@@ -10,6 +10,8 @@ import ipdl.builtin
 from ipdl.cxx.ast import *
 from ipdl.type import Actor, ActorType, ProcessGraph, TypeVisitor
 
+msvcver = int(os.getenv('MOZ_MSVCVERSION', default=10))
+
 # FIXME/cjones: the chromium Message logging code doesn't work on
 # gcc/POSIX, because it wprintf()s across the chromium/mozilla
 # boundary. one side builds with -fshort-wchar, the other doesn't.
@@ -2555,12 +2557,24 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         cppheaders = [CppDirective('include', '"%s"' % filename)
                       for filename in ipdl.builtin.CppIncludes]
 
-        cf.addthings((
-            [ Whitespace.NL ]
-            + self.protocolCxxIncludes
-            + [ Whitespace.NL ]
-            + cppheaders
-            + [ Whitespace.NL ]))
+        if msvcver > 8:
+            cf.addthings((
+                [ Whitespace.NL ]
+                + self.protocolCxxIncludes
+                + [ Whitespace.NL ]
+                + cppheaders
+                + [ Whitespace.NL ]))
+        else:
+            cf.addthings((
+                [ Whitespace.NL ]
+                + self.protocolCxxIncludes
+                + [ Whitespace.NL ]
+                + self.standardTypedefs()
+                + tu.protocol.decl.cxxtypedefs
+                + self.includedActorUsings
+                + [ Whitespace.NL ]
+                + cppheaders
+                + [ Whitespace.NL ]))
 
         cppns = makeNamespace(self.protocol, cf)
         cppns.addstmts([

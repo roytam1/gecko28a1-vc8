@@ -18,7 +18,7 @@ T* GetAtomCache(JSContext* aCx)
 {
   JSRuntime* rt = JS_GetRuntime(aCx);
 
-  auto atomCache = static_cast<PerThreadAtomCache*>(JS_GetRuntimePrivate(rt));
+  PerThreadAtomCache* atomCache = static_cast<PerThreadAtomCache*>(JS_GetRuntimePrivate(rt));
 
   return static_cast<T*>(atomCache);
 }

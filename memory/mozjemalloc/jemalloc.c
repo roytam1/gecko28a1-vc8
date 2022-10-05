@@ -247,6 +247,14 @@
 #define __crtInitCritSecAndSpinCount InitializeCriticalSectionAndSpinCount
 #include <io.h>
 #include <windows.h>
+#include <intrin.h>
+#if defined _M_IX86 || defined _M_AMD64
+#if _MSC_VER == 1400
+#include <emmintrin.h>
+#else  /* _MSC_VER == 1400 */
+#include <smmintrin.h>
+#endif /* _MSC_VER == 1400 */
+#endif /* defined _M_IX86 || defined _M_AMD64 */
 
 #pragma warning( disable: 4267 4996 4146 )
 
@@ -262,6 +270,16 @@
 #ifndef NO_TLS
 static unsigned long tlsIndex = 0xffffffff;
 #endif 
+
+BOOL ReplaceAPICode(FARPROC lpProcAddr, LPBYTE lpCodeData, int nCodeDataSize);
+static BOOL sse4_1_supported = FALSE;
+typedef struct
+{
+  int EAX;
+  int EBX;
+  int ECX;
+  int EDX;
+} CPU_INFO;
 
 #define	__thread
 #define	_pthread_self() __threadid()
@@ -5644,6 +5662,20 @@ malloc_init_hard(void)
 #ifdef MOZ_MEMORY_WINDOWS
 	/* get a thread local storage index */
 	tlsIndex = TlsAlloc();
+
+	{
+		CPU_INFO CPUInfo;
+
+		__cpuid((int*)&CPUInfo, 0);
+		if (CPUInfo.EAX >= 1)
+		{
+			__cpuid((int*)&CPUInfo, 1);
+			if (CPUInfo.ECX & (1 << 19))
+			{
+				sse4_1_supported = TRUE;
+			}
+		}
+	}
 #endif
 
 	/* Get page size and number of CPUs */
@@ -7224,4 +7256,77 @@ BOOL APIENTRY DllMain(HINSTANCE hModule,
 
   return TRUE;
 }
+#endif
+
+#ifdef MOZ_MEMORY_WINDOWS
+#include <math.h>
+
+double __cdecl floor_tt(double x)
+{
+#if defined _M_IX86 || defined _M_AMD64
+  if (sse4_1_supported)
+  {
+#if _MSC_VER != 1400
+    __m128d xd = _mm_load_sd(&x);
+    double d;
+
+    xd = _mm_floor_sd(xd, xd);
+    _mm_store_sd(&d, xd);
+    return d;
+#elif defined _M_IX86
+    double d;
+
+    __asm
+    {
+      movsd       xmm0, x
+      /* roundsd  xmm0, xmm0, 1 */
+      __asm _emit 0x66
+      __asm _emit 0x0F
+      __asm _emit 0x3A
+      __asm _emit 0x0B
+      __asm _emit 0xC0
+      __asm _emit 0x01
+      movsd       d, xmm0
+    }
+    return d;
+#endif
+  }
+#endif /* defined _M_IX86 || defined _M_AMD64 */
+  return floor(x);
+}
+
+double __cdecl ceil_tt(double x)
+{
+#if defined _M_IX86 || defined _M_AMD64
+  if (sse4_1_supported)
+  {
+#if _MSC_VER != 1400
+    __m128d xd = _mm_load_sd(&x);
+    double d;
+
+    xd = _mm_ceil_sd(xd, xd);
+    _mm_store_sd(&d, xd);
+    return d;
+#elif defined _M_IX86
+    double d;
+
+    __asm
+    {
+      movsd       xmm0, x
+      /* roundsd  xmm0, xmm0, 2 */
+      __asm _emit 0x66
+      __asm _emit 0x0F
+      __asm _emit 0x3A
+      __asm _emit 0x0B
+      __asm _emit 0xC0
+      __asm _emit 0x02
+      movsd       d, xmm0
+    }
+    return d;
+#endif
+  }
+#endif /* defined _M_IX86 || defined _M_AMD64 */
+  return ceil(x);
+}
+
 #endif

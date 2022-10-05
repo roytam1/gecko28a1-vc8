@@ -264,6 +264,10 @@ nsContainerFrame::DestroyFrom(nsIFrame* aDestructRoot)
 /////////////////////////////////////////////////////////////////////////////
 // Child frame enumeration
 
+#ifdef _MSC_VER
+#pragma optimize("g", off)
+#endif
+
 const nsFrameList&
 nsContainerFrame::GetChildList(ChildListID aListID) const
 {
@@ -289,6 +293,10 @@ nsContainerFrame::GetChildList(ChildListID aListID) const
       return nsSplittableFrame::GetChildList(aListID);
   }
 }
+
+#ifdef _MSC_VER
+#pragma optimize("g", on)
+#endif
 
 static void AppendIfNonempty(const nsIFrame* aFrame,
                             FramePropertyTable* aPropTable,

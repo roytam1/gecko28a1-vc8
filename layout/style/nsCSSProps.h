@@ -16,6 +16,11 @@
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 // Flags for ParseVariant method
 #define VARIANT_KEYWORD         0x000001  // K
 #define VARIANT_LENGTH          0x000002  // L

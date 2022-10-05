@@ -27,6 +27,15 @@
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SSE.h"
+#if _MSC_VER == 1400
+#include <emmintrin.h>
+extern "C" {
+  extern __m128i _mm_shuffle_epi8(__m128i a, __m128i b);
+}
+#else
+#include <tmmintrin.h>
+#endif
 
 #ifdef XP_MACOSX
 #include <CoreServices/CoreServices.h>
@@ -1854,24 +1863,49 @@ GLContext::MarkDestroyed()
 static void SwapRAndBComponents(gfxImageSurface* surf)
 {
   uint8_t *row = surf->Data();
-
   size_t rowBytes = surf->Width()*4;
-  size_t rowHole = surf->Stride() - rowBytes;
-
   size_t rows = surf->Height();
+
+#ifdef MOZILLA_MAY_SUPPORT_SSSE3
+  const __m128i swap_mask = _mm_set_epi8(15, 12, 13, 14,
+                                         11,  8,  9, 10,
+                                          7,  4,  5,  6,
+                                          3,  0,  1,  2);
+#endif
 
   while (rows) {
 
-    const uint8_t *rowEnd = row + rowBytes;
+    size_t w = rowBytes;
+    uint8_t *d = row;
 
-    while (row != rowEnd) {
-      row[0] ^= row[2];
-      row[2] ^= row[0];
-      row[0] ^= row[2];
-      row += 4;
+#ifdef MOZILLA_MAY_SUPPORT_SSSE3
+    if (mozilla::supports_ssse3()) {
+      while (w >= 4 && ((uintptr_t)d & 15)) {
+        d[0] ^= d[2];
+        d[2] ^= d[0];
+        d[0] ^= d[2];
+        d += 4;
+        w -= 4;
+      }
+
+      while (w >= 16) {
+        _mm_store_si128((__m128i*)d,
+                        _mm_shuffle_epi8(_mm_load_si128((__m128i*)d), swap_mask));
+        d += 16;
+        w -= 16;
+      }
+    }
+#endif
+
+    while (w >= 4) {
+      d[0] ^= d[2];
+      d[2] ^= d[0];
+      d[0] ^= d[2];
+      d += 4;
+      w -= 4;
     }
 
-    row += rowHole;
+    row += surf->Stride();
     --rows;
   }
 }

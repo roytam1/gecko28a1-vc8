@@ -9,3 +9,10 @@ DEFINES += \
   -DDLL_PREFIX=\"$(DLL_PREFIX)\" \
   -DDLL_SUFFIX=\"$(DLL_SUFFIX)\" \
   $(NULL)
+
+ifdef MOZ_THUNDERBIRD
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# avoid the fatal error C1001 of compiler when applying PGO to Thunderbird
+COMPILE_CXXFLAGS += -GL-
+endif
+endif

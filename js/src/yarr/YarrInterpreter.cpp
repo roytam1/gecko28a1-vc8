@@ -1943,7 +1943,13 @@ private:
     unsigned m_currentAlternativeIndex;
     Vector<ParenthesesStackEntry> m_parenthesesStack;
     Vector<ByteDisjunction*> m_allParenthesesInfo;
+#ifdef _MSC_VER
+#pragma optimize("g", off)
+#endif
 };
+#ifdef _MSC_VER
+#pragma optimize("g", on)
+#endif
 
 PassOwnPtr<BytecodePattern> byteCompile(YarrPattern& pattern, BumpPointerAllocator* allocator)
 {

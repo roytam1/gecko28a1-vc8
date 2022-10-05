@@ -45,7 +45,11 @@ class RenderStateCache
     typedef std::size_t (*BlendStateHashFunction)(const gl::BlendState &);
     typedef bool (*BlendStateEqualityFunction)(const gl::BlendState &, const gl::BlendState &);
     typedef std::pair<ID3D11BlendState*, unsigned long long> BlendStateCounterPair;
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<gl::BlendState, BlendStateCounterPair, BlendStateHashFunction, BlendStateEqualityFunction> BlendStateMap;
+#else
+    typedef boost::unordered_map<gl::BlendState, BlendStateCounterPair, BlendStateHashFunction, BlendStateEqualityFunction> BlendStateMap;
+#endif
     BlendStateMap mBlendStateCache;
 
     // Rasterizer state cache
@@ -62,7 +66,11 @@ class RenderStateCache
     typedef std::size_t (*RasterizerStateHashFunction)(const RasterizerStateKey &);
     typedef bool (*RasterizerStateEqualityFunction)(const RasterizerStateKey &, const RasterizerStateKey &);
     typedef std::pair<ID3D11RasterizerState*, unsigned long long> RasterizerStateCounterPair;
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<RasterizerStateKey, RasterizerStateCounterPair, RasterizerStateHashFunction, RasterizerStateEqualityFunction> RasterizerStateMap;
+#else
+    typedef boost::unordered_map<RasterizerStateKey, RasterizerStateCounterPair, RasterizerStateHashFunction, RasterizerStateEqualityFunction> RasterizerStateMap;
+#endif
     RasterizerStateMap mRasterizerStateCache;
 
     // Depth stencil state cache
@@ -73,10 +81,17 @@ class RenderStateCache
     typedef std::size_t (*DepthStencilStateHashFunction)(const gl::DepthStencilState &);
     typedef bool (*DepthStencilStateEqualityFunction)(const gl::DepthStencilState &, const gl::DepthStencilState &);
     typedef std::pair<ID3D11DepthStencilState*, unsigned long long> DepthStencilStateCounterPair;
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<gl::DepthStencilState,
                                DepthStencilStateCounterPair,
                                DepthStencilStateHashFunction,
                                DepthStencilStateEqualityFunction> DepthStencilStateMap;
+#else
+    typedef boost::unordered_map<gl::DepthStencilState,
+                                 DepthStencilStateCounterPair,
+                                 DepthStencilStateHashFunction,
+                                 DepthStencilStateEqualityFunction> DepthStencilStateMap;
+#endif
     DepthStencilStateMap mDepthStencilStateCache;
 
     // Sample state cache
@@ -87,10 +102,17 @@ class RenderStateCache
     typedef std::size_t (*SamplerStateHashFunction)(const gl::SamplerState &);
     typedef bool (*SamplerStateEqualityFunction)(const gl::SamplerState &, const gl::SamplerState &);
     typedef std::pair<ID3D11SamplerState*, unsigned long long> SamplerStateCounterPair;
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<gl::SamplerState,
                                SamplerStateCounterPair,
                                SamplerStateHashFunction,
                                SamplerStateEqualityFunction> SamplerStateMap;
+#else
+    typedef boost::unordered_map<gl::SamplerState,
+                                 SamplerStateCounterPair,
+                                 SamplerStateHashFunction,
+                                 SamplerStateEqualityFunction> SamplerStateMap;
+#endif
     SamplerStateMap mSamplerStateCache;
 
     ID3D11Device *mDevice;

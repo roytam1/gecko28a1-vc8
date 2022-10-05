@@ -26,3 +26,10 @@ endif
 ifdef MOZ_ENABLE_LIBCONIC
 	OS_INCLUDES += $(GLIB_CFLAGS) $(LIBCONIC_CFLAGS)
 endif
+
+ifdef MOZ_THUNDERBIRD
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# avoid the fatal error C1001 of compiler when applying PGO to Thunderbird
+COMPILE_CXXFLAGS += -GL-
+endif
+endif

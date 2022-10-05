@@ -36,7 +36,18 @@ using namespace mozilla;
    && nsMinorVersion(suppliedV) >= nsMinorVersion(requiredV))
 
 
-#define NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION TEXT("MozillaPluginWindowPropertyAssociation")
+class CAtom_MozillaPluginWindowPropertyAssociation {
+public:
+  CAtom_MozillaPluginWindowPropertyAssociation() {
+    atom = ::GlobalAddAtomW(L"MozillaPluginWindowPropertyAssociation");
+  }
+  ~CAtom_MozillaPluginWindowPropertyAssociation() {
+    ::GlobalDeleteAtom(atom);
+  }
+  ATOM atom;
+};
+static CAtom_MozillaPluginWindowPropertyAssociation gaMpwpa;
+#define NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION ((LPCWSTR)(DWORD)gaMpwpa.atom)
 #define NS_PLUGIN_CUSTOM_MSG_ID TEXT("MozFlashUserRelay")
 #define WM_USER_FLASH WM_USER+1
 static UINT sWM_FLASHBOUNCEMSG = 0;
@@ -193,7 +204,7 @@ static LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
  */
 static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-  nsPluginNativeWindowWin * win = (nsPluginNativeWindowWin *)::GetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+  nsPluginNativeWindowWin * win = (nsPluginNativeWindowWin *)::GetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
   if (!win)
     return TRUE;
 
@@ -395,7 +406,7 @@ SetWindowLongHookCheck(HWND hWnd,
                        LONG_PTR newLong)
 {
   nsPluginNativeWindowWin * win =
-    (nsPluginNativeWindowWin *)GetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+    (nsPluginNativeWindowWin *)GetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
   if (!win || (win && win->mPluginType != nsPluginType_Flash) ||
       (nIndex == GWLP_WNDPROC &&
        newLong == reinterpret_cast<LONG_PTR>(PluginWndProc)))
@@ -423,7 +434,7 @@ SetWindowLongAHook(HWND hWnd,
 
   // We already checked this in SetWindowLongHookCheck
   nsPluginNativeWindowWin * win =
-    (nsPluginNativeWindowWin *)GetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+    (nsPluginNativeWindowWin *)GetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
 
   // Hook our subclass back up, just like we do on setwindow.
   win->SetPrevWindowProc(
@@ -452,7 +463,7 @@ SetWindowLongWHook(HWND hWnd,
 
   // We already checked this in SetWindowLongHookCheck
   nsPluginNativeWindowWin * win =
-    (nsPluginNativeWindowWin *)GetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+    (nsPluginNativeWindowWin *)GetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
 
   // Hook our subclass back up, just like we do on setwindow.   
   win->SetPrevWindowProc(
@@ -695,10 +706,10 @@ nsresult nsPluginNativeWindowWin::SubclassAndAssociateWindow()
   if (!mPluginWinProc)
     return NS_ERROR_FAILURE;
 
-  DebugOnly<nsPluginNativeWindowWin *> win = (nsPluginNativeWindowWin *)::GetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+  DebugOnly<nsPluginNativeWindowWin *> win = (nsPluginNativeWindowWin *)::GetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
   NS_ASSERTION(!win || (win == this), "plugin window already has property and this is not us");
   
-  if (!::SetProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION, (HANDLE)this))
+  if (!::SetPropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION, (HANDLE)this))
     return NS_ERROR_FAILURE;
 
   return NS_OK;
@@ -712,7 +723,7 @@ nsresult nsPluginNativeWindowWin::UndoSubclassAndAssociateWindow()
   // remove window property
   HWND hWnd = (HWND)window;
   if (IsWindow(hWnd))
-    ::RemoveProp(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
+    ::RemovePropW(hWnd, NS_PLUGIN_WINDOW_PROPERTY_ASSOCIATION);
 
   // restore the original win proc
   // but only do this if this were us last time

@@ -14,6 +14,11 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/TypeTraits.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 namespace mozilla {
 
 template<typename T> class RefCounted;
@@ -103,7 +108,7 @@ class RefCounted : public detail::RefCounted<T, detail::NonAtomicRefCount>
 {
   public:
     ~RefCounted() {
-      static_assert(IsBaseOf<RefCounted, T>::value,
+      static_assert((IsBaseOf<RefCounted, T>::value),
                     "T must derive from RefCounted<T>");
     }
 };
@@ -117,7 +122,7 @@ class AtomicRefCounted : public detail::RefCounted<T, detail::AtomicRefCount>
 {
   public:
     ~AtomicRefCounted() {
-      static_assert(IsBaseOf<AtomicRefCounted, T>::value,
+      static_assert((IsBaseOf<AtomicRefCounted, T>::value),
                     "T must derive from AtomicRefCounted<T>");
     }
 };

@@ -13,6 +13,11 @@
 #include "mozilla/mozalloc_oom.h"
 #include "mozilla/Assertions.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 static mozalloc_oom_abort_handler gAbortHandler;
 
 #define OOM_MSG_LEADER "out of memory: 0x"

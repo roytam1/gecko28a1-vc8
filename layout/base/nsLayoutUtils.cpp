@@ -4189,7 +4189,8 @@ DrawImageInternal(nsRenderingContext*    aRenderingContext,
                   const nsRect&          aDirty,
                   const nsIntSize&       aImageSize,
                   const SVGImageContext* aSVGContext,
-                  uint32_t               aImageFlags)
+                  uint32_t               aImageFlags,
+                  const bool             aSingleImage = false)
 {
   if (aDest.Contains(aFill)) {
     aImageFlags |= imgIContainer::FLAG_CLAMP;
@@ -4207,6 +4208,10 @@ DrawImageInternal(nsRenderingContext*    aRenderingContext,
   gfxContextMatrixAutoSaveRestore saveMatrix(ctx);
   if (drawingParams.mResetCTM) {
     ctx->IdentityMatrix();
+  }
+
+  if (aSingleImage) {
+    ctx->SetFlag(gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
   }
 
   aImage->Draw(ctx, aGraphicsFilter, drawingParams.mUserSpaceToImageSpace,
@@ -4289,7 +4294,7 @@ nsLayoutUtils::DrawSingleUnscaledImage(nsRenderingContext* aRenderingContext,
   fill.IntersectRect(fill, dest);
   return DrawImageInternal(aRenderingContext, aImage, aGraphicsFilter,
                            dest, fill, aDest, aDirty ? *aDirty : dest,
-                           imageSize, nullptr, aImageFlags);
+                           imageSize, nullptr, aImageFlags, true);
 }
 
 /* static */ nsresult
@@ -4329,7 +4334,7 @@ nsLayoutUtils::DrawSingleImage(nsRenderingContext*    aRenderingContext,
   nsRect fill;
   fill.IntersectRect(aDest, dest);
   return DrawImageInternal(aRenderingContext, aImage, aGraphicsFilter, dest, fill,
-                           fill.TopLeft(), aDirty, imageSize, aSVGContext, aImageFlags);
+                           fill.TopLeft(), aDirty, imageSize, aSVGContext, aImageFlags, true);
 }
 
 /* static */ void

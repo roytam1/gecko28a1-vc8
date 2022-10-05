@@ -92,31 +92,31 @@ public:
 
     // from AudioMixerOutputReceiver
     virtual void NewMixedAudio(
-        int32_t id,
+        const int32_t id,
         const AudioFrame& generalAudioFrame,
         const AudioFrame** uniqueAudioFrames,
-        uint32_t size);
+        const uint32_t size);
 
     // from AudioMixerStatusReceiver
     virtual void MixedParticipants(
-        int32_t id,
+        const int32_t id,
         const ParticipantStatistics* participantStatistics,
-        uint32_t size);
+        const uint32_t size);
 
     virtual void VADPositiveParticipants(
-        int32_t id,
+        const int32_t id,
         const ParticipantStatistics* participantStatistics,
-        uint32_t size);
+        const uint32_t size);
 
-    virtual void MixedAudioLevel(int32_t id, uint32_t level);
+    virtual void MixedAudioLevel(const int32_t id, const uint32_t level);
 
     // For file recording
-    void PlayNotification(int32_t id, uint32_t durationMs);
+    void PlayNotification(const int32_t id, const uint32_t durationMs);
 
-    void RecordNotification(int32_t id, uint32_t durationMs);
+    void RecordNotification(const int32_t id, const uint32_t durationMs);
 
-    void PlayFileEnded(int32_t id);
-    void RecordFileEnded(int32_t id);
+    void PlayFileEnded(const int32_t id);
+    void RecordFileEnded(const int32_t id);
 
 private:
     OutputMixer(uint32_t instanceId);

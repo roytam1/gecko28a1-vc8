@@ -67,7 +67,7 @@
 #define NO_64BIT_MATH 1
 #endif
 #else
-#ifdef HAVE_STDINT_H
+#if defined(HAVE_STDINT_H) || defined(_MSC_VER)
 # include <stdint.h>
 #endif
 #endif /* INTEGER_TYPES_H */

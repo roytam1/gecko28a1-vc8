@@ -24,10 +24,10 @@ namespace webrtc {
 namespace voe {
 
 void
-OutputMixer::NewMixedAudio(int32_t id,
+OutputMixer::NewMixedAudio(const int32_t id,
                            const AudioFrame& generalAudioFrame,
                            const AudioFrame** uniqueAudioFrames,
-                           uint32_t size)
+                           const uint32_t size)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::NewMixedAudio(id=%d, size=%u)", id, size);
@@ -37,23 +37,23 @@ OutputMixer::NewMixedAudio(int32_t id,
 }
 
 void OutputMixer::MixedParticipants(
-    int32_t id,
+    const int32_t id,
     const ParticipantStatistics* participantStatistics,
-    uint32_t size)
+    const uint32_t size)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::MixedParticipants(id=%d, size=%u)", id, size);
 }
 
-void OutputMixer::VADPositiveParticipants(int32_t id,
-    const ParticipantStatistics* participantStatistics, uint32_t size)
+void OutputMixer::VADPositiveParticipants(const int32_t id,
+    const ParticipantStatistics* participantStatistics, const uint32_t size)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::VADPositiveParticipants(id=%d, size=%u)",
                  id, size);
 }
 
-void OutputMixer::MixedAudioLevel(int32_t id, uint32_t level)
+void OutputMixer::MixedAudioLevel(const int32_t id, const uint32_t level)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::MixedAudioLevel(id=%d, level=%u)", id, level);

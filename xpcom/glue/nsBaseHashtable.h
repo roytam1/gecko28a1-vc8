@@ -32,7 +32,11 @@ private:
   typedef typename KeyClass::KeyTypePointer KeyTypePointer;
   
   nsBaseHashtableET(KeyTypePointer aKey);
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
   nsBaseHashtableET(nsBaseHashtableET<KeyClass,DataType>&& toMove);
+#else
+  nsBaseHashtableET(nsBaseHashtableET<KeyClass,DataType>& toCopy);
+#endif
   ~nsBaseHashtableET();
 };
 
@@ -354,9 +358,15 @@ nsBaseHashtableET<KeyClass,DataType>::nsBaseHashtableET(KeyTypePointer aKey) :
 
 template<class KeyClass,class DataType>
 nsBaseHashtableET<KeyClass,DataType>::nsBaseHashtableET
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
   (nsBaseHashtableET<KeyClass,DataType>&& toMove) :
   KeyClass(mozilla::Move(toMove)),
   mData(mozilla::Move(toMove.mData))
+#else
+  (nsBaseHashtableET<KeyClass,DataType>& toCopy) :
+  KeyClass(toCopy),
+  mData(toCopy.mData)
+#endif
 { }
 
 template<class KeyClass,class DataType>

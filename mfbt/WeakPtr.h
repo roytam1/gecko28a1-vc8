@@ -64,6 +64,11 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TypeTraits.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 namespace mozilla {
 
 template <typename T, class WeakReference> class WeakPtrBase;
@@ -104,7 +109,7 @@ class SupportsWeakPtrBase
 
   protected:
     ~SupportsWeakPtrBase() {
-      static_assert(IsBaseOf<SupportsWeakPtrBase<T, WeakReference>, T>::value,
+      static_assert((IsBaseOf<SupportsWeakPtrBase<T, WeakReference>, T>::value),
                     "T must derive from SupportsWeakPtrBase<T, WeakReference>");
       if (weakRef)
         weakRef->detach();

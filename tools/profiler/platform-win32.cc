@@ -33,6 +33,7 @@
 #include "TableTicker.h"
 #include "ProfileEntry.h"
 #include "UnwinderThread2.h"
+#include <math.h>
 
 class PlatformData : public Malloced {
  public:

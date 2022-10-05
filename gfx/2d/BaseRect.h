@@ -10,6 +10,9 @@
 #include <mozilla/Assertions.h>
 #include <algorithm>
 
+#include <stddef.h>
+#include <emmintrin.h>
+
 namespace mozilla {
 namespace gfx {
 
@@ -50,6 +53,45 @@ struct BaseRect {
       x(aX), y(aY), width(aWidth), height(aHeight)
   {
   }
+  BaseRect(const __m128i& a128i)
+  {
+    _mm_storeu_si128((__m128i *)&x, a128i);
+  }
+
+  bool IsInt32x4() const {
+    return _is_int32<T>::value &&
+           offsetof(Sub, x) == offsetof(Sub, y) - 4 &&
+           offsetof(Sub, x) == offsetof(Sub, width) - 8 &&
+           offsetof(Sub, x) == offsetof(Sub, height) - 12;
+  }
+  template <typename T>
+  struct _is_int32 {
+    enum { value = false };
+  };
+  template <>
+  struct _is_int32<long> {
+    enum { value = (sizeof(long) == 4) };
+  };
+  template <>
+  struct _is_int32<long const> {
+    enum { value = (sizeof(long) == 4) };
+  };
+  template <>
+  struct _is_int32<int> {
+    enum { value = (sizeof(int) == 4) };
+  };
+  template <>
+  struct _is_int32<int const> {
+    enum { value = (sizeof(int) == 4) };
+  };
+  template <>
+  struct _is_int32<long long> {
+    enum { value = (sizeof(long long) == 4) };
+  };
+  template <>
+  struct _is_int32<long long const> {
+    enum { value = (sizeof(long long) == 4) };
+  };
 
   // Emptiness. An empty rect is one that has no area, i.e. its height or width
   // is <= 0

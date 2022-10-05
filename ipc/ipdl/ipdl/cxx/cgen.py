@@ -3,9 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys
+import os
 
 from ipdl.cgen import CodePrinter
 from ipdl.cxx.ast import TypeArray, Visitor
+
+msvcver = int(os.getenv('MOZ_MSVCVERSION', default=10))
 
 class CxxCodeGen(CodePrinter, Visitor):
     def __init__(self, outf=sys.stdout, indentCols=4):
@@ -189,7 +192,7 @@ class CxxCodeGen(CodePrinter, Visitor):
         if md.virtual:
             self.write('virtual ')
         if md.ret:
-            if md.only_for_definition:
+            if md.only_for_definition and msvcver > 8:
                 self.write('auto ')
             else:
                 md.ret.accept(self)
@@ -207,7 +210,7 @@ class CxxCodeGen(CodePrinter, Visitor):
 
         if md.const:
             self.write(' const')
-        if md.ret and md.only_for_definition:
+        if md.ret and md.only_for_definition and msvcver > 8:
             self.write(' -> ')
             md.ret.accept(self)
         if md.warn_unused:

@@ -427,8 +427,13 @@ gfxUtils::DrawPixelSnapped(gfxContext*      aContext,
                            uint32_t         aImageFlags)
 {
     PROFILER_LABEL("gfxUtils", "DrawPixelSnapped");
-    bool doTile = !aImageRect.Contains(aSourceRect) &&
-                  !(aImageFlags & imgIContainer::FLAG_CLAMP);
+
+    bool drawSingleImage = (aContext->GetFlags() & gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
+    aContext->ClearFlag(gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
+
+    bool doTile = (drawSingleImage ? false : (!aImageRect.Contains(aSourceRect) &&
+                  !(aImageFlags & imgIContainer::FLAG_CLAMP)));
+
 
     nsRefPtr<gfxASurface> currentTarget = aContext->CurrentSurface();
     gfxMatrix deviceSpaceToImageSpace =

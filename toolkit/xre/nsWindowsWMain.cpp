@@ -10,6 +10,10 @@
 #error This file only makes sense on Windows.
 #endif
 
+#if defined(TT_MEMUTIL) && defined(_MSC_VER)
+#include <omp.h>
+#endif
+
 #include "nsUTF8Utils.h"
 
 #ifndef XRE_DONT_PROTECT_DLL_LOAD

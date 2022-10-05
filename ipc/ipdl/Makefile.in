@@ -30,3 +30,8 @@ export:: $(ALL_IPDLSRCS)
 # We #include some things in the dom/plugins/ directory that rely on
 # toolkit libraries.
 CXXFLAGS    += $(TK_CFLAGS)
+
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# avoid the fatal error of compiler when applying PGO
+COMPILE_CXXFLAGS += -GL-
+endif

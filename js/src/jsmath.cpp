@@ -37,6 +37,20 @@
 
 #include "jsobjinlines.h"
 
+#if defined JS_CPU_X86 || defined JS_CPU_X64
+#if _MSC_VER == 1400
+#include <emmintrin.h>
+#else  /* _MSC_VER == 1400 */
+#include <smmintrin.h>
+#endif /* _MSC_VER == 1400 */
+#endif /* defined JS_CPU_X86 || defined JS_CPU_X64 */
+
+#include "assembler/assembler/MacroAssembler.h"
+
+#if (_M_IX86_FP >= 2)
+#pragma function(floor)
+#endif
+
 using namespace js;
 
 using mozilla::Abs;
@@ -307,13 +321,42 @@ js::math_atan2(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-double
+JS_ALWAYS_INLINE double
 js::math_ceil_impl(double x)
 {
 #ifdef __APPLE__
     if (x < 0 && x > -1.0)
         return js_copysign(0, -1);
 #endif
+
+#if defined JS_CPU_X86 || defined JS_CPU_X64
+    if (JSC::MacroAssemblerX86Common::getSSEState() >=
+        JSC::MacroAssemblerX86Common::HasSSE4_1) {
+#if _MSC_VER != 1400
+        __m128d xd = _mm_load_sd(&x);
+        double d;
+
+        xd = _mm_ceil_sd(xd, xd);
+        _mm_store_sd(&d, xd);
+        return d;
+#elif defined JS_CPU_X86
+        double d;
+
+        __asm {
+            movsd       xmm0, x
+            /* roundsd  xmm0, xmm0, 2 */
+            __asm _emit 0x66
+            __asm _emit 0x0F
+            __asm _emit 0x3A
+            __asm _emit 0x0B
+            __asm _emit 0xC0
+            __asm _emit 0x02
+            movsd       d, xmm0
+        }
+        return d;
+#endif
+    }
+#endif /* defined JS_CPU_X86 || defined JS_CPU_X64 */
     return ceil(x);
 }
 
@@ -422,9 +465,37 @@ js::math_exp(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-double
+JS_ALWAYS_INLINE double
 js::math_floor_impl(double x)
 {
+#if defined JS_CPU_X86 || defined JS_CPU_X64
+    if (JSC::MacroAssemblerX86Common::getSSEState() >=
+        JSC::MacroAssemblerX86Common::HasSSE4_1) {
+#if _MSC_VER != 1400
+        __m128d xd = _mm_load_sd(&x);
+        double d;
+
+        xd = _mm_floor_sd(xd, xd);
+        _mm_store_sd(&d, xd);
+        return d;
+#elif defined JS_CPU_X86
+        double d;
+
+        __asm {
+            movsd       xmm0, x
+            /* roundsd  xmm0, xmm0, 1 */
+            __asm _emit 0x66
+            __asm _emit 0x0F
+            __asm _emit 0x3A
+            __asm _emit 0x0B
+            __asm _emit 0xC0
+            __asm _emit 0x01
+            movsd       d, xmm0
+        }
+        return d;
+#endif
+    }
+#endif /* defined JS_CPU_X86 || defined JS_CPU_X64 */
     return floor(x);
 }
 
@@ -770,7 +841,12 @@ js_math_random(JSContext *cx, unsigned argc, Value *vp)
     return true;
 }
 
-double
+#if defined JS_CPU_X86 || defined JS_CPU_X64
+static const MOZ_ALIGNED_DECL(double dbhalf[2], 16) = { 0.5, 0.5 };
+static const MOZ_ALIGNED_DECL(int64_t mask_sign[2], 16) = { 0x8000000000000000 };
+#endif
+
+JS_ALWAYS_INLINE double
 js::math_round_impl(double x)
 {
     int32_t i;
@@ -781,7 +857,51 @@ js::math_round_impl(double x)
     if (ExponentComponent(x) >= 52)
         return x;
 
-    return js_copysign(floor(x + 0.5), x);
+#if defined JS_CPU_X86 || defined JS_CPU_X64
+    if (JSC::MacroAssemblerX86Common::getSSEState() >=
+        JSC::MacroAssemblerX86Common::HasSSE4_1) {
+#if _MSC_VER != 1400
+        __m128d xmm1d = _mm_load_sd(&x);
+        __m128d xmm0d = xmm1d;
+        double d;
+
+        xmm0d = _mm_add_sd(xmm0d, *(__m128d *)&dbhalf);
+        xmm0d = _mm_floor_sd(xmm0d, xmm0d);
+
+        __m128i xmm2i = _mm_load_si128((__m128i *)mask_sign);
+        __m128i xmm1i = _mm_castpd_si128(xmm1d);
+
+        xmm1i = _mm_and_si128(xmm1i, xmm2i);
+        xmm2i = _mm_andnot_si128(xmm2i, _mm_castpd_si128(xmm0d));
+        xmm1i = _mm_or_si128(xmm1i, xmm2i);
+
+        _mm_store_sd(&d, _mm_castsi128_pd(xmm1i));
+        return d;
+#elif defined JS_CPU_X86
+        double d;
+
+        __asm {
+            movsd       xmm1, x
+            movdqa      xmm2, mask_sign
+            movaps      xmm0, xmm1
+            addsd       xmm0, dbhalf
+            pand        xmm1, xmm2
+            /* roundsd  xmm0, xmm0, 1 */
+            __asm _emit 0x66
+            __asm _emit 0x0F
+            __asm _emit 0x3A
+            __asm _emit 0x0B
+            __asm _emit 0xC0
+            __asm _emit 0x01
+            pandn       xmm2, xmm0
+            por         xmm1, xmm2
+            movsd       d, xmm1
+        }
+        return d;
+#endif
+    }
+#endif /* defined JS_CPU_X86 || defined JS_CPU_X64 */
+    return js_copysign(math_floor_impl(x + 0.5), x);
 }
 
 bool /* ES5 15.8.2.15. */

@@ -1618,7 +1618,14 @@ static_assert(NS_ARRAY_LENGTH(sPseudoClassStates) ==
 //    which is done only when SelectorMatches calls itself recursively
 //  * what it points to should be set to true whenever a test is skipped
 //    because of aNodeMatchContent.mStateMask
-static bool SelectorMatches(Element* aElement,
+bool SelectorMatchesComponent(Element* aElement,
+                              nsCSSSelector* aSelector,
+                              NodeMatchContext& aNodeMatchContext,
+                              TreeMatchContext& aTreeMatchContext,
+                              bool* const aDependence);
+
+inline
+bool SelectorMatches(Element* aElement,
                               nsCSSSelector* aSelector,
                               NodeMatchContext& aNodeMatchContext,
                               TreeMatchContext& aTreeMatchContext,
@@ -1648,6 +1655,19 @@ static bool SelectorMatches(Element* aElement,
     }
   }
 
+  return SelectorMatchesComponent(aElement,
+                                  aSelector,
+                                  aNodeMatchContext,
+                                  aTreeMatchContext,
+                                  aDependence);
+}
+
+static bool SelectorMatchesComponent(Element* aElement,
+                                       nsCSSSelector* aSelector,
+                                       NodeMatchContext& aNodeMatchContext,
+                                       TreeMatchContext& aTreeMatchContext,
+                                       bool* const aDependence)
+{
   nsAtomList* IDList = aSelector->mIDList;
   if (IDList) {
     nsIAtom* id = aElement->GetID();

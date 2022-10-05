@@ -23,6 +23,9 @@
 // solution.
 #include "mozilla/RefPtr.h"
 
+#include <string.h>
+
+
 #ifdef MOZ_ENABLE_FREETYPE
 #include <string>
 #endif
@@ -860,8 +863,12 @@ public:
    * Set a transform on the surface, this transform is applied at drawing time
    * to both the mask and source of the operation.
    */
-  virtual void SetTransform(const Matrix &aTransform)
-    { mTransform = aTransform; mTransformDirty = true; }
+  virtual void SetTransform(const Matrix &aTransform) {
+    if (memcmp(&mTransform, &aTransform, sizeof(Matrix)) != 0) {
+      mTransform = aTransform;
+      mTransformDirty = true;
+    }
+  }
 
   SurfaceFormat GetFormat() { return mFormat; }
 
@@ -934,6 +941,7 @@ class GFX2D_API Factory
 {
 public:
   static bool HasSSE2();
+  static bool HasSSSE3();
 
   static TemporaryRef<DrawTarget> CreateDrawTargetForCairoSurface(cairo_surface_t* aSurface, const IntSize& aSize);
 

@@ -2428,7 +2428,7 @@ IDBObjectStore::OpenCursorFromChildProcess(IDBRequest* aRequest,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aRequest);
 
-  auto direction = static_cast<IDBCursor::Direction>(aDirection);
+  IDBCursor::Direction direction = static_cast<IDBCursor::Direction>(aDirection);
 
   nsRefPtr<IDBCursor> cursor =
     IDBCursor::Create(aRequest, mTransaction, this, direction, Key(),
@@ -2457,7 +2457,7 @@ IDBObjectStore::OpenKeyCursorInternal(IDBKeyRange* aKeyRange, size_t aDirection,
     return nullptr;
   }
 
-  auto direction = static_cast<IDBCursor::Direction>(aDirection);
+  IDBCursor::Direction direction = static_cast<IDBCursor::Direction>(aDirection);
 
   nsRefPtr<OpenKeyCursorHelper> helper =
     new OpenKeyCursorHelper(mTransaction, request, this, aKeyRange, direction);

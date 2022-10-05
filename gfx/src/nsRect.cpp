@@ -9,6 +9,11 @@
 #include "nsString.h"               // for nsAutoString, etc
 #include "nsMargin.h"                   // for nsMargin
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 static_assert((NS_SIDE_TOP == 0) && (NS_SIDE_RIGHT == 1) && (NS_SIDE_BOTTOM == 2) && (NS_SIDE_LEFT == 3),
               "The mozilla::css::Side sequence must match the nsMargin nscoord sequence");
 

@@ -6,6 +6,9 @@
 /*
  * Double hashing implementation.
  */
+#if _MSC_VER >= 1400
+#include <intrin.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -129,13 +132,29 @@ PL_DHashMoveEntryStub(PLDHashTable *table,
                       const PLDHashEntryHdr *from,
                       PLDHashEntryHdr *to)
 {
+#if _MSC_VER >= 1400
+    if ((table->entrySize & 3) == 0) {
+        __movsd((unsigned long*)to, (unsigned long*)from, table->entrySize >> 2);
+    } else {
+        memcpy(to, from, table->entrySize);
+    }
+#else
     memcpy(to, from, table->entrySize);
+#endif
 }
 
 void
 PL_DHashClearEntryStub(PLDHashTable *table, PLDHashEntryHdr *entry)
 {
+#if _MSC_VER >= 1400
+    if ((table->entrySize & 3) == 0) {
+        __stosd((unsigned long*)entry, 0, table->entrySize >> 2);
+    } else {
+        memset(entry, 0, table->entrySize);
+    }
+#else
     memset(entry, 0, table->entrySize);
+#endif
 }
 
 void
@@ -502,7 +521,29 @@ ChangeTable(PLDHashTable *table, int deltaLog2)
     table->generation++;
 
     /* Assign the new entry store to table. */
+#ifdef TT_MEMUTIL
+    {
+        static PRBool initialized = PR_FALSE;
+        static PRUint32 dwNonTemporalDataSizeMin = NON_TEMPORAL_STORES_NOT_SUPPORTED;
+
+        if (!initialized) {
+            dwNonTemporalDataSizeMin = GetNonTemporalDataSizeMin_tt();
+            initialized = PR_TRUE;
+        }
+
+        if (nbytes < dwNonTemporalDataSizeMin ||
+            NON_TEMPORAL_STORES_NOT_SUPPORTED == dwNonTemporalDataSizeMin)
+        {
+            memset(newEntryStore, 0, nbytes);
+        }
+        else
+        {
+            memset_nontemporal_tt(newEntryStore, 0, nbytes);
+        }
+    }
+#else
     memset(newEntryStore, 0, nbytes);
+#endif
     oldEntryAddr = oldEntryStore = table->entryStore;
     table->entryStore = newEntryStore;
     moveEntry = table->ops->moveEntry;

@@ -278,6 +278,10 @@ public:
     return aRect.ScaleToNearestPixels(mParameters.mXScale, mParameters.mYScale,
                                       mAppUnitsPerDevPixel);
   }
+  nsIntRect ToNearestPixels(const nsRect& aRect)
+  {
+    return aRect.ToNearestPixels(mAppUnitsPerDevPixel);
+  }
   nsIntRegion ScaleRegionToNearestPixels(const nsRegion& aRegion)
   {
     return aRegion.ScaleToNearestPixels(mParameters.mXScale, mParameters.mYScale,
@@ -291,6 +295,13 @@ public:
     return aRect.ScaleToOutsidePixels(mParameters.mXScale, mParameters.mYScale,
                                       mAppUnitsPerDevPixel);
   }
+  nsIntRect ToOutsidePixels(const nsRect& aRect, bool aSnap)
+  {
+    if (aSnap && mSnappingEnabled) {
+      return ToNearestPixels(aRect);
+    }
+    return aRect.ToOutsidePixels(mAppUnitsPerDevPixel);
+  }
   nsIntRect ScaleToInsidePixels(const nsRect& aRect, bool aSnap)
   {
     if (aSnap && mSnappingEnabled) {
@@ -298,6 +309,13 @@ public:
     }
     return aRect.ScaleToInsidePixels(mParameters.mXScale, mParameters.mYScale,
                                      mAppUnitsPerDevPixel);
+  }
+  nsIntRect ToInsidePixels(const nsRect& aRect, bool aSnap)
+  {
+    if (aSnap && mSnappingEnabled) {
+      return ToNearestPixels(aRect);
+    }
+    return aRect.ToInsidePixels(mAppUnitsPerDevPixel);
   }
 
   nsIntRegion ScaleRegionToInsidePixels(const nsRegion& aRegion, bool aSnap)
@@ -2019,6 +2037,7 @@ ContainerState::ProcessDisplayItems(const nsDisplayList& aList,
 
   const nsIFrame* lastActiveScrolledRoot = nullptr;
   nsPoint topLeft;
+  const bool scaled = mParameters.Scaled();
 
   // When NO_COMPONENT_ALPHA is set, items will be flattened into a single
   // layer, so we need to choose which active scrolled root to use for all
@@ -2039,15 +2058,18 @@ ContainerState::ProcessDisplayItems(const nsDisplayList& aList,
       "items in a container layer should all have the same app units per dev pixel");
 
     nsIntRect itemVisibleRect =
-      ScaleToOutsidePixels(item->GetVisibleRect(), false);
+      scaled ? ScaleToOutsidePixels(item->GetVisibleRect(), false) :
+               ToOutsidePixels(item->GetVisibleRect(), false);
     bool snap;
     nsRect itemContent = item->GetBounds(mBuilder, &snap);
-    nsIntRect itemDrawRect = ScaleToOutsidePixels(itemContent, snap);
+    nsIntRect itemDrawRect = scaled ? ScaleToOutsidePixels(itemContent, snap) :
+                                      ToOutsidePixels(itemContent, snap);
     nsIntRect clipRect;
     const DisplayItemClip& itemClip = item->GetClip();
     if (itemClip.HasClip()) {
       itemContent.IntersectRect(itemContent, itemClip.GetClipRect());
-      clipRect = ScaleToNearestPixels(itemClip.GetClipRect());
+      clipRect = scaled ? ScaleToNearestPixels(itemClip.GetClipRect()) :
+                          ToNearestPixels(itemClip.GetClipRect());
       itemDrawRect.IntersectRect(itemDrawRect, clipRect);
       clipRect.MoveBy(mParameters.mOffset);
     }

@@ -2001,7 +2001,18 @@ nsWindow::ResetLayout()
 // Internally track the caption status via a window property. Required
 // due to our internal handling of WM_NCACTIVATE when custom client
 // margins are set.
-static const PRUnichar kManageWindowInfoProperty[] = L"ManageWindowInfoProperty";
+class CAtom_ManageWindowInfoProperty {
+public:
+  CAtom_ManageWindowInfoProperty() {
+    atom = ::GlobalAddAtomW(L"ManageWindowInfoProperty");
+  }
+  ~CAtom_ManageWindowInfoProperty() {
+    ::GlobalDeleteAtom(atom);
+  }
+  ATOM atom;
+};
+static CAtom_ManageWindowInfoProperty gaMwip;
+#define kManageWindowInfoProperty ((LPCWSTR)(UINT_PTR)gaMwip.atom)
 typedef BOOL (WINAPI *GetWindowInfoPtr)(HWND hwnd, PWINDOWINFO pwi);
 static GetWindowInfoPtr sGetWindowInfoPtrStub = nullptr;
 

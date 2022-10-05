@@ -11,6 +11,11 @@
 
 #include <stdint.h>
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 /*
  * To add error code to your module, you need to do the following:
  *
@@ -187,6 +192,7 @@ static_assert(((nsresult)0) < ((nsresult)-1),
               "nsresult must be an unsigned type");
 static_assert(sizeof(nsresult) == sizeof(uint32_t),
               "nsresult must be 32 bits");
+
 #else
 #define NS_FAILED_impl(_nsresult) ((_nsresult) & 0x80000000)
 #define NS_FAILED(_nsresult)    (MOZ_UNLIKELY(NS_FAILED_impl(_nsresult)))

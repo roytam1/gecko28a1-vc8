@@ -128,8 +128,14 @@ class nsChromeRegistryChrome : public nsChromeRegistry
     typedef nsURIHashKey::KeyTypePointer KeyTypePointer;
 
     OverlayListEntry(KeyTypePointer aKey) : nsURIHashKey(aKey) { }
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
     OverlayListEntry(OverlayListEntry&& toMove) : nsURIHashKey(mozilla::Move(toMove)),
                                                   mArray(mozilla::Move(toMove.mArray)) { }
+#else
+    OverlayListEntry(OverlayListEntry& toCopy) : nsURIHashKey(toCopy),
+                                                 mArray(toCopy.mArray) { }
+#endif
+
     ~OverlayListEntry() { }
 
     void AddURI(nsIURI* aURI);

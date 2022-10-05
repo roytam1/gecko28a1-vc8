@@ -4,6 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+
+#if defined(_MSC_VER) && _MSC_VER < 1500
+#include <boost/typeof/typeof.hpp>
+#endif
+
 #include "WorkerScope.h"
 
 #include "jsapi.h"
@@ -1124,9 +1129,14 @@ private:
   static bool
   GetOnconnectImpl(JSContext* aCx, JS::CallArgs aArgs)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto name = sEventStrings[STRING_onconnect];
-
     auto scope = GetInstancePrivate(aCx, &aArgs.thisv().toObject(), name);
+#else
+    BOOST_AUTO(name, sEventStrings[STRING_onconnect]);
+    BOOST_AUTO(scope, GetInstancePrivate(aCx, &aArgs.thisv().toObject(), name));
+#endif
+
     MOZ_ASSERT(scope);
 
     ErrorResult rv;
@@ -1150,7 +1160,11 @@ private:
   static bool
   GetOnconnect(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto args = JS::CallArgsFromVp(aArgc, aVp);
+#else
+    BOOST_AUTO(args, JS::CallArgsFromVp(aArgc, aVp));
+#endif
     return JS::CallNonGenericMethod<IsSharedWorkerGlobalScope,
                                     GetOnconnectImpl>(aCx, args);
   }
@@ -1158,9 +1172,13 @@ private:
   static bool
   SetOnconnectImpl(JSContext* aCx, JS::CallArgs aArgs)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto name = sEventStrings[STRING_onconnect];
-
     auto scope = GetInstancePrivate(aCx, &aArgs.thisv().toObject(), name);
+#else
+    BOOST_AUTO(name, sEventStrings[STRING_onconnect]);
+    BOOST_AUTO(scope, GetInstancePrivate(aCx, &aArgs.thisv().toObject(), name));
+#endif
     MOZ_ASSERT(scope);
 
     if (aArgs.length() == 0 || !aArgs[0].isObject()) {
@@ -1192,7 +1210,11 @@ private:
   static bool
   SetOnconnect(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto args = JS::CallArgsFromVp(aArgc, aVp);
+#else
+    BOOST_AUTO(args, JS::CallArgsFromVp(aArgc, aVp));
+#endif
     return JS::CallNonGenericMethod<IsSharedWorkerGlobalScope,
                                     SetOnconnectImpl>(aCx, args);
   }
@@ -1200,10 +1222,18 @@ private:
   static bool
   GetNameImpl(JSContext* aCx, JS::CallArgs aArgs)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto scope = GetInstancePrivate(aCx, &aArgs.thisv().toObject(), "name");
+#else
+    BOOST_AUTO(scope, GetInstancePrivate(aCx, &aArgs.thisv().toObject(), "name"));
+#endif
     MOZ_ASSERT(scope);
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto name = scope->mWorker->SharedWorkerName();
+#else
+    BOOST_AUTO(name, scope->mWorker->SharedWorkerName());
+#endif
     MOZ_ASSERT(!name.IsVoid());
 
     JS::Rooted<JSString*> nameStr(aCx,
@@ -1219,7 +1249,11 @@ private:
   static bool
   GetName(JSContext* aCx, unsigned aArgc, JS::Value* aVp)
   {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     auto args = JS::CallArgsFromVp(aArgc, aVp);
+#else
+    BOOST_AUTO(args, JS::CallArgsFromVp(aArgc, aVp));
+#endif
     return JS::CallNonGenericMethod<IsSharedWorkerGlobalScope,
                                     GetNameImpl>(aCx, args);
   }
@@ -1376,7 +1410,11 @@ WorkerGlobalScope::IsWorkerGlobalScope(JS::Handle<JS::Value> aVal)
     return false;
   }
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
   auto classPtr = JS_GetClass(&aVal.toObject());
+#else
+  BOOST_AUTO(classPtr, JS_GetClass(&aVal.toObject()));
+#endif
 
   return classPtr == DedicatedWorkerGlobalScope::Class() ||
          classPtr == SharedWorkerGlobalScope::Class();

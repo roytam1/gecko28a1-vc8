@@ -12,6 +12,15 @@
 #include <d2d1.h>
 #endif // #ifndef _D2D1_H_
 
+#if _MSC_VER == 1400
+#ifndef _In_
+#define _In_
+#endif
+#ifndef _In_opt_
+#define _In_opt_
+#endif
+#endif
+
 //+-----------------------------------------------------------------------------
 //
 //  Flag:

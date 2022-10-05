@@ -450,6 +450,9 @@ static BITMAPINFO* CreateBitmapInfo(BITMAPINFOHEADER* aHeader,
   return bmi;
 }
 
+#ifdef _MSC_VER
+#pragma function(memcpy)
+#endif
 nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocking)
 {
   // Check whether the icon requested's a file icon or a stock icon
@@ -586,6 +589,9 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool nonBlocki
     rv = NS_ERROR_NOT_AVAILABLE;
   return rv;
 }
+#ifdef _MSC_VER
+#pragma intrinsic(memcpy)
+#endif
 
 NS_IMETHODIMP nsIconChannel::GetContentType(nsACString &aContentType) 
 {

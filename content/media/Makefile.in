@@ -23,3 +23,15 @@ CXXFLAGS += $(GSTREAMER_CFLAGS)
 DEFINES  += -DMOZILLA_INTERNAL_API
 
 AudioNodeEngineNEON.$(OBJ_SUFFIX): CXXFLAGS += -mfpu=neon
+
+# Optimizer bug with MSVC PGO
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+AudioStream.$(OBJ_SUFFIX): COMPILE_CXXFLAGS += -GL-
+endif
+
+ifdef MOZ_THUNDERBIRD
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# avoid the fatal error C1001 of compiler when applying PGO to Thunderbird
+COMPILE_CXXFLAGS += -GL-
+endif
+endif

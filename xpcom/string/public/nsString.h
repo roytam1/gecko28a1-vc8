@@ -48,6 +48,11 @@
 #include "nsTString.h"
 #include "string-template-undef.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 static_assert(sizeof(PRUnichar) == 2, "size of PRUnichar must be 2");
 static_assert(sizeof(nsString::char_type) == 2,
               "size of nsString::char_type must be 2");

@@ -61,10 +61,17 @@ class InputLayoutCache
 
     typedef std::size_t (*InputLayoutHashFunction)(const InputLayoutKey &);
     typedef bool (*InputLayoutEqualityFunction)(const InputLayoutKey &, const InputLayoutKey &);
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<InputLayoutKey,
                                InputLayoutCounterPair,
                                InputLayoutHashFunction,
                                InputLayoutEqualityFunction> InputLayoutMap;
+#else
+    typedef boost::unordered_map<InputLayoutKey,
+                                 InputLayoutCounterPair,
+                                 InputLayoutHashFunction,
+                                 InputLayoutEqualityFunction> InputLayoutMap;
+#endif
     InputLayoutMap mInputLayoutMap;
 
     static const unsigned int kMaxInputLayouts;

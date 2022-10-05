@@ -117,6 +117,8 @@ class LinkedListElement
         isSentinel(false)
     { }
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+
     LinkedListElement(LinkedListElement<T>&& other)
       : isSentinel(other.isSentinel)
     {
@@ -146,6 +148,8 @@ class LinkedListElement
       other.next = &other;
       other.prev = &other;
     }
+
+#endif /* !defined(_MSC_VER) || _MSC_VER >= 1600 */
 
     ~LinkedListElement() {
       if (!isSentinel && isInList())
@@ -296,9 +300,13 @@ class LinkedList
   public:
     LinkedList() : sentinel(LinkedListElement<T>::NODE_KIND_SENTINEL) { }
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+
     LinkedList(LinkedList<T>&& other)
       : sentinel(mozilla::Move(other.sentinel))
     { }
+
+#endif
 
     ~LinkedList() {
       MOZ_ASSERT(isEmpty());

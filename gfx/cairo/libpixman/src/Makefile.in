@@ -21,7 +21,8 @@ ifneq (64,$(findstring 64,$(OS_TEST)))
 USE_MMX=1
 endif
 USE_SSE2=1
-MMX_CFLAGS=
+# avoid the bug of PGO
+MMX_CFLAGS=-GL-
 ifneq (,$(filter 1400 1500, $(_MSC_VER)))
 # MSVC 2005 and 2008 generate code that breaks alignment
 # restrictions in debug mode so always optimize.
@@ -112,10 +113,23 @@ ifdef GNU_CC
 CFLAGS += -Wno-missing-field-initializers
 endif # GNU_CC
 
+ifdef _MSC_VER
+ifneq (,$(filter -DTT_MEMUTIL,$(MOZ_OPTIMIZE_FLAGS)))
+OPENMP_FLAGS_TT = -GL- -openmp
+else
+OPENMP_FLAGS_TT =
+endif
+pixman-implementation.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(OPENMP_FLAGS_TT)
+
+pixman-general.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(OPENMP_FLAGS_TT)
+
+pixman-trap.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(OPENMP_FLAGS_TT)
+endif
+
 # special rule for pixman-mmx to get the right cflags
 pixman-mmx.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(MMX_CFLAGS)
 
-pixman-sse2.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(SSE2_CFLAGS)
+pixman-sse2.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(SSE2_CFLAGS) $(OPENMP_FLAGS_TT)
 
 pixman-arm-neon.$(OBJ_SUFFIX): COMPILE_CFLAGS += $(ARM_NEON_CFLAGS)
 

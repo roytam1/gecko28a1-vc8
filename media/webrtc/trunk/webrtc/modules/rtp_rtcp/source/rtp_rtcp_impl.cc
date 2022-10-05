@@ -532,8 +532,8 @@ int32_t ModuleRtpRtcpImpl::RemoteCSRCs(
   return rtp_receiver_->CSRCs(arr_of_csrc);
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(RtxMode mode, bool set_ssrc,
-                                            uint32_t ssrc) {
+int32_t ModuleRtpRtcpImpl::SetRTXSendStatus(const RtxMode mode, const bool set_ssrc,
+                                            const uint32_t ssrc) {
   rtp_sender_.SetRTXStatus(mode, set_ssrc, ssrc);
   return 0;
 }
@@ -544,8 +544,8 @@ int32_t ModuleRtpRtcpImpl::RTXSendStatus(RtxMode* mode, uint32_t* ssrc,
   return 0;
 }
 
-int32_t ModuleRtpRtcpImpl::SetRTXReceiveStatus(bool enable,
-                                               uint32_t ssrc) {
+int32_t ModuleRtpRtcpImpl::SetRTXReceiveStatus(const bool enable,
+                                               const uint32_t ssrc) {
   rtp_receiver_->SetRTXStatus(enable, ssrc);
   return 0;
 }

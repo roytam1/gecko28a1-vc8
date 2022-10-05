@@ -137,15 +137,15 @@ public:
 
 
     // FileCallback
-    void PlayNotification(int32_t id,
-                          uint32_t durationMs);
+    void PlayNotification(const int32_t id,
+                          const uint32_t durationMs);
 
-    void RecordNotification(int32_t id,
-                            uint32_t durationMs);
+    void RecordNotification(const int32_t id,
+                            const uint32_t durationMs);
 
-    void PlayFileEnded(int32_t id);
+    void PlayFileEnded(const int32_t id);
 
-    void RecordFileEnded(int32_t id);
+    void RecordFileEnded(const int32_t id);
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     // Typing detection

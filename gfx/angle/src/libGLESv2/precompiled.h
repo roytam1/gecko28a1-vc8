@@ -29,7 +29,11 @@
 #include <set>
 #include <sstream>
 #include <string>
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
 #include <unordered_map>
+#else
+#include <boost/unordered_map.hpp>
+#endif
 #include <vector>
 
 #include <d3d9.h>

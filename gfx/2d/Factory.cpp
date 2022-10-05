@@ -178,6 +178,19 @@ Factory::HasSSE2()
 #endif
 }
 
+bool
+Factory::HasSSSE3()
+{
+#if defined(__SSSE3__)
+  // gcc with -mssse3
+  return true;
+#elif defined(HAVE_CPU_DETECTION)
+  return HasCPUIDBit(1u, ecx, (1u<<9));
+#else
+  return false;
+#endif
+}
+
 TemporaryRef<DrawTarget>
 Factory::CreateDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat)
 {

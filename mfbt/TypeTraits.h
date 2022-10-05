@@ -514,11 +514,15 @@ struct RemoveReference<T&>
     typedef T Type;
 };
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+
 template<typename T>
 struct RemoveReference<T&&>
 {
     typedef T Type;
 };
+
+#endif
 
 /* 20.9.7.3 Sign modifications [meta.trans.sign] */
 

@@ -150,6 +150,11 @@ public:
       mInActiveTransformedSubtree(aParent.mInActiveTransformedSubtree),
       mDisableSubpixelAntialiasingInDescendants(aParent.mDisableSubpixelAntialiasingInDescendants)
     {}
+    bool Scaled()
+    {
+      return (0x3f800000 != *(PRUint32 *)&mXScale) ||
+             (0x3f800000 != *(PRUint32 *)&mYScale);
+    }
     float mXScale, mYScale;
     /**
      * An ancestor clip rect that can be applied to restrict the visibility

@@ -112,6 +112,11 @@
   DISALLOW_COPY_AND_ASSIGN(TypeName)
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 namespace double_conversion {
 
 static const int kCharSize = sizeof(char);

@@ -165,6 +165,10 @@ struct nsCharTraits<PRUnichar>
     char_type*
     copy( char_type* s1, const char_type* s2, size_t n )
       {
+        if (1 == n) {
+          *s1 = *s2;
+          return s1;
+        }
         return static_cast<char_type*>(memcpy(s1, s2, n * sizeof(char_type)));
       }
 

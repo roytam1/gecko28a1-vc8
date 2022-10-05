@@ -235,7 +235,11 @@ class Renderer11 : public Renderer
         unsigned int qualityLevels[D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT];
     };
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     typedef std::unordered_map<DXGI_FORMAT, MultisampleSupportInfo> MultisampleSupportMap;
+#else
+    typedef boost::unordered_map<DXGI_FORMAT, MultisampleSupportInfo> MultisampleSupportMap;
+#endif
     MultisampleSupportMap mMultisampleSupportMap;
 
     unsigned int mMaxSupportedSamples;

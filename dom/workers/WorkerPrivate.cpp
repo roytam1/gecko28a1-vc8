@@ -2173,7 +2173,7 @@ WorkerPrivateParent<Derived>::Suspend(JSContext* aCx, nsPIDOMWindow* aWindow)
         MOZ_ASSERT(aSharedWorker);
         MOZ_ASSERT(aClosure);
 
-        auto closure = static_cast<Closure*>(aClosure);
+        Closure* closure = static_cast<Closure*>(aClosure);
 
         if (closure->mWindow && aSharedWorker->GetOwner() == closure->mWindow) {
           // Calling Suspend() may change the refcount, ensure that the worker
@@ -2257,7 +2257,7 @@ WorkerPrivateParent<Derived>::Resume(JSContext* aCx, nsPIDOMWindow* aWindow)
         MOZ_ASSERT(aSharedWorker);
         MOZ_ASSERT(aClosure);
 
-        auto closure = static_cast<Closure*>(aClosure);
+        Closure* closure = static_cast<Closure*>(aClosure);
 
         if (closure->mWindow && aSharedWorker->GetOwner() == closure->mWindow) {
           // Calling Resume() may change the refcount, ensure that the worker
@@ -3004,7 +3004,7 @@ WorkerPrivateParent<Derived>::GetAllSharedWorkers(
       MOZ_ASSERT(aSharedWorker);
       MOZ_ASSERT(aClosure);
 
-      auto array = static_cast<nsTArray<nsRefPtr<SharedWorker>>*>(aClosure);
+      nsTArray<nsRefPtr<SharedWorker>>* array = static_cast<nsTArray<nsRefPtr<SharedWorker>>*>(aClosure);
       array->AppendElement(aSharedWorker);
 
       return PL_DHASH_NEXT;
@@ -3048,7 +3048,7 @@ WorkerPrivateParent<Derived>::CloseSharedWorkersForWindow(
       MOZ_ASSERT(aSharedWorker);
       MOZ_ASSERT(aClosure);
 
-      auto closure = static_cast<Closure*>(aClosure);
+      Closure* closure = static_cast<Closure*>(aClosure);
       MOZ_ASSERT(closure->mWindow);
 
       if (aSharedWorker->GetOwner() == closure->mWindow) {

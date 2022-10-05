@@ -3136,6 +3136,10 @@ nsContentUtils::ReportToConsoleNonLocalized(const nsAString& aErrorText,
   return sConsoleService->LogMessage(errorObject);
 }
 
+#ifdef _MSC_VER
+#pragma optimize("g", off)
+#endif
+
 bool
 nsContentUtils::IsChromeDoc(nsIDocument *aDocument)
 {
@@ -3148,6 +3152,10 @@ nsContentUtils::IsChromeDoc(nsIDocument *aDocument)
 
   return aDocument->NodePrincipal() == systemPrincipal;
 }
+
+#ifdef _MSC_VER
+#pragma optimize("g", on)
+#endif
 
 bool
 nsContentUtils::IsChildOfSameType(nsIDocument* aDoc)
@@ -3427,6 +3435,9 @@ nsContentUtils::DispatchChromeEvent(nsIDocument *aDoc,
 }
 
 /* static */
+#ifdef _MSC_VER
+#pragma inline_recursion(on)
+#endif
 Element*
 nsContentUtils::MatchElementId(nsIContent *aContent, const nsIAtom* aId)
 {
@@ -3440,8 +3451,14 @@ nsContentUtils::MatchElementId(nsIContent *aContent, const nsIAtom* aId)
 
   return nullptr;
 }
+#ifdef _MSC_VER
+#pragma inline_recursion(off)
+#endif
 
 /* static */
+#ifdef _MSC_VER
+#pragma inline_recursion(on)
+#endif
 Element *
 nsContentUtils::MatchElementId(nsIContent *aContent, const nsAString& aId)
 {
@@ -3456,6 +3473,9 @@ nsContentUtils::MatchElementId(nsIContent *aContent, const nsAString& aId)
 
   return MatchElementId(aContent, id);
 }
+#ifdef _MSC_VER
+#pragma inline_recursion(off)
+#endif
 
 // Convert the string from the given charset to Unicode.
 /* static */

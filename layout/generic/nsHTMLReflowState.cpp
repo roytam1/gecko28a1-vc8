@@ -28,6 +28,7 @@
 #include "StickyScrollContainer.h"
 #include "nsIFrameInlines.h"
 #include <algorithm>
+#include "mozilla/Attributes.h"
 
 #ifdef DEBUG
 #undef NOISY_VERTICAL_ALIGN
@@ -1039,6 +1040,7 @@ nsHTMLReflowState::CalculateHorizBorderPaddingMargin(
  * Returns true iff a pre-order traversal of the normal child
  * frames rooted at aFrame finds no non-empty frame before aDescendant.
  */
+MOZ_ALWAYS_INLINE
 static bool AreAllEarlierInFlowFramesEmpty(nsIFrame* aFrame,
   nsIFrame* aDescendant, bool* aFound) {
   if (aFrame == aDescendant) {

@@ -11,7 +11,12 @@
 #include "libGLESv2/renderer/IndexRangeCache.h"
 #include "common/debug.h"
 #include "libGLESv2/utilities.h"
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
 #include <tuple>
+#else
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
+#endif
 
 namespace rx
 {
@@ -81,7 +86,11 @@ IndexRangeCache::IndexRange::IndexRange(GLenum typ, intptr_t off, GLsizei c)
 
 bool IndexRangeCache::IndexRange::operator<(const IndexRange& rhs) const
 {
+#if !defined(_MSC_VER) || _MSC_VER >= 1500
     return std::make_tuple(type, offset, count) < std::make_tuple(rhs.type, rhs.offset, rhs.count);
+#else
+    return boost::make_tuple(type, offset, count) < boost::make_tuple(rhs.type, rhs.offset, rhs.count);
+#endif
 }
 
 IndexRangeCache::IndexBounds::IndexBounds()

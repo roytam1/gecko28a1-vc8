@@ -5,6 +5,24 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 
+/* VC8 doesn't support some SSE2 built-in functions, so we define them here. */
+#if defined(_MSC_VER) && (_MSC_VER < 1500)
+MOZ_ALWAYS_INLINE __m128 _mm_castsi128_ps(__m128i a)
+{
+  return *(__m128 *)&a;
+}
+
+MOZ_ALWAYS_INLINE __m128i _mm_castpd_si128(__m128d a)
+{
+  return *(__m128i *)&a;
+}
+
+MOZ_ALWAYS_INLINE __m128i _mm_castps_si128(__m128 a)
+{
+  return *(__m128i *)&a;
+}
+#endif
+
 /* Before Nehalem _mm_loadu_si128 could be very slow, this trick is a little
  * faster. Once enough people are on architectures where _mm_loadu_si128 is
  * fast we can migrate to it.

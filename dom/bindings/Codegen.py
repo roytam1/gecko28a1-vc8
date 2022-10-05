@@ -1234,7 +1234,7 @@ class CGClassHasInstanceHook(CGAbstractStaticMethod):
   """
         if self.descriptor.interface.hasInterfacePrototypeObject():
             return header + """
-  static_assert(IsBaseOf<nsISupports, %s>::value,
+  static_assert((IsBaseOf<nsISupports, %s>::value),
                 "HasInstance only works for nsISupports-based classes.");
 
   bool ok = InterfaceHasInstance(cx, obj, instance, bp);
@@ -8119,7 +8119,7 @@ class CGDescriptor(CGThing):
 
         if descriptor.concrete:
             if descriptor.proxy:
-                cgThings.append(CGGeneric("""static_assert(IsBaseOf<nsISupports, %s >::value,
+                cgThings.append(CGGeneric("""static_assert((IsBaseOf<nsISupports, %s>::value),
                   "We don't support non-nsISupports native classes for "
                   "proxy-based bindings yet");
 

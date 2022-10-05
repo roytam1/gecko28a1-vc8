@@ -18,6 +18,15 @@
 
 #include <dwrite.h>
 
+#if _MSC_VER == 1400
+#include <emmintrin.h>
+extern "C" {
+  extern __m128i _mm_shuffle_epi8(__m128i a, __m128i b);
+}
+#else
+#include <tmmintrin.h>
+#endif
+
 typedef HRESULT (WINAPI*D2D1CreateFactoryFunc)(
     D2D1_FACTORY_TYPE factoryType,
     REFIID iid,
@@ -2284,6 +2293,12 @@ DrawTargetD2D::CreateBrushForPattern(const Pattern &aPattern, Float aAlpha)
   return nullptr;
 }
 
+static const float f_zero = 0;
+static const float f_one = 1.0f;
+static const __m128 xm_4095_rcp_mul = _mm_set_ss(1.0f / 4095);
+static const __m128 xm_255x4 = _mm_set1_ps(255.0f);
+static const __m128i sfl_pack4 = _mm_set_epi8(0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 12, 0, 4, 8);
+
 TemporaryRef<ID3D10Texture2D>
 DrawTargetD2D::CreateGradientTexture(const GradientStopsD2D *aStops)
 {
@@ -2293,10 +2308,68 @@ DrawTargetD2D::CreateGradientTexture(const GradientStopsD2D *aStops)
   rawStops.resize(aStops->mStopCollection->GetGradientStopCount());
   aStops->mStopCollection->GetGradientStops(&rawStops.front(), rawStops.size());
 
-  std::vector<unsigned char> textureData;
-  textureData.resize(4096 * 4);
-  unsigned char *texData = &textureData.front();
+  unsigned char *textureData = new unsigned char [4096 * 4];
+  unsigned char *texData = textureData;
 
+#if (_MSC_VER != 1400) || !defined(_M_AMD64)
+if (Factory::HasSSE2()) {
+  bool has_ssse3 = Factory::HasSSSE3();
+  __m128 prevColorPos = _mm_load_ss(&f_zero);
+  __m128 nextColorPos = _mm_load_ss(&f_one);
+  __m128 prevColor = _mm_loadu_ps((float*)&rawStops[0].color);
+  __m128 nextColor = prevColor;
+
+  if (rawStops.size() >= 2) {
+    nextColor = _mm_loadu_ps((float*)&rawStops[1].color);
+    nextColorPos = _mm_load_ss(&rawStops[1].position);
+  }
+
+  uint32_t stopPosition = 2;
+  __m128 interp_rcp_mul = _mm_div_ss(_mm_load_ss(&f_one), _mm_sub_ss(nextColorPos, prevColorPos));
+
+  // Not the most optimized way but this will do for now.
+  for (int i = 0; i < 4096; i++) {
+    // The 4095 seems a little counter intuitive, but we want the gradient
+    // color at offset 0 at the first pixel, and at offset 1.0f at the last
+    // pixel.
+    __m128 pos;
+    pos = _mm_cvtsi32_ss(pos, i);
+    pos = _mm_mul_ss(pos, xm_4095_rcp_mul);
+
+    if (_mm_comigt_ss(pos, nextColorPos)) {
+      prevColor = nextColor;
+      prevColorPos = nextColorPos;
+      if (rawStops.size() > stopPosition) {
+        nextColor = _mm_loadu_ps((float*)&rawStops[stopPosition].color);
+        nextColorPos = _mm_load_ss(&rawStops[stopPosition++].position);
+      } else {
+        nextColorPos = _mm_load_ss(&f_one);
+      }
+      interp_rcp_mul = _mm_div_ss(_mm_load_ss(&f_one), _mm_sub_ss(nextColorPos, prevColorPos));
+    }
+
+    __m128 interp = _mm_mul_ss(_mm_sub_ss(pos, prevColorPos), interp_rcp_mul);
+    interp = _mm_shuffle_ps(interp, interp, _MM_SHUFFLE(0, 0, 0, 0));
+
+    __m128 newColor = _mm_add_ps(_mm_mul_ps(_mm_sub_ps(nextColor, prevColor), interp), prevColor);
+    newColor = _mm_mul_ps(newColor, xm_255x4);
+
+    if (has_ssse3) {
+      __m128i xmResult = _mm_cvttps_epi32(newColor);
+      xmResult = _mm_shuffle_epi8(xmResult, sfl_pack4);
+      *((uint32_t*)&texData[i * 4]) = _mm_cvtsi128_si32(xmResult);
+    } else
+    {
+      newColor = _mm_shuffle_ps(newColor, newColor, _MM_SHUFFLE(3, 0, 1, 2));
+      __m128i xmResult = _mm_cvttps_epi32(newColor);
+      xmResult = _mm_packs_epi32(xmResult, _mm_setzero_si128());
+      xmResult = _mm_packus_epi16(xmResult, _mm_setzero_si128());
+      *((uint32_t*)&texData[i * 4]) = _mm_cvtsi128_si32(xmResult);
+    }
+  }
+} else
+#endif  // (_MSC_VER != 1400) || !defined(_M_AMD64)
+{
   float prevColorPos = 0;
   float nextColorPos = 1.0f;
   D2D1_COLOR_F prevColor = rawStops[0].color;
@@ -2345,13 +2418,16 @@ DrawTargetD2D::CreateGradientTexture(const GradientStopsD2D *aStops)
     texData[i * 4 + 2] = (char)(255.0f * newColor.r);
     texData[i * 4 + 3] = (char)(255.0f * newColor.a);
   }
+}
 
   D3D10_SUBRESOURCE_DATA data;
-  data.pSysMem = &textureData.front();
+  data.pSysMem = textureData;
   data.SysMemPitch = 4096 * 4;
 
   RefPtr<ID3D10Texture2D> tex;
   mDevice->CreateTexture2D(&desc, &data, byRef(tex));
+
+  delete [] textureData;
 
   return tex;
 }

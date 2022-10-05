@@ -25,6 +25,11 @@
 #include <config.h>
 #endif
 
+#if defined(TT_MEMUTIL) && defined(_MSC_VER)
+#include <omp.h>
+#endif
+#include <limits.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "pixman-private.h"
@@ -40,6 +45,26 @@ pixman_sample_ceil_y (pixman_fixed_t y, int n)
     pixman_fixed_t f = pixman_fixed_frac (y);
     pixman_fixed_t i = pixman_fixed_floor (y);
 
+if (8 == n)
+{
+    f = DIV (f - Y_FRAC_FIRST (8) + (STEP_Y_SMALL (8) - pixman_fixed_e), STEP_Y_SMALL (8)) * STEP_Y_SMALL (8) +
+	Y_FRAC_FIRST (8);
+    
+    if (f > Y_FRAC_LAST (8))
+    {
+	if (pixman_fixed_to_int (i) == 0x7fff)
+	{
+	    f = 0xffff; /* saturate */
+	}
+	else
+	{
+	    f = Y_FRAC_FIRST (8);
+	    i += pixman_fixed_1;
+	}
+    }
+}
+else
+{
     f = DIV (f - Y_FRAC_FIRST (n) + (STEP_Y_SMALL (n) - pixman_fixed_e), STEP_Y_SMALL (n)) * STEP_Y_SMALL (n) +
 	Y_FRAC_FIRST (n);
     
@@ -55,6 +80,7 @@ pixman_sample_ceil_y (pixman_fixed_t y, int n)
 	    i += pixman_fixed_1;
 	}
     }
+}
     return (i | f);
 }
 
@@ -69,6 +95,26 @@ pixman_sample_floor_y (pixman_fixed_t y,
     pixman_fixed_t f = pixman_fixed_frac (y);
     pixman_fixed_t i = pixman_fixed_floor (y);
 
+if (8 == n)
+{
+    f = DIV (f - pixman_fixed_e - Y_FRAC_FIRST (8), STEP_Y_SMALL (8)) * STEP_Y_SMALL (8) +
+	Y_FRAC_FIRST (8);
+
+    if (f < Y_FRAC_FIRST (8))
+    {
+	if (pixman_fixed_to_int (i) == 0x8000)
+	{
+	    f = 0; /* saturate */
+	}
+	else
+	{
+	    f = Y_FRAC_LAST (8);
+	    i -= pixman_fixed_1;
+	}
+    }
+}
+else
+{
     f = DIV (f - pixman_fixed_e - Y_FRAC_FIRST (n), STEP_Y_SMALL (n)) * STEP_Y_SMALL (n) +
 	Y_FRAC_FIRST (n);
 
@@ -84,6 +130,8 @@ pixman_sample_floor_y (pixman_fixed_t y,
 	    i -= pixman_fixed_1;
 	}
     }
+}
+
     return (i | f);
 }
 
@@ -186,11 +234,22 @@ pixman_edge_init (pixman_edge_t *e,
 	    e->e = 0;
 	}
 
+if (8 == n)
+{
+	_pixman_edge_multi_init (e, STEP_Y_SMALL (8),
+				 &e->stepx_small, &e->dx_small);
+
+	_pixman_edge_multi_init (e, STEP_Y_BIG (8),
+				 &e->stepx_big, &e->dx_big);
+}
+else
+{
 	_pixman_edge_multi_init (e, STEP_Y_SMALL (n),
 				 &e->stepx_small, &e->dx_small);
 
 	_pixman_edge_multi_init (e, STEP_Y_BIG (n),
 				 &e->stepx_big, &e->dx_big);
+}
     }
     pixman_edge_step (e, y_start - y_top);
 }
@@ -327,6 +386,27 @@ pixman_add_trapezoids (pixman_image_t *          image,
     dump_image (image, "before");
 #endif
 
+#if defined(TT_MEMUTIL) && defined(_MSC_VER)
+int omp_thread_counts = omp_get_max_threads();
+if (omp_thread_counts >= 2 &&
+    ntraps >= omp_thread_counts &&
+    ntraps >= 160)
+{
+#pragma omp parallel for schedule(guided) default(none) \
+shared(ntraps, traps, image, x_off, y_off)
+    for (i = 0; i < ntraps; ++i)
+    {
+	const pixman_trapezoid_t *trap = &(traps[i]);
+
+	if (pixman_trapezoid_valid (trap))
+	{
+		pixman_rasterize_trapezoid (image, trap, x_off, y_off);
+	}
+    }
+}
+else
+#endif
+{
     for (i = 0; i < ntraps; ++i)
     {
 	const pixman_trapezoid_t *trap = &(traps[i]);
@@ -336,6 +416,7 @@ pixman_add_trapezoids (pixman_image_t *          image,
 
 	pixman_rasterize_trapezoid (image, trap, x_off, y_off);
     }
+}
 
 #if 0
     dump_image (image, "after");

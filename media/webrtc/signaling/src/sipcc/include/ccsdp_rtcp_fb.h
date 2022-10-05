@@ -5,6 +5,11 @@
 #ifndef __CCSDP_RTCP_FB_H__
 #define __CCSDP_RTCP_FB_H__
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 /* a=rtcp-fb enumerations */
 
 typedef enum {

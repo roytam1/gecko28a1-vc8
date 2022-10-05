@@ -1109,13 +1109,15 @@ void imgLoader::CheckCacheLimits(imgCacheTable &cache, imgCacheQueue &queue)
     NS_ASSERTION(entry, "imgLoader::CheckCacheLimits -- NULL entry pointer");
 
 #if defined(PR_LOGGING)
-    nsRefPtr<imgRequest> req(entry->GetRequest());
-    if (req) {
-      nsRefPtr<ImageURL> uri;
-      req->GetURI(getter_AddRefs(uri));
-      nsAutoCString spec;
-      uri->GetSpec(spec);
-      LOG_STATIC_FUNC_WITH_PARAM(GetImgLog(), "imgLoader::CheckCacheLimits", "entry", spec.get());
+    if (entry) {
+      nsRefPtr<imgRequest> req(entry->GetRequest());
+      if (req) {
+        nsRefPtr<ImageURL> uri;
+        req->GetURI(getter_AddRefs(uri));
+        nsAutoCString spec;
+        uri->GetSpec(spec);
+        LOG_STATIC_FUNC_WITH_PARAM(GetImgLog(), "imgLoader::CheckCacheLimits", "entry", spec.get());
+      }
     }
 #endif
 

@@ -273,7 +273,7 @@ private:
     };
 
     // last scissor / viewport scissor state seen by the GL.
-    struct {
+    struct ScissorSettings {
         TriState    fEnabled;
         GrGLIRect   fRect;
         void invalidate() {
@@ -389,7 +389,7 @@ private:
         GrGLVertexArray*        fVBOVertexArray;
     } fHWGeometryState;
 
-    struct {
+    struct BlendState {
         GrBlendCoeff    fSrcCoeff;
         GrBlendCoeff    fDstCoeff;
         GrColor         fConstColor;
@@ -404,7 +404,7 @@ private:
         }
     } fHWBlendState;
 
-    struct {
+    struct AAState {
         TriState fMSAAEnabled;
         TriState fSmoothLineEnabled;
         void invalidate() {

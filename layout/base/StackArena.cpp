@@ -6,6 +6,11 @@
 #include "nsAlgorithm.h"
 #include "nsDebug.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 namespace mozilla {
 
 // A block of memory that the stack will chop up and hand out.

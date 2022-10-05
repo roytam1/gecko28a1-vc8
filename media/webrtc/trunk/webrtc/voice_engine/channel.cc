@@ -332,10 +332,10 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
 }
 
 void
-Channel::OnPlayTelephoneEvent(int32_t id,
-                              uint8_t event,
-                              uint16_t lengthMs,
-                              uint8_t volume)
+Channel::OnPlayTelephoneEvent(const int32_t id,
+                              const uint8_t event,
+                              const uint16_t lengthMs,
+                              const uint8_t volume)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPlayTelephoneEvent(id=%d, event=%u, lengthMs=%u,"
@@ -356,8 +356,8 @@ Channel::OnPlayTelephoneEvent(int32_t id,
 }
 
 void
-Channel::OnIncomingSSRCChanged(int32_t id,
-                               uint32_t SSRC)
+Channel::OnIncomingSSRCChanged(const int32_t id,
+                               const uint32_t SSRC)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingSSRCChanged(id=%d, SSRC=%d)",
@@ -382,9 +382,9 @@ Channel::OnIncomingSSRCChanged(int32_t id,
     }
 }
 
-void Channel::OnIncomingCSRCChanged(int32_t id,
-                                    uint32_t CSRC,
-                                    bool added)
+void Channel::OnIncomingCSRCChanged(const int32_t id,
+                                    const uint32_t CSRC,
+                                    const bool added)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnIncomingCSRCChanged(id=%d, CSRC=%d, added=%d)",
@@ -436,12 +436,12 @@ Channel::OnApplicationDataReceived(int32_t id,
 
 int32_t
 Channel::OnInitializeDecoder(
-    int32_t id,
-    int8_t payloadType,
+    const int32_t id,
+    const int8_t payloadType,
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-    int frequency,
-    uint8_t channels,
-    uint32_t rate)
+    const int frequency,
+    const uint8_t channels,
+    const uint32_t rate)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnInitializeDecoder(id=%d, payloadType=%d, "
@@ -477,7 +477,7 @@ Channel::OnInitializeDecoder(
 }
 
 void
-Channel::OnPacketTimeout(int32_t id)
+Channel::OnPacketTimeout(const int32_t id)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPacketTimeout(id=%d)", id);
@@ -504,8 +504,8 @@ Channel::OnPacketTimeout(int32_t id)
 }
 
 void
-Channel::OnReceivedPacket(int32_t id,
-                          RtpRtcpPacketType packetType)
+Channel::OnReceivedPacket(const int32_t id,
+                          const RtpRtcpPacketType packetType)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnReceivedPacket(id=%d, packetType=%d)",
@@ -536,8 +536,8 @@ Channel::OnReceivedPacket(int32_t id,
 }
 
 void
-Channel::OnPeriodicDeadOrAlive(int32_t id,
-                               RTPAliveType alive)
+Channel::OnPeriodicDeadOrAlive(const int32_t id,
+                               const RTPAliveType alive)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPeriodicDeadOrAlive(id=%d, alive=%d)", id, alive);
@@ -590,7 +590,7 @@ Channel::OnPeriodicDeadOrAlive(int32_t id,
 
 int32_t
 Channel::OnReceivedPayloadData(const uint8_t* payloadData,
-                               uint16_t payloadSize,
+                               const uint16_t payloadSize,
                                const WebRtcRTPHeader* rtpHeader)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -645,7 +645,7 @@ Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     return 0;
 }
 
-int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
+int32_t Channel::GetAudioFrame(const int32_t id, AudioFrame& audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
@@ -751,7 +751,7 @@ int32_t Channel::GetAudioFrame(int32_t id, AudioFrame& audioFrame)
 }
 
 int32_t
-Channel::NeededFrequency(int32_t id)
+Channel::NeededFrequency(const int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::NeededFrequency(id=%d)", id);
@@ -812,7 +812,7 @@ Channel::CreateChannel(Channel*& channel,
 }
 
 void
-Channel::PlayNotification(int32_t id, uint32_t durationMs)
+Channel::PlayNotification(const int32_t id, const uint32_t durationMs)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayNotification(id=%d, durationMs=%d)",
@@ -822,7 +822,7 @@ Channel::PlayNotification(int32_t id, uint32_t durationMs)
 }
 
 void
-Channel::RecordNotification(int32_t id, uint32_t durationMs)
+Channel::RecordNotification(const int32_t id, const uint32_t durationMs)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RecordNotification(id=%d, durationMs=%d)",
@@ -832,7 +832,7 @@ Channel::RecordNotification(int32_t id, uint32_t durationMs)
 }
 
 void
-Channel::PlayFileEnded(int32_t id)
+Channel::PlayFileEnded(const int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PlayFileEnded(id=%d)", id);
@@ -860,7 +860,7 @@ Channel::PlayFileEnded(int32_t id)
 }
 
 void
-Channel::RecordFileEnded(int32_t id)
+Channel::RecordFileEnded(const int32_t id)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::RecordFileEnded(id=%d)", id);

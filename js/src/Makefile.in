@@ -726,3 +726,18 @@ clean::
 	$(srcdir)/make-source-package.sh clean
 
 endif
+
+ifdef _MSC_VER
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# Optimizer bug with MSVC PGO (Bug 595653)
+YarrPattern.$(OBJ_SUFFIX): COMPILE_CXXFLAGS := $(COMPILE_CXXFLAGS:arch:SSE2=arch:SSE)
+
+ifneq (x86_64, $(TARGET_CPU))
+ifdef ENABLE_ION
+# Optimizer bug with MSVC PGO
+Trampoline-x86.$(OBJ_SUFFIX): COMPILE_CXXFLAGS += -GL-
+endif
+endif
+
+endif
+endif # _MSC_VER

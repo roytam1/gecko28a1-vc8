@@ -530,7 +530,12 @@ gfxFontUtils::MapCharToGlyphFormat4(const uint8_t *aBuf, PRUnichar aCh)
     idDelta = &startCodes[segCount];
     idRangeOffset = &idDelta[segCount];
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+    volatile uint16_t tmpSelector = (uint16_t)(cmap4->entrySelector);
+    probe = 1 << tmpSelector;
+#else
     probe = 1 << (uint16_t)(cmap4->entrySelector);
+#endif
     rangeShiftOver2 = (uint16_t)(cmap4->rangeShift) / 2;
 
     if ((uint16_t)(startCodes[rangeShiftOver2]) <= aCh) {

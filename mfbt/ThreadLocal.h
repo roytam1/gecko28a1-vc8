@@ -31,6 +31,11 @@ __declspec(dllimport) unsigned long __stdcall TlsAlloc();
 #include "mozilla/Attributes.h"
 #include "mozilla/NullPtr.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 namespace mozilla {
 
 // sig_safe_t denotes an atomic type which can be read or stored in a single

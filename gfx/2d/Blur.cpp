@@ -13,6 +13,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Constants.h"
 #include "mozilla/Util.h"
+#include "nsAutoPtr.h"
 
 #include "2D.h"
 #include "Tools.h"
@@ -35,13 +36,15 @@ namespace gfx {
  * XXX shouldn't we pass stride in separately here?
  */
 static void
-BoxBlurHorizontal(unsigned char* aInput,
-                  unsigned char* aOutput,
+BoxBlurHorizontal(unsigned char* TT_RESTRICTED_PTR aInput,
+                  unsigned char* TT_RESTRICTED_PTR aOutput,
                   int32_t aLeftLobe,
                   int32_t aRightLobe,
                   int32_t aWidth,
                   int32_t aRows,
-                  const IntRect& aSkipRect)
+                  const IntRect& aSkipRect,
+                  int32_t* TT_RESTRICTED_PTR aLasts,
+                  int32_t* TT_RESTRICTED_PTR aNexts)
 {
     MOZ_ASSERT(aWidth > 0);
 
@@ -53,6 +56,12 @@ BoxBlurHorizontal(unsigned char* aInput,
         return;
     }
     uint32_t reciprocal = uint32_t((uint64_t(1) << 32) / boxSize);
+
+    for (int32_t x = 0; x < aWidth; x++) {
+        int32_t tmp = x - aLeftLobe;
+        aLasts[x] = max(tmp, 0);
+        aNexts[x] = min(tmp + boxSize, aWidth - 1);
+    }
 
     for (int32_t y = 0; y < aRows; y++) {
         // Check whether the skip rect intersects this row. If the skip
@@ -95,14 +104,11 @@ BoxBlurHorizontal(unsigned char* aInput,
                     alphaSum += aInput[aWidth * y + pos];
                 }
             }
-            int32_t tmp = x - aLeftLobe;
-            int32_t last = max(tmp, 0);
-            int32_t next = min(tmp + boxSize, aWidth - 1);
 
             aOutput[aWidth * y + x] = (uint64_t(alphaSum) * reciprocal) >> 32;
 
-            alphaSum += aInput[aWidth * y + next] -
-                        aInput[aWidth * y + last];
+            alphaSum += aInput[aWidth * y + aNexts[x]] -
+                        aInput[aWidth * y + aLasts[x]];
         }
     }
 }
@@ -113,13 +119,15 @@ BoxBlurHorizontal(unsigned char* aInput,
  * XXX shouldn't we pass stride in separately here?
  */
 static void
-BoxBlurVertical(unsigned char* aInput,
-                unsigned char* aOutput,
+BoxBlurVertical(unsigned char* TT_RESTRICTED_PTR aInput,
+                unsigned char* TT_RESTRICTED_PTR aOutput,
                 int32_t aTopLobe,
                 int32_t aBottomLobe,
                 int32_t aWidth,
                 int32_t aRows,
-                const IntRect& aSkipRect)
+                const IntRect& aSkipRect,
+                int32_t* TT_RESTRICTED_PTR aLasts,
+                int32_t* TT_RESTRICTED_PTR aNexts)
 {
     MOZ_ASSERT(aRows > 0);
 
@@ -131,6 +139,12 @@ BoxBlurVertical(unsigned char* aInput,
         return;
     }
     uint32_t reciprocal = uint32_t((uint64_t(1) << 32) / boxSize);
+
+    for (int32_t y = 0; y < aRows; y++) {
+        int32_t tmp = y - aTopLobe;
+        aLasts[y] = max(tmp, 0);
+        aNexts[y] = min(tmp + boxSize, aRows - 1);
+    }
 
     for (int32_t x = 0; x < aWidth; x++) {
         bool inSkipRectX = x >= aSkipRect.x &&
@@ -166,14 +180,11 @@ BoxBlurVertical(unsigned char* aInput,
                     alphaSum += aInput[aWidth * pos + x];
                 }
             }
-            int32_t tmp = y - aTopLobe;
-            int32_t last = max(tmp, 0);
-            int32_t next = min(tmp + boxSize, aRows - 1);
 
             aOutput[aWidth * y + x] = (uint64_t(alphaSum) * reciprocal) >> 32;
 
-            alphaSum += aInput[aWidth * next + x] -
-                        aInput[aWidth * last + x];
+            alphaSum += aInput[aWidth * aNexts[y] + x] -
+                        aInput[aWidth * aLasts[y] + x];
         }
     }
 }
@@ -500,21 +511,31 @@ AlphaBoxBlur::Blur(uint8_t* aData)
       uint8_t* tmpData = new uint8_t[szB];
       memset(tmpData, 0, szB);
 
+      size_t szLastsNexts = 0;
+      if (mBlurRadius.width > 0) {
+        szLastsNexts = stride;
+      }
+      if (mBlurRadius.height > 0) {
+        szLastsNexts = max<size_t>(szLastsNexts, GetSize().height);
+      }
+      nsAutoArrayPtr<int32_t> tmpLasts(new int32_t[szLastsNexts]);
+      nsAutoArrayPtr<int32_t> tmpNexts(new int32_t[szLastsNexts]);
+
       uint8_t* a = aData;
       uint8_t* b = tmpData;
       if (mBlurRadius.width > 0) {
-        BoxBlurHorizontal(a, b, horizontalLobes[0][0], horizontalLobes[0][1], stride, GetSize().height, mSkipRect);
-        BoxBlurHorizontal(b, a, horizontalLobes[1][0], horizontalLobes[1][1], stride, GetSize().height, mSkipRect);
-        BoxBlurHorizontal(a, b, horizontalLobes[2][0], horizontalLobes[2][1], stride, GetSize().height, mSkipRect);
+        BoxBlurHorizontal(a, b, horizontalLobes[0][0], horizontalLobes[0][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
+        BoxBlurHorizontal(b, a, horizontalLobes[1][0], horizontalLobes[1][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
+        BoxBlurHorizontal(a, b, horizontalLobes[2][0], horizontalLobes[2][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
       } else {
         a = tmpData;
         b = aData;
       }
       // The result is in 'b' here.
       if (mBlurRadius.height > 0) {
-        BoxBlurVertical(b, a, verticalLobes[0][0], verticalLobes[0][1], stride, GetSize().height, mSkipRect);
-        BoxBlurVertical(a, b, verticalLobes[1][0], verticalLobes[1][1], stride, GetSize().height, mSkipRect);
-        BoxBlurVertical(b, a, verticalLobes[2][0], verticalLobes[2][1], stride, GetSize().height, mSkipRect);
+        BoxBlurVertical(b, a, verticalLobes[0][0], verticalLobes[0][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
+        BoxBlurVertical(a, b, verticalLobes[1][0], verticalLobes[1][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
+        BoxBlurVertical(b, a, verticalLobes[2][0], verticalLobes[2][1], stride, GetSize().height, mSkipRect, tmpLasts, tmpNexts);
       } else {
         a = b;
       }

@@ -454,6 +454,9 @@ void imgFrame::Draw(gfxContext *aContext, GraphicsFilter aFilter,
   NS_ASSERTION(!aSubimage.IsEmpty(), "zero source size --- fix caller");
   NS_ASSERTION(!mPalettedImageData, "Directly drawing a paletted image!");
 
+  bool drawSingleImage = (aContext->GetFlags() & gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
+  aContext->ClearFlag(gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
+
   bool doPadding = aPadding != nsIntMargin(0,0,0,0);
   bool doPartialDecode = !ImageComplete();
 
@@ -472,14 +475,17 @@ void imgFrame::Draw(gfxContext *aContext, GraphicsFilter aFilter,
   NS_ASSERTION(!sourceRect.Intersect(subimage).IsEmpty(),
                "We must be allowed to sample *some* source pixels!");
 
-  bool doTile = !imageRect.Contains(sourceRect) &&
-                !(aImageFlags & imgIContainer::FLAG_CLAMP);
+  bool doTile = (drawSingleImage ? false : (!imageRect.Contains(sourceRect) &&
+                !(aImageFlags & imgIContainer::FLAG_CLAMP)));
   SurfaceWithFormat surfaceResult =
     SurfaceForDrawing(doPadding, doPartialDecode, doTile, aPadding,
                       userSpaceToImageSpace, fill, subimage, sourceRect,
                       imageRect);
 
   if (surfaceResult.IsValid()) {
+    if (drawSingleImage) {
+      aContext->SetFlag(gfxContext::FLAG_DRAW_SINGLE_IMAGE_TT);
+    }
     gfxUtils::DrawPixelSnapped(aContext, surfaceResult.mDrawable,
                                userSpaceToImageSpace,
                                subimage, sourceRect, imageRect, fill,

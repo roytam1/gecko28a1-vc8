@@ -99,7 +99,15 @@ public:
    */
   ~nsTHashtable();
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+
   nsTHashtable(nsTHashtable<EntryType>&& aOther);
+
+#else
+
+  nsTHashtable(mozilla::MoveRef<nsTHashtable<EntryType> > aOther);
+
+#endif
 
   /**
    * Return the generation number for the table. This increments whenever
@@ -369,9 +377,15 @@ private:
 
 template<class EntryType>
 nsTHashtable<EntryType>::nsTHashtable(
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
   nsTHashtable<EntryType>&& aOther)
   : mTable(mozilla::Move(aOther.mTable))
+#else
+  mozilla::MoveRef<nsTHashtable<EntryType> > aOther)
+  : mTable(aOther->mTable)
+#endif
 {
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
   // aOther shouldn't touch mTable after this, because we've stolen the table's
   // pointers but not overwitten them.
   MOZ_MAKE_MEM_UNDEFINED(aOther.mTable, sizeof(aOther.mTable));
@@ -379,6 +393,10 @@ nsTHashtable<EntryType>::nsTHashtable(
   // Indicate that aOther is not initialized.  This will make its destructor a
   // nop, which is what we want.
   aOther.mTable.entrySize = 0;
+#else
+  aOther->mTable = PLDHashTable();
+  aOther->mTable.entrySize = 0;
+#endif
 }
 
 template<class EntryType>
@@ -514,7 +532,7 @@ PLDHashOperator
 ImplCycleCollectionTraverse_EnumFunc(EntryType *aEntry,
                                      void* aUserData)
 {
-  auto userData = static_cast<nsTHashtableCCTraversalData*>(aUserData);
+  nsTHashtableCCTraversalData* userData = static_cast<nsTHashtableCCTraversalData*>(aUserData);
 
   ImplCycleCollectionTraverse(userData->mCallback,
                               *aEntry,

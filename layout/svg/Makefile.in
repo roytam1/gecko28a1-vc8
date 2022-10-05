@@ -20,3 +20,8 @@ libs::
 
 install::
 	$(SYSINSTALL) $(IFLAGS1) $(srcdir)/svg.css $(DESTDIR)$(mozappdir)/res
+
+ifeq (WINNT_1,$(OS_ARCH)_$(MOZ_PROFILE_GENERATE)$(MOZ_PROFILE_USE))
+# avoid the fatal error C1001 of compiler when applying PGO to Thunderbird
+COMPILE_CXXFLAGS += -GL-
+endif

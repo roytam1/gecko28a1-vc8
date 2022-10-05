@@ -7,6 +7,11 @@
 
 #include "nsGfxScrollFrame.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#include <boost/typeof/typeof.hpp>
+#define decltype(exp) BOOST_TYPEOF(exp)
+#endif
+
 #include "base/compiler_specific.h"
 #include "nsCOMPtr.h"
 #include "nsPresContext.h"

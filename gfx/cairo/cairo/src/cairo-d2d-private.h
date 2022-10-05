@@ -42,6 +42,7 @@
 #include <d2d1.h>
 #include <d3d10.h>
 #include <dxgi.h>
+#include <list>
 
 #include "cairoint.h"
 #include "cairo-surface-clipper-private.h"
@@ -72,6 +73,18 @@ struct _cairo_d2d_device
     RefPtr<ID3D10ShaderResourceView> mTextTextureView;
     int mVRAMUsage;
 };
+
+typedef struct
+{
+    RefPtr<ID2D1RadialGradientBrush> radialGradientBrush;
+    RefPtr<ID2D1GradientStopCollection> radialGradientStopCollection;
+} radial_gradient;
+
+typedef struct
+{
+    RefPtr<ID2D1LinearGradientBrush> linearGradientBrush;
+    RefPtr<ID2D1GradientStopCollection> linearGradientStopCollection;
+} linear_gradient;
 
 const unsigned int TEXT_TEXTURE_WIDTH = 2048;
 const unsigned int TEXT_TEXTURE_HEIGHT = 512;
@@ -130,6 +143,12 @@ struct _cairo_d2d_surface {
     RefPtr<ID2D1BitmapBrush> bitmapBrush;
     /** Brush used for solid colors */
     RefPtr<ID2D1SolidColorBrush> solidColorBrush;
+
+    /** Brush used for radial gradients */
+    std::list<radial_gradient> mRadialGradientCache;
+    /** Brush used for linear gradients */
+    std::list<linear_gradient> mLinearGradientCache;
+
     /** Indicates if our render target is currently in drawing mode */
     bool isDrawing;
     /** Indicates if text rendering is initialized */

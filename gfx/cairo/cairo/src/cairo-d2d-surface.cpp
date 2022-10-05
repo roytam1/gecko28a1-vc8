@@ -1541,19 +1541,54 @@ _cairo_d2d_create_radial_gradient_brush(cairo_d2d_surface_t *d2dsurf,
 	return NULL;
     }
 
-    RefPtr<ID2D1GradientStopCollection> stopCollection;
-    d2dsurf->rt->CreateGradientStopCollection(stops, num_stops, &stopCollection);
-    RefPtr<ID2D1RadialGradientBrush> brush;
+    std::list<radial_gradient>::iterator iterRadialGradient = d2dsurf->mRadialGradientCache.end();
 
-    d2dsurf->rt->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center,
-									       origin,
-									       outer_radius,
-									       outer_radius),
-					   brushProps,
-					   stopCollection,
-					   &brush);
+    if (d2dsurf->mRadialGradientCache.size() > 0) {
+        for (std::list<radial_gradient>::iterator iter = d2dsurf->mRadialGradientCache.begin();
+             iter != d2dsurf->mRadialGradientCache.end(); iter++) {
+            UINT32 nCount = (*iter).radialGradientStopCollection->GetGradientStopCount();
+
+            if (nCount == num_stops &&
+                nCount > 0) {
+                D2D1_GRADIENT_STOP *gradientStopsOld = new D2D1_GRADIENT_STOP[nCount];
+
+                (*iter).radialGradientStopCollection->GetGradientStops(gradientStopsOld, nCount);
+                bool stopCollectionEqual = (memcmp(gradientStopsOld, stops, sizeof(D2D1_GRADIENT_STOP) * nCount) == 0);
+                delete [] gradientStopsOld;
+                if (stopCollectionEqual) {
+                    iterRadialGradient = iter;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (iterRadialGradient != d2dsurf->mRadialGradientCache.end()) {
+        (*iterRadialGradient).radialGradientBrush->SetOpacity(brushProps.opacity);
+        (*iterRadialGradient).radialGradientBrush->SetTransform(&brushProps.transform);
+        (*iterRadialGradient).radialGradientBrush->SetCenter(center);
+        (*iterRadialGradient).radialGradientBrush->SetGradientOriginOffset(origin);
+        (*iterRadialGradient).radialGradientBrush->SetRadiusX(outer_radius);
+        (*iterRadialGradient).radialGradientBrush->SetRadiusY(outer_radius);
+    } else {
+        radial_gradient rg;
+
+        d2dsurf->rt->CreateGradientStopCollection(stops, num_stops, &rg.radialGradientStopCollection);
+        d2dsurf->rt->CreateRadialGradientBrush(D2D1::RadialGradientBrushProperties(center,
+            origin,
+            outer_radius,
+            outer_radius),
+            brushProps,
+            rg.radialGradientStopCollection,
+            &rg.radialGradientBrush);
+
+        iterRadialGradient = d2dsurf->mRadialGradientCache.insert(d2dsurf->mRadialGradientCache.begin(), rg);
+        if (d2dsurf->mRadialGradientCache.size() > 50) {
+            d2dsurf->mRadialGradientCache.pop_back();
+        }
+    }
     delete [] stops;
-    return brush;
+    return (*iterRadialGradient).radialGradientBrush;
 }
 
 static RefPtr<ID2D1Brush>
@@ -1718,16 +1753,50 @@ _cairo_d2d_create_linear_gradient_brush(cairo_d2d_surface_t *d2dsurf,
 	stops[source_pattern->base.n_stops + 1].position = 1.0f;
 	stops[source_pattern->base.n_stops + 1].color = D2D1::ColorF(0, 0);
     }
-    RefPtr<ID2D1GradientStopCollection> stopCollection;
-    d2dsurf->rt->CreateGradientStopCollection(stops, num_stops, &stopCollection);
-    RefPtr<ID2D1LinearGradientBrush> brush;
-    d2dsurf->rt->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F((FLOAT)p1.x, (FLOAT)p1.y),
-									       D2D1::Point2F((FLOAT)p2.x, (FLOAT)p2.y)),
-					   brushProps,
-					   stopCollection,
-					   &brush);
+
+    std::list<linear_gradient>::iterator iterLinearGradient = d2dsurf->mLinearGradientCache.end();
+
+    if (d2dsurf->mLinearGradientCache.size() > 0) {
+        for (std::list<linear_gradient>::iterator iter = d2dsurf->mLinearGradientCache.begin();
+             iter != d2dsurf->mLinearGradientCache.end(); iter++) {
+            UINT32 nCount = (*iter).linearGradientStopCollection->GetGradientStopCount();
+
+            if (nCount == num_stops &&
+                nCount > 0) {
+                D2D1_GRADIENT_STOP *gradientStopsOld = new D2D1_GRADIENT_STOP[nCount];
+
+                (*iter).linearGradientStopCollection->GetGradientStops(gradientStopsOld, nCount);
+                bool stopCollectionEqual = (memcmp(gradientStopsOld, stops, sizeof(D2D1_GRADIENT_STOP) * nCount) == 0);
+                delete [] gradientStopsOld;
+                if (stopCollectionEqual) {
+                    iterLinearGradient = iter;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (iterLinearGradient != d2dsurf->mLinearGradientCache.end()) {
+        (*iterLinearGradient).linearGradientBrush->SetOpacity(brushProps.opacity);
+        (*iterLinearGradient).linearGradientBrush->SetTransform(&brushProps.transform);
+        (*iterLinearGradient).linearGradientBrush->SetStartPoint(D2D1::Point2F((FLOAT)p1.x, (FLOAT)p1.y));
+        (*iterLinearGradient).linearGradientBrush->SetEndPoint(D2D1::Point2F((FLOAT)p2.x, (FLOAT)p2.y));
+    } else {
+        linear_gradient lg;
+
+        d2dsurf->rt->CreateGradientStopCollection(stops, num_stops, &lg.linearGradientStopCollection);
+        d2dsurf->rt->CreateLinearGradientBrush(D2D1::LinearGradientBrushProperties(D2D1::Point2F((FLOAT)p1.x, (FLOAT)p1.y), D2D1::Point2F((FLOAT)p2.x, (FLOAT)p2.y)),
+            brushProps,
+            lg.linearGradientStopCollection,
+            &lg.linearGradientBrush);
+
+        iterLinearGradient = d2dsurf->mLinearGradientCache.insert(d2dsurf->mLinearGradientCache.begin(), lg);
+        if (d2dsurf->mLinearGradientCache.size() > 100) {
+            d2dsurf->mLinearGradientCache.pop_back();
+        }
+    }
     delete [] stops;
-    return brush;
+    return (*iterLinearGradient).linearGradientBrush;
 }
 
 /**

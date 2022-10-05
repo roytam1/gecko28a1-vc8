@@ -27,6 +27,14 @@
 #include <stdlib.h>
 #include "pixman-private.h"
 
+#if defined(TT_MEMUTIL) && defined(_MSC_VER)
+#include <omp.h>
+#endif
+
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
+
 pixman_implementation_t *
 _pixman_implementation_create (pixman_implementation_t *fallback,
 			       const pixman_fast_path_t *fast_paths)
@@ -376,10 +384,183 @@ _pixman_disabled (const char *name)
     return FALSE;
 }
 
+#ifdef _MSC_VER
+
+#ifdef TT_MEMUTIL
+uint32_t dwNonTemporalDataSizeMin = NON_TEMPORAL_STORES_NOT_SUPPORTED;
+uint32_t dwNonTemporalMemcpySizeMin = NON_TEMPORAL_STORES_NOT_SUPPORTED;
+#endif
+typedef BOOL (WINAPI *LPFN_GLPI)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+
+int Initialize_TT()
+{
+#ifdef TT_MEMUTIL
+    int omp_thread_counts = 0;
+    DWORD pam, sam;
+
+    long env_omp_num_threads = 0;
+    wchar_t *lpwz_env = _wgetenv(L"OMP_NUM_THREADS");
+    if (lpwz_env)
+    {
+      env_omp_num_threads = _wtol(lpwz_env);
+    }
+
+    omp_set_dynamic(0);
+    omp_set_num_threads(1);
+
+    if (GetProcessAffinityMask(GetCurrentProcess(), &pam, &sam))
+    {
+        LPFN_GLPI glpi =
+            (LPFN_GLPI)GetProcAddress(GetModuleHandle("kernel32.dll"),
+            "GetLogicalProcessorInformation");
+        DWORD returnLength = 0;
+        int *pThreadBindIndex = NULL;
+
+        if (NULL != glpi &&
+            !glpi(NULL, &returnLength) &&
+            GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+        {
+            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer =
+                (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(returnLength);
+
+            if (glpi(buffer, &returnLength))
+            {
+                DWORD byteOffset;
+                PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr;
+                int i;
+                size_t threadBindIndexSize;
+
+                byteOffset = 0;
+                ptr = buffer;
+                while (byteOffset < returnLength)
+                {
+                    if (RelationProcessorCore == ptr->Relationship)
+                    {
+                        omp_thread_counts++;
+                    }
+                    byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+                    ptr++;
+                }
+
+                threadBindIndexSize = sizeof(int) * omp_thread_counts;
+                pThreadBindIndex = (int *)malloc(threadBindIndexSize);
+                memset(pThreadBindIndex, 0xFF, threadBindIndexSize);
+
+                i = 0;
+                byteOffset = 0;
+                ptr = buffer;
+                while (byteOffset < returnLength)
+                {
+                    if (RelationProcessorCore == ptr->Relationship)
+                    {
+                        if (i < omp_thread_counts)
+                        {
+                            int b;
+
+                            for (b = 0; b <= 31; b++)
+                            {
+                                if ((pam & ptr->ProcessorMask) & (1 << b))
+                                {
+                                    pThreadBindIndex[i++] = b;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+                    ptr++;
+                }
+            }
+            free(buffer);
+        }
+
+        if (NULL == pThreadBindIndex)
+        {
+            int b;
+            int i;
+            size_t threadBindIndexSize;
+
+            for (b = 0; b <= 31; b++)
+            {
+                if (pam & (1 << b)) omp_thread_counts++;
+            }
+
+            threadBindIndexSize = sizeof(int) * omp_thread_counts;
+            pThreadBindIndex = (int *)malloc(threadBindIndexSize);
+            memset(pThreadBindIndex, 0xFF, threadBindIndexSize);
+
+            for (i = 0; i < omp_thread_counts; i++)
+            {
+                pThreadBindIndex[i] = i;
+            }
+        }
+
+        if (NULL != pThreadBindIndex)
+        {
+            if (omp_thread_counts >= 1)
+            {
+                OSVERSIONINFO osvi = { sizeof(OSVERSIONINFO) };
+                BOOL bIsWindows7orLater = FALSE;
+
+                omp_set_dynamic(0);
+                if (0 != env_omp_num_threads)
+                {
+                    omp_thread_counts = env_omp_num_threads;
+                }
+                omp_set_num_threads(omp_thread_counts);
+                omp_thread_counts = omp_get_max_threads();
+
+                GetVersionEx(&osvi);
+                bIsWindows7orLater =
+                    (VER_PLATFORM_WIN32_NT == osvi.dwPlatformId) &&
+                    ((6 == osvi.dwMajorVersion && osvi.dwMinorVersion >= 1) || (osvi.dwMajorVersion >= 7));
+                if (!bIsWindows7orLater)
+                {
+#pragma omp parallel
+                    {
+                        SetThreadIdealProcessor(GetCurrentThread(),
+                            pThreadBindIndex[omp_get_thread_num()]);
+                    }
+                }
+            }
+            free(pThreadBindIndex);
+        }
+    }
+#endif /* TT_MEMUTIL */
+
+#ifdef TT_MEMUTIL
+    dwNonTemporalMemcpySizeMin = dwNonTemporalDataSizeMin = GetNonTemporalDataSizeMin_tt();
+    if (dwNonTemporalMemcpySizeMin != NON_TEMPORAL_STORES_NOT_SUPPORTED)
+    {
+        dwNonTemporalMemcpySizeMin = dwNonTemporalDataSizeMin / 2;
+    }
+#endif
+
+    return 0;
+}
+
+#endif /* _MSC_VER */
+
 pixman_implementation_t *
 _pixman_choose_implementation (void)
 {
     pixman_implementation_t *imp;
+
+#ifdef _MSC_VER
+    {
+        static pixman_bool_t initialized = FALSE;
+
+        if (!initialized)
+        {
+            Initialize_TT();
+            initialized = TRUE;
+        }
+    }
+#endif
 
     imp = _pixman_implementation_create_general();
 

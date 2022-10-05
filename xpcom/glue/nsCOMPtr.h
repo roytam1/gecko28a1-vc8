@@ -42,6 +42,10 @@
 
 #include "nsCycleCollectionNoteChild.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
 
 /*
   WARNING:
@@ -574,7 +578,7 @@ class nsCOMPtr MOZ_FINAL
           // construct from |dont_AddRef(expr)|
         {
           // But make sure that U actually inherits from T
-          static_assert(mozilla::IsBaseOf<T, U>::value,
+          static_assert((mozilla::IsBaseOf<T, U>::value),
                         "U is not a subclass of T");
           NSCAP_LOG_ASSIGNMENT(this, static_cast<T*>(aSmartPtr.mRawPtr));
           NSCAP_ASSERT_NO_QUERY_NEEDED();
@@ -664,7 +668,7 @@ class nsCOMPtr MOZ_FINAL
           // assign from |dont_AddRef(expr)|
         {
           // Make sure that U actually inherits from T
-          static_assert(mozilla::IsBaseOf<T, U>::value,
+          static_assert((mozilla::IsBaseOf<T, U>::value),
                         "U is not a subclass of T");
           assign_assuming_AddRef(static_cast<T*>(rhs.mRawPtr));
           NSCAP_ASSERT_NO_QUERY_NEEDED();

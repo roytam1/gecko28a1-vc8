@@ -23,6 +23,11 @@
 
 #include <stdint.h>
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+#undef static_assert
+#define static_assert(a,b)
+#endif
+
 /*
  * Our minimum deployment target on clang/OS X is OS X 10.6, whose SDK
  * does not have <atomic>.  So be sure to check for <atomic> support

@@ -1184,4 +1184,11 @@ void pixman_timer_register (pixman_timer_t *timer);
 
 #endif /* __ASSEMBLER__ */
 
+#ifdef TT_MEMUTIL
+extern pixman_bool_t nt_initialized;
+extern uint32_t dwNonTemporalDataSizeMin;
+extern uint32_t dwNonTemporalMemcpySizeMin;
+void InitializeNonTemporalData();
+#endif /* TT_MEMUTIL */
+
 #endif /* PIXMAN_PRIVATE_H */

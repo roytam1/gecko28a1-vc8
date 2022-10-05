@@ -304,31 +304,31 @@ public:
 public:
     // From RtpData in the RTP/RTCP module
     int32_t OnReceivedPayloadData(const uint8_t* payloadData,
-                                  uint16_t payloadSize,
+                                  const uint16_t payloadSize,
                                   const WebRtcRTPHeader* rtpHeader);
 
 public:
     // From RtpFeedback in the RTP/RTCP module
     int32_t OnInitializeDecoder(
-            int32_t id,
-            int8_t payloadType,
-            const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-            int frequency,
-            uint8_t channels,
-            uint32_t rate);
+            const int32_t id,
+            const int8_t payloadType,
+            const const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+            const int frequency,
+            const uint8_t channels,
+            const uint32_t rate);
 
-    void OnPacketTimeout(int32_t id);
+    void OnPacketTimeout(const int32_t id);
 
-    void OnReceivedPacket(int32_t id, RtpRtcpPacketType packetType);
+    void OnReceivedPacket(const int32_t id, const RtpRtcpPacketType packetType);
 
-    void OnPeriodicDeadOrAlive(int32_t id,
-                               RTPAliveType alive);
+    void OnPeriodicDeadOrAlive(const int32_t id,
+                               const RTPAliveType alive);
 
-    void OnIncomingSSRCChanged(int32_t id,
-                               uint32_t SSRC);
+    void OnIncomingSSRCChanged(const int32_t id,
+                               const uint32_t SSRC);
 
-    void OnIncomingCSRCChanged(int32_t id,
-                               uint32_t CSRC, bool added);
+    void OnIncomingCSRCChanged(const int32_t id,
+                               const uint32_t CSRC, const bool added);
 
 public:
     // From RtcpFeedback in the RTP/RTCP module
@@ -344,10 +344,10 @@ public:
                                   uint8_t event,
                                   bool endOfEvent);
 
-    void OnPlayTelephoneEvent(int32_t id,
-                              uint8_t event,
-                              uint16_t lengthMs,
-                              uint8_t volume);
+    void OnPlayTelephoneEvent(const int32_t id,
+                              const uint8_t event,
+                              const uint16_t lengthMs,
+                              const uint8_t volume);
 
 public:
     // From Transport (called by the RTP/RTCP module)
@@ -356,8 +356,8 @@ public:
 
 public:
     // From MixerParticipant
-    int32_t GetAudioFrame(int32_t id, AudioFrame& audioFrame);
-    int32_t NeededFrequency(int32_t id);
+    int32_t GetAudioFrame(const int32_t id, AudioFrame& audioFrame);
+    int32_t NeededFrequency(const int32_t id);
 
 public:
     // From MonitorObserver
@@ -365,12 +365,12 @@ public:
 
 public:
     // From FileCallback
-    void PlayNotification(int32_t id,
-                          uint32_t durationMs);
-    void RecordNotification(int32_t id,
-                            uint32_t durationMs);
-    void PlayFileEnded(int32_t id);
-    void RecordFileEnded(int32_t id);
+    void PlayNotification(const int32_t id,
+                          const uint32_t durationMs);
+    void RecordNotification(const int32_t id,
+                            const uint32_t durationMs);
+    void PlayFileEnded(const int32_t id);
+    void RecordFileEnded(const int32_t id);
 
 public:
     uint32_t InstanceId() const

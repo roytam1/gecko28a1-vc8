@@ -670,7 +670,11 @@ public:
         /**
          * Disable copying of backgrounds in PushGroupAndCopyBackground.
          */
-        FLAG_DISABLE_COPY_BACKGROUND = (1 << 2)
+        FLAG_DISABLE_COPY_BACKGROUND = (1 << 2),
+        /**
+         * tete009 extension
+         */
+        FLAG_DRAW_SINGLE_IMAGE_TT = (1 << 20)
     };
 
     void SetFlag(int32_t aFlag) { mFlags |= aFlag; }

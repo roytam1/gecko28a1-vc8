@@ -107,7 +107,22 @@ void nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator){
  */
 void nsDeque::Empty() {
   if (mSize && mData) {
+#ifdef TT_MEMUTIL
+    static const uint32_t dwNonTemporalDataSizeMin = GetNonTemporalDataSizeMin_tt();
+    const uint32_t dwDataSize = mCapacity*sizeof(mData);
+
+    if (dwDataSize < dwNonTemporalDataSizeMin ||
+        NON_TEMPORAL_STORES_NOT_SUPPORTED == dwNonTemporalDataSizeMin)
+    {
+        memset(mData, 0, mCapacity*sizeof(mData));
+    }
+    else
+    {
+        memset_nontemporal_tt(mData, 0, mCapacity*sizeof(mData));
+    }
+#else
     memset(mData, 0, mCapacity*sizeof(mData));
+#endif
   }
   mSize=0;
   mOrigin=0;
