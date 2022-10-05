@@ -38,6 +38,7 @@ EXPORTS_mozilla_FILES += \
   MemoryChecking.h \
   MemoryReporting.h \
   MSIntTypes.h \
+  MSStdInt.h \
   Move.h \
   NullPtr.h \
   NumericLimits.h \
@@ -50,6 +51,7 @@ EXPORTS_mozilla_FILES += \
   Scoped.h \
   SHA1.h \
   SplayTree.h \
+  StandardInteger.h \
   TemplateLib.h \
   ThreadLocal.h \
   TypedEnum.h \
