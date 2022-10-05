@@ -61,6 +61,7 @@
  */
 
 #include "mozilla/StandardInteger.h"
+#include "mozilla/NullPtr.h"
 
 namespace mozilla {
 namespace internal {

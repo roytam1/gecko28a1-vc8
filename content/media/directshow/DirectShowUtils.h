@@ -10,6 +10,7 @@
 #include "dshow.h"
 #include "DShowTools.h"
 #include "prlog.h"
+#include "mozilla/NullPtr.h"
 
 namespace mozilla {
 
