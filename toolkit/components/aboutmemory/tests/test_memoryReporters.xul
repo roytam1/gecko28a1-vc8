@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/css" href="chrome://global/skin"?>
+<?xml-stylesheet type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"?>
+<window title="Memory reporters"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/javascript"
+          src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
+
+  <!-- This file tests (in a rough fashion) whether the memory reporters are
+       producing sensible results.  test_aboutmemory.xul tests the
+       presentation of memory reports in about:memory. -->
+
+  <!-- test results are displayed in the html:body -->
+  <body xmlns="http://www.w3.org/1999/xhtml">
+  <!-- In bug 773533, <marquee> elements crashed the JS memory reporter -->
+  <marquee>Marquee</marquee>
+  </body>
+
+  <!-- test code goes here -->
+  <script type="application/javascript">
+  <![CDATA[
+
+  // Nb: this test is all JS and so should be done with an xpcshell test,
+  // but bug 671753 is preventing the memory-reporter-manager from being
+  // accessed from xpcshell.
+
+  "use strict";
+
+  const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  const Cr = Components.results;
+
+  const NONHEAP = Ci.nsIMemoryReporter.KIND_NONHEAP;
+  const HEAP    = Ci.nsIMemoryReporter.KIND_HEAP;
+  const OTHER   = Ci.nsIMemoryReporter.KIND_OTHER;
+
+  const BYTES = Ci.nsIMemoryReporter.UNITS_BYTES;
+  const COUNT = Ci.nsIMemoryReporter.UNITS_COUNT;
+  const COUNT_CUMULATIVE = Ci.nsIMemoryReporter.UNITS_COUNT_CUMULATIVE;
+  const PERCENTAGE = Ci.nsIMemoryReporter.UNITS_PERCENTAGE;
+
+  let vsizeAmounts = [];
+  let residentAmounts = [];
+  let jsGcHeapAmounts = [];
+  let heapAllocatedAmounts = [];
+  let storageSqliteAmounts = [];
+
+  let present = {}
+
+  // Generate a long, random string.  We'll check that this string is
+  // reported in at least one of the memory reporters.
+  let bigString = "";
+  while (bigString.length < 10000) {
+    bigString += Math.random();
+  }
+  let bigStringPrefix = bigString.substring(0, 100);
+
+  // Generate many copies of two distinctive short strings, "!)(*&" and
+  // "@)(*&".  We'll check that these strings are reported in at least
+  // one of the memory reporters.
+  let shortStrings = [];
+  for (let i = 0; i < 10000; i++) {
+    let str = (Math.random() > 0.5 ? "!" : "@") + ")(*&";
+    shortStrings.push(str);
+  }
+
+  let mySandbox = Components.utils.Sandbox(document.nodePrincipal,
+                    { sandboxName: "this-is-a-sandbox-name" });
+
+  function handleReport(aProcess, aPath, aKind, aUnits, aAmount, aDescription)
+  {
+    // Record the values of some notable reporters.
+    if (aPath === "vsize") {
+      vsizeAmounts.push(aAmount);
+    } else if (aPath === "resident") {
+      residentAmounts.push(aAmount);
+    } else if (aPath === "js-main-runtime-gc-heap-committed/used/gc-things") {
+      jsGcHeapAmounts.push(aAmount); 
+    } else if (aPath === "heap-allocated") {
+      heapAllocatedAmounts.push(aAmount);
+    } else if (aPath === "storage-sqlite") {
+      storageSqliteAmounts.push(aAmount);
+
+    // Check the presence of some other notable reporters.
+    } else if (aPath.search(/^explicit\/js-non-window\/.*compartment\(/) >= 0) {
+      present.jsNonWindowCompartments = true;
+    } else if (aPath.search(/^explicit\/window-objects\/top\(.*\/js-compartment\(/) >= 0) {
+      present.windowObjectsJsCompartments = true;
+    } else if (aPath.search(/^explicit\/storage\/sqlite\/places.sqlite/) >= 0) {
+      present.places = true;
+    } else if (aPath.search(/^explicit\/images/) >= 0) {
+      present.images = true;
+    } else if (aPath.search(/^explicit\/xpti-working-set$/) >= 0) {
+      present.xptiWorkingSet = true;
+    } else if (aPath.search(/^explicit\/atom-tables$/) >= 0) {
+      present.atomTable = true;
+    } else if (/\[System Principal\].*this-is-a-sandbox-name/.test(aPath)) {
+      // A system compartment with a location (such as a sandbox) should
+      // show that location.
+      present.sandboxLocation = true;
+    } else if (aPath.contains(bigStringPrefix)) {
+      present.bigString = true;
+    } else if (aPath.contains("!)(*&")) {
+      present.smallString1 = true;
+    } else if (aPath.contains("@)(*&")) {
+      present.smallString2 = true;
+    }
+  }
+
+  let mgr = Cc["@mozilla.org/memory-reporter-manager;1"].
+            getService(Ci.nsIMemoryReporterManager);
+
+  // Access the distinguished amounts (mgr.explicit et al.) just to make sure
+  // they don't crash.  We can't check their actual values because they're
+  // non-deterministic.
+  //
+  // Nb: mgr.explicit will throw NS_ERROR_NOT_AVAILABLE if this is a
+  // --enable-trace-malloc build.  Allow for that exception, but *only* that
+  // exception.
+  let dummy;
+  let haveExplicit = true;
+  try {
+    dummy = mgr.explicit;
+  } catch (ex) {
+    is(ex.result, Cr.NS_ERROR_NOT_AVAILABLE, "mgr.explicit exception");
+    haveExplicit = false;
+  }
+  let amounts = [
+    "vsize",
+    "resident",
+    "residentFast",
+    "heapAllocated",
+    "heapOverheadRatio",
+    "JSMainRuntimeGCHeap",
+    "JSMainRuntimeTemporaryPeak",
+    "JSMainRuntimeCompartmentsSystem",
+    "JSMainRuntimeCompartmentsUser",
+    "imagesContentUsedUncompressed",
+    "storageSQLite",
+    "lowMemoryEventsVirtual",
+    "lowMemoryEventsPhysical",
+    "ghostWindows",
+    "pageFaultsHard",
+  ];
+  for (let i = 0; i < amounts.length; i++) {
+    try {
+      // If mgr[amounts[i]] throws an exception, just move on -- some amounts
+      // aren't available on all platforms.  But if the attribute simply
+      // isn't present, that indicates the distinguished amounts have changed
+      // and this file hasn't been updated appropriately.
+      dummy = mgr[amounts[i]];
+      ok(dummy !== undefined,
+         "accessed an unknown distinguished amount: " + amounts[i]);
+    } catch (ex) {
+    }
+  }
+
+  // Run sizeOfTab() to make sure it doesn't crash.  We can't check the result
+  // values because they're non-deterministic.
+  let jsObjectsSize = {};
+  let jsStringsSize = {};
+  let jsOtherSize = {};
+  let domSize = {};
+  let styleSize = {};
+  let otherSize = {};
+  let totalSize = {};
+  let jsMilliseconds = {};
+  let nonJSMilliseconds = {};
+  mgr.sizeOfTab(window, jsObjectsSize, jsStringsSize, jsOtherSize,
+                domSize, styleSize, otherSize, totalSize,
+                jsMilliseconds, nonJSMilliseconds);
+
+  let e = mgr.enumerateReporters();
+  while (e.hasMoreElements()) {
+    let r = e.getNext().QueryInterface(Ci.nsIMemoryReporter);
+    r.collectReports(handleReport, null);
+
+    // Access |name| to make sure it doesn't crash or assert.
+    dummy = r.name;
+  }
+
+  function checkSpecialReport(aName, aAmounts)
+  {
+    ok(aAmounts.length == 1, aName + " has " + aAmounts.length + " report");
+    let n = aAmounts[0];
+    // Check the size is reasonable -- i.e. not ridiculously large or small.
+    ok(100 * 1000 <= n && n <= 10 * 1000 * 1000 * 1000,
+       aName + "'s size is reasonable");
+  }
+
+  // If mgr.explicit failed, we won't have "heap-allocated" either.
+  if (haveExplicit) {
+    checkSpecialReport("heap-allocated", heapAllocatedAmounts);
+  }
+  checkSpecialReport("vsize",          vsizeAmounts);
+  checkSpecialReport("resident",       residentAmounts);
+  checkSpecialReport("js-main-runtime-gc-heap-committed/used/gc-things", jsGcHeapAmounts);
+
+  ok(present.jsNonWindowCompartments,     "js-non-window compartments are present");
+  ok(present.windowObjectsJsCompartments, "window-objects/.../js compartments are present");
+  ok(present.places,                      "places is present");
+  ok(present.images,                      "images is present");
+  ok(present.xptiWorkingSet,              "xpti-working-set is present");
+  ok(present.atomTable,                   "atom-table is present");
+  ok(present.sandboxLocation,             "sandbox locations are present");
+  ok(present.bigString,                   "large string is present");
+  ok(present.smallString1,                "small string 1 is present");
+  ok(present.smallString2,                "small string 2 is present");
+
+  ]]>
+  </script>
+</window>
+

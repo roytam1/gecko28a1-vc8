@@ -1,0 +1,34 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'content'
+
+SOURCES += [
+    'Biquad.cpp',
+    'DirectConvolver.cpp',
+    'DynamicsCompressor.cpp',
+    'DynamicsCompressorKernel.cpp',
+    'FFTConvolver.cpp',
+    'HRTFDatabase.cpp',
+    'HRTFDatabaseLoader.cpp',
+    'HRTFElevation.cpp',
+    'HRTFKernel.cpp',
+    'HRTFPanner.cpp',
+    'PeriodicWave.cpp',
+    'Reverb.cpp',
+    'ReverbAccumulationBuffer.cpp',
+    'ReverbConvolver.cpp',
+    'ReverbConvolverStage.cpp',
+    'ReverbInputBuffer.cpp',
+    'ZeroPole.cpp',
+]
+
+LIBXUL_LIBRARY = True
+
+LIBRARY_NAME = 'gkconwebaudio_blink_s'
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

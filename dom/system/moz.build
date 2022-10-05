@@ -1,0 +1,61 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+toolkit = CONFIG['MOZ_WIDGET_TOOLKIT']
+
+if toolkit in ('qt', 'gtk2', 'gtk3'):
+    DIRS += ['unix']
+elif toolkit == 'windows':
+    DIRS += ['windows']
+elif toolkit == 'cocoa':
+    DIRS += ['mac']
+elif toolkit == 'android':
+    DIRS += ['android']
+
+if CONFIG['MOZ_B2G_RIL']:
+    DIRS += ['gonk']
+
+TEST_DIRS += ['tests']
+
+XPIDL_SOURCES += [
+    'nsIOSFileConstantsService.idl',
+]
+
+XPIDL_MODULE = 'dom_system'
+
+MODULE = 'dom'
+
+EXPORTS += [
+    'nsDeviceSensors.h',
+]
+
+EXPORTS.mozilla += [
+    'OSFileConstants.h',
+]
+
+SOURCES += [
+    'nsDeviceSensors.cpp',
+    'OSFileConstants.cpp',
+]
+
+# On Systems that have build in geolocation providers,
+# we really do not need these.
+if CONFIG['OS_TARGET'] != 'Android' or CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+    EXTRA_COMPONENTS += [
+        'NetworkGeolocationProvider.js',
+        'NetworkGeolocationProvider.manifest',
+    ]
+
+FAIL_ON_WARNINGS = True
+
+LIBXUL_LIBRARY = True
+
+LIBRARY_NAME = 'domsystem_s'
+
+EXPORT_LIBRARY = True
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

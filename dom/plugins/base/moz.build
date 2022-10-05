@@ -1,0 +1,113 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
+    DIRS += ['android']
+
+XPIDL_SOURCES += [
+    'nsIHTTPHeaderListener.idl',
+    'nsIPluginDocument.idl',
+    'nsIPluginHost.idl',
+    'nsIPluginInputStream.idl',
+    'nsIPluginInstanceOwner.idl',
+    'nsIPluginTag.idl',
+    'nsIPluginTagInfo.idl',
+    'nspluginroot.idl',
+]
+
+MODULE = 'plugin'
+
+EXPORTS += [
+    'npapi.h',
+    'npfunctions.h',
+    'npruntime.h',
+    'nptypes.h',
+    'nsJSNPRuntime.h',
+    'nsNPAPIPluginInstance.h',
+    'nsPluginDirServiceProvider.h',
+    'nsPluginHost.h',
+    'nsPluginInstanceOwner.h',
+    'nsPluginLogging.h',
+    'nsPluginNativeWindow.h',
+    'nsPluginPlayPreviewInfo.h',
+    'nsPluginsCID.h',
+    'nsPluginsDir.h',
+    'nsPluginTags.h',
+]
+
+EXPORTS.mozilla += [
+    'PluginPRLibrary.h',
+]
+
+SOURCES += [
+    'nsJSNPRuntime.cpp',
+    'nsNPAPIPlugin.cpp',
+    'nsNPAPIPluginInstance.cpp',
+    'nsNPAPIPluginStreamListener.cpp',
+    'nsPluginHost.cpp',
+    'nsPluginInstanceOwner.cpp',
+    'nsPluginModule.cpp',
+    'nsPluginPlayPreviewInfo.cpp',
+    'nsPluginStreamListenerPeer.cpp',
+    'nsPluginTags.cpp',
+    'PluginPRLibrary.cpp',
+]
+
+if CONFIG['OS_ARCH'] == 'WINNT':
+    SOURCES += [
+        'nsPluginDirServiceProvider.cpp',
+        'nsPluginNativeWindowWin.cpp',
+        'nsPluginsDirWin.cpp',
+    ]
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'os2':
+    SOURCES += [
+        'nsPluginNativeWindowOS2.cpp',
+        'nsPluginsDirOS2.cpp',
+    ]
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
+    SOURCES += [
+        'nsPluginNativeWindow.cpp',
+        'nsPluginsDirDarwin.cpp',
+    ]
+else:
+    SOURCES += [
+        'nsPluginsDirUnix.cpp',
+    ]
+    if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk2':
+        SOURCES += [
+            'nsPluginNativeWindowGtk2.cpp',
+        ]
+    elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'qt':
+        SOURCES += [
+            'nsPluginNativeWindowQt.cpp',
+        ]
+    else:
+        SOURCES += [
+            'nsPluginNativeWindow.cpp',
+        ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] != 'android':
+    # android_npapi.h extends the NPNVariable and NPPVariable enums
+    # using #defines, which results in Wswitch warnings in gcc-4.6.
+    # Therefore, enable FAIL_ON_WARNINGS only on non-Android platforms.
+    FAIL_ON_WARNINGS = True
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'gkplugin'
+
+EXPORT_LIBRARY = True
+
+LOCAL_INCLUDES += [
+    '/content/base/src',
+    '/dom/base',
+    '/layout/generic',
+    '/layout/xul/base/src',
+]
+
+include('/ipc/chromium/chromium-config.mozbuild')

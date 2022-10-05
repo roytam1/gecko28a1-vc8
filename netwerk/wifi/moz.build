@@ -1,0 +1,58 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+FAIL_ON_WARNINGS = True
+
+XPIDL_SOURCES += [
+    'nsIWifiAccessPoint.idl',
+    'nsIWifiListener.idl',
+    'nsIWifiMonitor.idl',
+]
+
+XPIDL_MODULE = 'necko_wifi'
+
+MODULE = 'necko'
+
+SOURCES += [
+    'nsWifiAccessPoint.cpp',
+]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+    SOURCES += [
+        'nsWifiMonitorGonk.cpp',
+    ]
+else:
+    SOURCES += [
+        'nsWifiMonitor.cpp',
+    ]
+
+if CONFIG['OS_ARCH'] == 'Darwin':
+    # osx_corewlan.mm has warnings I don't understand.
+    FAIL_ON_WARNINGS = False
+    SOURCES += [
+        'nsWifiScannerMac.cpp',
+    ]
+    SOURCES += [
+        'osx_corewlan.mm',
+    ]
+elif CONFIG['OS_ARCH'] == 'WINNT':
+    SOURCES += [
+        'nsWifiScannerWin.cpp',
+    ]
+elif CONFIG['OS_ARCH'] == 'SunOS':
+    SOURCES += [
+        'nsWifiScannerSolaris.cpp',
+    ]
+
+if CONFIG['NECKO_WIFI_DBUS']:
+    SOURCES += [
+        'nsWifiScannerDBus.cpp',
+    ]
+
+LIBRARY_NAME = 'neckowifi_s'
+
+LIBXUL_LIBRARY = True
+

@@ -1,0 +1,26 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'pref'
+
+SOURCES += [
+    'nsPrefBranch.cpp',
+    'nsPrefsFactory.cpp',
+    'prefapi.cpp',
+    'Preferences.cpp',
+    'prefread.cpp',
+]
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'pref'
+
+EXPORT_LIBRARY = True
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

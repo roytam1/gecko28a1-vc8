@@ -1,0 +1,65 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'accessibility'
+
+EXPORTS += [
+    'IUnknownImpl.h',
+]
+
+EXPORTS.mozilla.a11y += [
+    'AccessibleWrap.h',
+    'Compatibility.h',
+    'HyperTextAccessibleWrap.h',
+]
+
+SOURCES += [
+    'AccessibleWrap.cpp',
+    'ApplicationAccessibleWrap.cpp',
+    'ARIAGridAccessibleWrap.cpp',
+    'Compatibility.cpp',
+    'DocAccessibleWrap.cpp',
+    'EnumVariant.cpp',
+    'HTMLTableAccessibleWrap.cpp',
+    'HTMLWin32ObjectAccessible.cpp',
+    'HyperTextAccessibleWrap.cpp',
+    'ImageAccessibleWrap.cpp',
+    'IUnknownImpl.cpp',
+    'nsWinUtils.cpp',
+    'Platform.cpp',
+    'RootAccessibleWrap.cpp',
+    'ServiceProvider.cpp',
+    'TextLeafAccessibleWrap.cpp',
+]
+
+if CONFIG['MOZ_XUL']:
+    SOURCES += [
+        'XULListboxAccessibleWrap.cpp',
+        'XULMenuAccessibleWrap.cpp',
+        'XULTreeGridAccessibleWrap.cpp',
+    ]
+
+LIBXUL_LIBRARY = True
+
+LOCAL_INCLUDES += [
+    '../../../../content/base/src',
+    '../../../../content/events/src',
+    '../../base',
+    '../../generic',
+    '../../html',
+    '../../xpcom',
+    '../../xul',
+    '../ia2',
+    '../sdn',
+    '../uia',
+]
+
+LIBRARY_NAME = 'accessibility_toolkit_msaa_s'
+
+EXPORT_LIBRARY = True
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

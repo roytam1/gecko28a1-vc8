@@ -1,0 +1,48 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+ifdef GNU_CC
+OS_CFLAGS := $(OS_CFLAGS) -Wshadow
+OS_CXXFLAGS := $(OS_CXXFLAGS) -Wshadow
+endif
+
+INSTALL_TARGETS += structlist
+structlist_FILES := nsStyleStructList.h
+structlist_DEST = $(DIST)/include
+structlist_TARGET := export
+
+include $(topsrcdir)/config/rules.mk
+
+LOCAL_INCLUDES	+= \
+		-I$(srcdir)/../base \
+		-I$(topsrcdir)/dom/base \
+		-I$(srcdir)/../generic \
+		-I$(srcdir)/../xul/base/src \
+		-I$(srcdir)/../../content/base/src \
+		-I$(srcdir)/../../content/html/content/src \
+		-I$(srcdir)/../../content/xbl/src \
+		-I$(srcdir)/../../content/xul/document/src \
+		$(NULL)
+
+nsStyleStructList.h : $(srcdir)/generate-stylestructlist.py
+	$(PYTHON) $< > $@
+
+_FILES	= \
+	contenteditable.css \
+	designmode.css \
+	ImageDocument.css \
+	TopLevelImageDocument.css \
+	TopLevelVideoDocument.css \
+	$(NULL)
+
+GARBAGE	+= \
+	$(addprefix $(DIST)/bin/res/,$(_FILES)) \
+	nsStyleStructList.h \
+	$(NULL)
+
+libs:: $(_FILES)
+	$(INSTALL) $^ $(DIST)/bin/res
+
+install:: $(_FILES)
+	$(SYSINSTALL) $(IFLAGS1) $^ $(DESTDIR)$(mozappdir)/res

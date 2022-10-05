@@ -1,0 +1,67 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'xpcom'
+
+EXPORTS += [
+    'nsXPCOM.h',
+    'nsXPCOMCID.h',
+    'nsXPCOMCIDInternal.h',
+    'nsXREAppData.h',
+    'nsXULAppAPI.h',
+    'xrecore.h',
+]
+
+EXPORTS.mozilla += [
+    'FileLocation.h',
+    'mozPoisonWrite.h',
+    'Omnijar.h',
+    'ServiceList.h',
+    'Services.h',
+    'XPCOM.h',
+]
+
+if CONFIG['OS_ARCH'] == 'WINNT':
+    EXPORTS.mozilla += ['perfprobe.h']
+    SOURCES += [
+        'mozPoisonWriteBase.cpp',
+        'mozPoisonWriteWin.cpp',
+        'perfprobe.cpp',
+    ]
+elif CONFIG['OS_ARCH'] == 'Darwin':
+    SOURCES += [
+        'mozPoisonWriteBase.cpp',
+        'mozPoisonWriteMac.cpp',
+    ]
+else:
+    SOURCES += [
+        'mozPoisonWriteStub.cpp',
+    ]
+
+include('../glue/objs.mozbuild')
+
+SOURCES += xpcom_gluens_src_cppsrcs
+SOURCES += xpcom_glue_src_cppsrcs
+
+SOURCES += [
+    'FileLocation.cpp',
+    'FrozenFunctions.cpp',
+    'nsXPComInit.cpp',
+    'nsXPCOMStrings.cpp',
+    'Omnijar.cpp',
+    'Services.cpp',
+]
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'xpcom_core'
+
+EXPORT_LIBRARY = True
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

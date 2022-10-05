@@ -1,0 +1,40 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+RESOURCES_HTML = \
+		$(srcdir)/folder.png \
+		$(NULL)
+
+include $(topsrcdir)/config/rules.mk
+
+LOCAL_INCLUDES += \
+		-I$(srcdir) \
+		-I$(srcdir)/../base \
+		-I$(srcdir)/../forms \
+		-I$(srcdir)/../style \
+		-I$(srcdir)/../tables \
+		-I$(srcdir)/../xul/base/src \
+		-I$(srcdir)/../../content/xul/content/src \
+		-I$(srcdir)/../../content/base/src \
+		-I$(srcdir)/../../content/html/content/src \
+		-I$(srcdir)/../../dom/base \
+		-I$(srcdir)/../../dom/plugins/base \
+		-I$(srcdir)/../svg \
+		$(MOZ_CAIRO_CFLAGS) \
+		$(MOZ_PIXMAN_CFLAGS) \
+		$(NULL)
+
+ifdef MOZ_WIDGET_GTK
+CXXFLAGS += $(TK_CFLAGS)
+endif
+
+ifdef MOZ_ENABLE_QT
+CXXFLAGS += $(MOZ_QT_CFLAGS)
+endif
+
+libs::
+	$(INSTALL) $(RESOURCES_HTML) $(DIST)/bin/res/html
+
+install::
+	$(SYSINSTALL) $(IFLAGS1) $(RESOURCES_HTML) $(DESTDIR)$(mozappdir)/res/html

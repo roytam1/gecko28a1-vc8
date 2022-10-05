@@ -1,0 +1,163 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+PARALLEL_DIRS += [
+  'encoder',
+  'mediasource',
+  'webaudio',
+  'webvtt'
+]
+
+if CONFIG['MOZ_RAW']:
+    PARALLEL_DIRS += ['raw']
+
+if CONFIG['MOZ_OGG']:
+    PARALLEL_DIRS += ['ogg']
+
+if CONFIG['MOZ_WAVE']:
+    PARALLEL_DIRS += ['wave']
+
+if CONFIG['MOZ_WEBM']:
+    PARALLEL_DIRS += ['webm']
+
+if CONFIG['MOZ_GSTREAMER']:
+    PARALLEL_DIRS += ['gstreamer']
+
+if CONFIG['MOZ_DASH']:
+    PARALLEL_DIRS += ['dash']
+
+if CONFIG['MOZ_DIRECTSHOW']:
+    PARALLEL_DIRS += ['directshow']
+
+if CONFIG['MOZ_MEDIA_PLUGINS']:
+    PARALLEL_DIRS += ['plugins']
+
+if CONFIG['MOZ_WMF']:
+    PARALLEL_DIRS += ['wmf']
+
+if CONFIG['MOZ_APPLEMEDIA']:
+    PARALLEL_DIRS += ['apple']
+
+PARALLEL_DIRS += ['webrtc']
+
+if CONFIG['MOZ_OMX_DECODER']:
+    PARALLEL_DIRS += ['omx']
+    PARALLEL_DIRS += ['omx/mediaresourcemanager']
+
+PARALLEL_DIRS += ['webspeech']
+
+TEST_DIRS += ['test']
+
+MODULE = 'content'
+
+EXPORTS += [
+    'AbstractMediaDecoder.h',
+    'AudioAvailableEventManager.h',
+    'AudioChannelFormat.h',
+    'AudioEventTimeline.h',
+    'AudioNodeEngine.h',
+    'AudioNodeExternalInputStream.h',
+    'AudioNodeStream.h',
+    'AudioSampleFormat.h',
+    'AudioSegment.h',
+    'AudioStream.h',
+    'BufferDecoder.h',
+    'BufferMediaResource.h',
+    'DecoderTraits.h',
+    'DOMMediaStream.h',
+    'EncodedBufferCache.h',
+    'FileBlockCache.h',
+    'Latency.h',
+    'MediaCache.h',
+    'MediaDecoder.h',
+    'MediaDecoderOwner.h',
+    'MediaDecoderReader.h',
+    'MediaDecoderStateMachine.h',
+    'MediaMetadataManager.h',
+    'MediaRecorder.h',
+    'MediaResource.h',
+    'MediaSegment.h',
+    'MediaStreamGraph.h',
+    'MP3FrameParser.h',
+    'RtspMediaResource.h',
+    'SharedBuffer.h',
+    'StreamBuffer.h',
+    'TimeVarying.h',
+    'TrackUnionStream.h',
+    'VideoFrameContainer.h',
+    'VideoSegment.h',
+    'VideoUtils.h',
+    'VorbisUtils.h',
+]
+
+EXPORTS.mozilla.dom += [
+    'AudioStreamTrack.h',
+    'MediaStreamTrack.h',
+    'TextTrack.h',
+    'TextTrackCue.h',
+    'TextTrackCueList.h',
+    'TextTrackList.h',
+    'TextTrackRegion.h',
+    'TextTrackRegionList.h',
+    'VideoPlaybackQuality.h',
+    'VideoStreamTrack.h',
+]
+
+SOURCES += [
+    'AudioAvailableEventManager.cpp',
+    'AudioChannelFormat.cpp',
+    'AudioNodeEngine.cpp',
+    'AudioNodeExternalInputStream.cpp',
+    'AudioNodeStream.cpp',
+    'AudioSegment.cpp',
+    'AudioStream.cpp',
+    'AudioStreamTrack.cpp',
+    'BufferDecoder.cpp',
+    'DecoderTraits.cpp',
+    'DOMMediaStream.cpp',
+    'EncodedBufferCache.cpp',
+    'FileBlockCache.cpp',
+    'Latency.cpp',
+    'MediaCache.cpp',
+    'MediaDecoder.cpp',
+    'MediaDecoderReader.cpp',
+    'MediaDecoderStateMachine.cpp',
+    'MediaRecorder.cpp',
+    'MediaResource.cpp',
+    'MediaStreamGraph.cpp',
+    'MediaStreamTrack.cpp',
+    'MP3FrameParser.cpp',
+    'RtspMediaResource.cpp',
+    'StreamBuffer.cpp',
+    'TextTrack.cpp',
+    'TextTrackCue.cpp',
+    'TextTrackCueList.cpp',
+    'TextTrackList.cpp',
+    'TextTrackRegion.cpp',
+    'TextTrackRegionList.cpp',
+    'VideoFrameContainer.cpp',
+    'VideoPlaybackQuality.cpp',
+    'VideoSegment.cpp',
+    'VideoStreamTrack.cpp',
+    'VideoUtils.cpp',
+    'WebVTTListener.cpp',
+]
+
+FAIL_ON_WARNINGS = True
+
+if CONFIG['CPU_ARCH'] == 'arm' and CONFIG['BUILD_ARM_NEON']:
+    SOURCES += [
+        'AudioNodeEngineNEON.cpp',
+    ]
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'gkconmedia_s'
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

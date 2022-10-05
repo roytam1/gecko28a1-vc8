@@ -1,0 +1,69 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'widget'
+
+EXPORTS += [
+    'APZCCallbackHelper.h',
+    'GfxInfoCollector.h',
+]
+
+SOURCES += [
+    'APZCCallbackHelper.cpp',
+    'GfxDriverInfo.cpp',
+    'GfxInfoBase.cpp',
+    'GfxInfoCollector.cpp',
+    'GfxInfoWebGL.cpp',
+    'InputData.cpp',
+    'nsBaseAppShell.cpp',
+    'nsBaseDragService.cpp',
+    'nsBaseScreen.cpp',
+    'nsBaseWidget.cpp',
+    'nsClipboardHelper.cpp',
+    'nsClipboardPrivacyHandler.cpp',
+    'nsFilePickerProxy.cpp',
+    'nsHTMLFormatConverter.cpp',
+    'nsIdleService.cpp',
+    'nsIWidgetListener.cpp',
+    'nsPrimitiveHelpers.cpp',
+    'nsPrintOptionsImpl.cpp',
+    'nsPrintSession.cpp',
+    'nsPrintSettingsImpl.cpp',
+    'nsTransferable.cpp',
+    'nsXPLookAndFeel.cpp',
+    'PuppetWidget.cpp',
+    'WidgetUtils.cpp',
+]
+
+if CONFIG['MOZ_X11']:
+    SOURCES += [
+        'GfxInfoX11.cpp'
+    ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('os2', 'cocoa', 'windows'):
+    SOURCES += [
+        'nsBaseClipboard.cpp',
+    ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('qt', 'gtk2', 'gtk3', 'os2', 'cocoa', 'windows',
+                                    'android', 'gonk'):
+    SOURCES += [
+        'nsBaseFilePicker.cpp',
+    ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('qt', 'gtk2', 'gtk3', 'windows', 'cocoa'):
+    SOURCES += [
+        'nsNativeTheme.cpp',
+    ]
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'xpwidgets_s'
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

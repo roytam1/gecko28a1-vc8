@@ -1,0 +1,108 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+TEST_DIRS += ['test']
+
+MODULE = 'layout'
+
+EXPORTS += [
+    'nsCanvasFrame.h',
+    'nsDirection.h',
+    'nsFrameIdList.h',
+    'nsFrameList.h',
+    'nsFrameSelection.h',
+    'nsHTMLParts.h',
+    'nsHTMLReflowMetrics.h',
+    'nsHTMLReflowState.h',
+    'nsIAnonymousContentCreator.h',
+    'nsIFrame.h',
+    'nsIFrameInlines.h',
+    'nsIFrameUtil.h',
+    'nsILineIterator.h',
+    'nsIObjectFrame.h',
+    'nsIPageSequenceFrame.h',
+    'nsIScrollableFrame.h',
+    'nsIScrollbarOwner.h',
+    'nsIScrollPositionListener.h',
+    'nsIStatefulFrame.h',
+    'nsObjectFrame.h',
+    'nsQueryFrame.h',
+    'nsSubDocumentFrame.h',
+    'ScrollbarActivity.h',
+    'Selection.h',
+]
+
+EXPORTS.mozilla += [
+    'Selection.h',
+]
+
+EXPORTS.mozilla.layout += [
+    'FrameChildList.h',
+]
+
+SOURCES += [
+    'FrameChildList.cpp',
+    'nsAbsoluteContainingBlock.cpp',
+    'nsBlockFrame.cpp',
+    'nsBlockReflowContext.cpp',
+    'nsBlockReflowState.cpp',
+    'nsBRFrame.cpp',
+    'nsBulletFrame.cpp',
+    'nsCanvasFrame.cpp',
+    'nsColumnSetFrame.cpp',
+    'nsContainerFrame.cpp',
+    'nsFirstLetterFrame.cpp',
+    'nsFlexContainerFrame.cpp',
+    'nsFloatManager.cpp',
+    'nsFontInflationData.cpp',
+    'nsFrame.cpp',
+    'nsFrameList.cpp',
+    'nsFrameSetFrame.cpp',
+    'nsFrameUtil.cpp',
+    'nsGfxScrollFrame.cpp',
+    'nsHTMLCanvasFrame.cpp',
+    'nsHTMLReflowMetrics.cpp',
+    'nsHTMLReflowState.cpp',
+    'nsImageFrame.cpp',
+    'nsImageMap.cpp',
+    'nsInlineFrame.cpp',
+    'nsIntervalSet.cpp',
+    'nsLeafFrame.cpp',
+    'nsLineBox.cpp',
+    'nsLineLayout.cpp',
+    'nsObjectFrame.cpp',
+    'nsPageContentFrame.cpp',
+    'nsPageFrame.cpp',
+    'nsPlaceholderFrame.cpp',
+    'nsSelection.cpp',
+    'nsSimplePageSequence.cpp',
+    'nsSplittableFrame.cpp',
+    'nsSubDocumentFrame.cpp',
+    'nsTextFrame.cpp',
+    'nsTextFrameUtils.cpp',
+    'nsTextRunTransformations.cpp',
+    'nsVideoFrame.cpp',
+    'nsViewportFrame.cpp',
+    'ScrollbarActivity.cpp',
+    'StickyScrollContainer.cpp',
+    'TextOverflow.cpp',
+]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
+    SOURCES += [
+        'nsPluginUtilsOSX.mm',
+    ]
+
+FAIL_ON_WARNINGS = not CONFIG['_MSC_VER']
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'gkgeneric_s'
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

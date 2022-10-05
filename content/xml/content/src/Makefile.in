@@ -1,0 +1,19 @@
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+include $(topsrcdir)/config/rules.mk
+
+INCLUDES	+= \
+		-I$(srcdir)/../../../base/src \
+		$(NULL)
+
+EXPORT_RESOURCE_CONTENT = \
+		$(srcdir)/htmlmathml-f.ent \
+		$(NULL)
+libs::
+	$(INSTALL) $(EXPORT_RESOURCE_CONTENT) $(DIST)/bin/res/dtd
+
+install::
+	$(SYSINSTALL) $(IFLAGS1) $(EXPORT_RESOURCE_CONTENT) $(DESTDIR)$(mozappdir)/res/dtd

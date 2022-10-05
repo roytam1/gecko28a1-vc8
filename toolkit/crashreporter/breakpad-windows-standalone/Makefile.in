@@ -1,0 +1,28 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+USE_STATIC_LIBS = 1
+MOZ_GLUE_LDFLAGS =
+
+STL_FLAGS =
+
+LOCAL_INCLUDES = -I$(topsrcdir)/toolkit/crashreporter/google-breakpad/src
+
+include $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/common/windows/objs.mk
+include $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/client/windows/handler/objs.mk
+include $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/client/windows/crash_generation/objs.mk
+
+VPATH += \
+  $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/common/windows \
+  $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/client/windows/handler \
+  $(topsrcdir)/toolkit/crashreporter/google-breakpad/src/client/windows/crash_generation \
+  $(NULL)
+
+DEFINES += -DUNICODE -DUNICODE_ -DBREAKPAD_NO_TERMINATE_THREAD -DNOMINMAX
+
+CPPSRCS += \
+  $(objs_common) \
+  $(objs_crash_generation) \
+  $(objs_handler) \
+  $(NULL)

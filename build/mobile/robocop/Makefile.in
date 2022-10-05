@@ -1,0 +1,95 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+mobile-tests := mobile/android/base/tests
+TESTPATH     := $(topsrcdir)/$(mobile-tests)
+dir-tests    := $(DEPTH)/$(mobile-tests)
+
+ANDROID_APK_NAME := robocop-debug
+
+ANDROID_EXTRA_JARS += \
+  $(srcdir)/robotium-solo-4.3.jar \
+  $(NULL)
+
+ANDROID_ASSETS_DIR := $(TESTPATH)/assets
+
+_JAVA_HARNESS := \
+  Actions.java \
+  Assert.java \
+  Driver.java \
+  Element.java \
+  FennecInstrumentationTestRunner.java \
+  FennecNativeActions.java \
+  FennecMochitestAssert.java \
+  FennecTalosAssert.java \
+  FennecNativeDriver.java \
+  FennecNativeElement.java \
+  RoboCopException.java \
+  RobocopUtils.java \
+  PaintedSurface.java \
+  $(NULL)
+
+# pre-process harness sources
+PP_TARGETS        += java-harness
+java-harness      := $(addprefix $(srcdir)/,$(addsuffix .in,$(_JAVA_HARNESS)))
+java-harness-dep  := $(addprefix $(CURDIR)/,$(_JAVA_HARNESS))
+java-harness_PATH := $(CURDIR)
+
+# pre-process test sources
+PP_TARGETS      += java-tests
+java-tests-src  := $(wildcard $(TESTPATH)/*.java.in)
+java-tests-dep  := $(patsubst $(TESTPATH)/%.java.in,$(dir-tests)/%.java,$(java-tests-src))
+java-tests      := $(java-tests-src)
+java-tests_PATH := $(dir-tests)
+
+PP_TARGETS        += manifest
+manifest          := $(srcdir)/AndroidManifest.xml.in
+manifest_TARGET   := AndroidManifest.xml
+
+# Install robocop configs and helper
+INSTALL_TARGETS += robocop
+robocop_TARGET  := libs
+robocop_DEST    := $(CURDIR)
+robocop_FILES   := \
+  $(TESTPATH)/robocop.ini \
+  $(TESTPATH)/robocop_autophone.ini \
+  $(NULL)
+robocop-deps := $(notdir $(robocop_FILES))
+
+MOCHITEST_ROBOCOP_FILES := \
+  $(wildcard $(TESTPATH)/*.html) \
+  $(wildcard $(TESTPATH)/*.jpg) \
+  $(wildcard $(TESTPATH)/*.sjs) \
+  $(wildcard $(TESTPATH)/test*.js) \
+  $(wildcard $(TESTPATH)/robocop*.js) \
+  $(wildcard $(TESTPATH)/*.xml) \
+  $(NULL)
+
+GARBAGE += \
+  AndroidManifest.xml \
+  $(java-tests-dep) \
+  $(java-harness-dep) \
+  $(robocop-deps) \
+  $(NULL)
+
+JAVAFILES += \
+  $(robocop-deps) \
+  $(java-harness-dep) \
+  $(java-tests-dep) \
+  $(NULL)
+
+DEFINES += \
+  -DANDROID_PACKAGE_NAME=$(ANDROID_PACKAGE_NAME) \
+  $(NULL)
+
+include $(topsrcdir)/config/rules.mk
+
+tools:: $(ANDROID_APK_NAME).apk
+
+GENERATED_DIRS += $(dir-tests)
+
+# PP_java-tests not fully usable here
+# Intermediate step toward a library rule.
+$(dir-tests)/%.java: $(TESTPATH)/%.java.in $(call mkdir_deps,$(dir-tests))
+	$(PYTHON) $(topsrcdir)/config/Preprocessor.py $(DEFINES) $< > $@

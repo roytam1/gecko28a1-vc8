@@ -1,0 +1,25 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+include $(topsrcdir)/config/rules.mk
+
+ifdef MOZ_OMX_DECODER
+DEFINES += -DMOZ_OMX_DECODER
+endif
+
+LOCAL_INCLUDES  += \
+  -I$(topsrcdir)/content/base/src \
+  -I$(topsrcdir)/layout/generic \
+  -I$(topsrcdir)/layout/xul/base/src \
+  $(NULL)
+
+ifdef MOZ_DIRECTSHOW
+LOCAL_INCLUDES += -I$(topsrcdir)/media/webrtc/trunk/webrtc/modules/video_capture/windows/
+endif
+
+CFLAGS   += $(GSTREAMER_CFLAGS)
+CXXFLAGS += $(GSTREAMER_CFLAGS)
+DEFINES  += -DMOZILLA_INTERNAL_API
+
+AudioNodeEngineNEON.$(OBJ_SUFFIX): CXXFLAGS += -mfpu=neon

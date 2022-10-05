@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<bindings id="firefoxBrowserBindings"
+          xmlns="http://www.mozilla.org/xbl"
+          xmlns:xul="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <binding id="remote-browser" extends="chrome://global/content/bindings/browser.xml#browser">
+
+    <implementation type="application/javascript" implements="nsIObserver, nsIDOMEventListener, nsIMessageListener, nsIMessageListener">
+
+      <field name="_securityUI">null</field>
+
+      <property name="securityUI"
+                readonly="true">
+        <getter><![CDATA[
+          if (!this._securityUI) {
+            let jsm = "resource://gre/modules/RemoteSecurityUI.jsm";
+            let RemoteSecurityUI = Components.utils.import(jsm, {}).RemoteSecurityUI;
+            this._securityUI = new RemoteSecurityUI();
+          }
+
+          // We want to double-wrap the JS implemented interface, so that QI and instanceof works.
+          var ptr = Cc["@mozilla.org/supports-interface-pointer;1"].
+                        createInstance(Ci.nsISupportsInterfacePointer);
+          ptr.data = this._securityUI;
+          return ptr.data.QueryInterface(Ci.nsISecureBrowserUI);
+        ]]></getter>
+      </property>
+
+      <field name="_remoteWebNavigation">null</field>
+
+      <property name="webNavigation" readonly="true">
+        <getter>
+          <![CDATA[
+            if (!this._remoteWebNavigation) {
+              let jsm = "resource://gre/modules/RemoteWebNavigation.jsm";
+              let RemoteWebNavigation = Cu.import(jsm, {}).RemoteWebNavigation;
+              this._remoteWebNavigation = new RemoteWebNavigation(this);
+            }
+            return this._remoteWebNavigation;
+          ]]>
+        </getter>
+      </property>
+
+      <field name="_remoteWebProgress">null</field>
+
+      <property name="webProgress" readonly="true">
+      	<getter>
+      	  <![CDATA[
+            if (!this._remoteWebProgress) {
+              let jsm = "resource://gre/modules/RemoteWebProgress.jsm";
+              let RemoteWebProgressManager = Cu.import(jsm, {}).RemoteWebProgressManager;
+              this._remoteWebProgress = new RemoteWebProgressManager(this)
+                                         .topLevelWebProgress;
+            }
+            return this._remoteWebProgress;
+      	  ]]>
+      	</getter>
+      </property>
+
+      <field name="_remoteFinder">null</field>
+
+      <property name="finder" readonly="true">
+        <getter><![CDATA[
+          if (!this._remoteFinder) {
+            let jsm = "resource://gre/modules/RemoteFinder.jsm";
+            let RemoteFinder = Cu.import(jsm, {}).RemoteFinder;
+            this._remoteFinder = new RemoteFinder(this);
+          }
+          return this._remoteFinder;
+        ]]></getter>
+      </property>
+
+      <field name="_documentURI">null</field>
+
+      <property name="documentURI"
+                onget="return this._documentURI;"
+                readonly="true"/>
+
+      <field name="_contentTitle">""</field>
+
+      <property name="contentTitle"
+                onget="return this._contentTitle"
+                readonly="true"/>
+
+      <field name="_characterSet">null</field>
+
+      <property name="characterSet"
+                onget="return this._characterSet"
+                readonly="true"/>
+
+      <field name="_contentWindow">null</field>
+
+      <property name="contentWindow"
+                onget="return this._contentWindow"
+                readonly="true"/>
+
+      <property name="contentDocument"
+                onget="return this.contentWindow ? this.contentWindow.document : null"
+                readonly="true"/>
+
+      <field name="_imageDocument">null</field>
+
+      <property name="imageDocument"
+                onget="return this._imageDocument"
+                readonly="true"/>
+
+      <constructor>
+        <![CDATA[
+          this.messageManager.addMessageListener("DOMTitleChanged", this);
+          this.messageManager.addMessageListener("ImageDocumentLoaded", this);
+          this.messageManager.loadFrameScript("chrome://global/content/browser-child.js", true);
+
+          if (this.hasAttribute("selectpopup")) {
+            this.messageManager.addMessageListener("Forms:ShowDropDown", this);
+            this.messageManager.addMessageListener("Forms:HideDropDown", this);
+            this.messageManager.loadFrameScript("chrome://global/content/select-child.js", true);
+          }
+
+          let jsm = "resource://gre/modules/RemoteController.jsm";
+          let RemoteController = Components.utils.import(jsm, {}).RemoteController;
+          this._controller = new RemoteController(this);
+          this.controllers.appendController(this._controller);
+
+          jsm = "resource://gre/modules/RemoteAddonsParent.jsm";
+          let RemoteAddonsParent = Components.utils.import(jsm, {}).RemoteAddonsParent;
+          RemoteAddonsParent.init();
+        ]]>
+      </constructor>
+
+      <method name="receiveMessage">
+        <parameter name="aMessage"/>
+        <body><![CDATA[
+          let data = aMessage.data;
+          switch (aMessage.name) {
+            case "DOMTitleChanged":
+              this._contentTitle = data.title;
+              break;
+            case "ImageDocumentLoaded":
+              this._imageDocument = {
+                width: data.width,
+                height: data.height
+              };
+              break;
+
+            case "Forms:ShowDropDown": {
+              Cu.import("resource://gre/modules/SelectParentHelper.jsm");
+              let dropdown = document.getElementById(this.getAttribute("selectpopup"));
+              SelectParentHelper.populate(dropdown, data.options, data.selectedIndex);
+              SelectParentHelper.open(this, dropdown, data.rect);
+              break;
+            }
+
+            case "Forms:HideDropDown": {
+              Cu.import("resource://gre/modules/SelectParentHelper.jsm");
+              let dropdown = document.getElementById(this.getAttribute("selectpopup"));
+              SelectParentHelper.hide(dropdown);
+            }
+          }
+        ]]></body>
+      </method>
+
+    </implementation>
+
+  </binding>
+
+</bindings>

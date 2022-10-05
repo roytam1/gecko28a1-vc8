@@ -1,0 +1,62 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'dom'
+
+EXPORTS.mozilla += [
+    'ErrorResult.h',
+]
+
+EXPORTS.mozilla.dom += [
+    'AtomList.h',
+    'BindingDeclarations.h',
+    'BindingUtils.h',
+    'CallbackFunction.h',
+    'CallbackInterface.h',
+    'CallbackObject.h',
+    'Date.h',
+    'DOMJSClass.h',
+    'DOMJSProxyHandler.h',
+    'DOMString.h',
+    'Errors.msg',
+    'Exceptions.h',
+    'JSSlots.h',
+    'NonRefcountedDOMObject.h',
+    'Nullable.h',
+    'OwningNonNull.h',
+    'PrimitiveConversions.h',
+    'RootedDictionary.h',
+    'TypedArray.h',
+    'UnionMember.h',
+]
+
+FAIL_ON_WARNINGS = True
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'dombindings_s'
+
+EXPORT_LIBRARY = True
+
+LOCAL_INCLUDES += [
+    '../bluetooth',
+    '../camera',
+    '../file',
+    '../src/geolocation',
+    '../workers',
+    '/content/base/src',
+    '/content/events/src',
+    '/content/html/document/src',
+    '/content/media/webaudio',
+    '/content/svg/content/src',
+    '/content/xbl/src',
+    '/layout/style',
+    '/layout/xul/tree',
+]
+
+include('/ipc/chromium/chromium-config.mozbuild')

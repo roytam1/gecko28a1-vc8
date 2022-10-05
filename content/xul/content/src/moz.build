@@ -1,0 +1,35 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'xul'
+
+if CONFIG['MOZ_XUL']:
+    LIBXUL_LIBRARY = True
+    MSVC_ENABLE_PGO = True
+
+    SOURCES += [
+        'nsXULContextMenuBuilder.cpp',
+        'nsXULElement.cpp',
+        'nsXULPopupListener.cpp',
+    ]
+    LIBRARY_NAME = 'gkconxulcon_s'
+
+FAIL_ON_WARNINGS = True
+
+LOCAL_INCLUDES += [
+    '../../document/src',
+    '../../templates/src',
+    '/content/base/src',
+    '/content/events/src',
+    '/content/html/content/src',
+    '/content/xbl/src',
+    '/content/xml/content/src',
+    '/content/xml/document/src',
+    '/layout/generic',
+    '/layout/style',
+    '/layout/xul/base/src',
+    '/xpcom/ds',
+]

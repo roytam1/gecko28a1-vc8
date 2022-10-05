@@ -1,0 +1,25 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'xpcom'
+
+include('../objs.mozbuild')
+
+SOURCES += xpcom_gluens_src_cppsrcs
+SOURCES += xpcom_glue_src_cppsrcs
+
+SOURCES += [
+    '../GenericModule.cpp',
+    '../nsStringAPI.cpp',
+]
+
+LIBRARY_NAME = 'xpcomglue_staticruntime_s'
+
+SDK_LIBRARY = [
+    "%s%s.%s" % (CONFIG['LIB_PREFIX'], 'xpcomglue_staticruntime_s', CONFIG['LIB_SUFFIX']),
+]
+
+FORCE_STATIC_LIB = True

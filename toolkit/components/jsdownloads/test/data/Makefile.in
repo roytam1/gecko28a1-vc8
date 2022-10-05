@@ -1,0 +1,12 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+FILES = \
+	empty.txt \
+	source.txt \
+	$(NULL)
+
+include $(topsrcdir)/config/rules.mk
+
+libs:: $(FILES)
+	$(INSTALL) $(foreach f,$^,"$f") $(DEPTH)/_tests/xpcshell/$(relativesrcdir)

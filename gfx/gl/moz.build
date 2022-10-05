@@ -1,0 +1,124 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'gl'
+
+gl_provider = 'Null'
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
+    gl_provider = 'WGL'
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
+    gl_provider = 'CGL'
+elif CONFIG['MOZ_WIDGET_GTK']:
+    if CONFIG['MOZ_EGL_XRENDER_COMPOSITE']:
+        gl_provider = 'EGL'
+    else:
+        gl_provider = 'GLX'
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'qt':
+    gl_provider = 'GLX'
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
+    gl_provider = 'EGL'
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+    gl_provider = 'EGL'
+
+if CONFIG['MOZ_GL_PROVIDER']:
+    gl_provider = CONFIG['MOZ_GL_PROVIDER']
+
+EXPORTS += [
+    'ForceDiscreteGPUHelperCGL.h',
+    'GfxTexturesReporter.h',
+    'GLConsts.h',
+    'GLContext.h',
+    'GLContextProvider.h',
+    'GLContextProviderImpl.h',
+    'GLContextSymbols.h',
+    'GLContextTypes.h',
+    'GLDefs.h',
+    'GLLibraryEGL.h',
+    'GLLibraryLoader.h',
+    'GLScreenBuffer.h',
+    'GLTextureImage.h',
+    'GLTypes.h',
+    'SharedSurface.h',
+    'SharedSurfaceEGL.h',
+    'SharedSurfaceGL.h',
+    'SurfaceFactory.h',
+    'SurfaceStream.h',
+    'SurfaceTypes.h',
+    'TextureGarbageBin.h',
+    'VBOArena.h',
+]
+
+if CONFIG['MOZ_X11']:
+    EXPORTS += ['GLXLibrary.h']
+
+# Win32 is a special snowflake, for ANGLE
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
+    EXPORTS += [
+        'SharedSurfaceANGLE.h',
+        'WGLLibrary.h',
+    ]
+    SOURCES += [
+        'GLContextProviderEGL.cpp',
+        'SharedSurfaceANGLE.cpp',
+    ]
+if CONFIG['MOZ_ENABLE_SKIA_GPU']:
+    EXPORTS += ['GLContextSkia.h']
+    SOURCES += [
+        'GLContextSkia.cpp',
+    ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gonk':
+    SOURCES += ['SharedSurfaceGralloc.cpp']
+    EXPORTS += ['SharedSurfaceGralloc.h']
+
+if gl_provider == 'CGL':
+    SOURCES += [
+        "GLContextProvider%s.mm" % (gl_provider),
+    ]
+    EXPORTS += [
+        'SharedSurfaceIO.h',
+    ]
+    SOURCES += [
+        'SharedSurfaceIO.cpp',
+    ]
+else:
+    SOURCES += [
+        'GLContextProvider%s.cpp' % gl_provider,
+    ]
+
+SOURCES += [
+    'GfxTexturesReporter.cpp',
+    'GLContext.cpp',
+    'GLContextFeatures.cpp',
+    'GLContextTypes.cpp',
+    'GLContextUtils.cpp',
+    'GLLibraryEGL.cpp',
+    'GLLibraryLoader.cpp',
+    'GLScreenBuffer.cpp',
+    'GLTextureImage.cpp',
+    'SharedSurface.cpp',
+    'SharedSurfaceEGL.cpp',
+    'SharedSurfaceGL.cpp',
+    'SurfaceFactory.cpp',
+    'SurfaceStream.cpp',
+    'TextureGarbageBin.cpp',
+    'TextureImageEGL.cpp',
+    'VBOArena.cpp',
+]
+
+FAIL_ON_WARNINGS = True
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'gl'
+
+EXPORT_LIBRARY = True
+
+include('/ipc/chromium/chromium-config.mozbuild')
+

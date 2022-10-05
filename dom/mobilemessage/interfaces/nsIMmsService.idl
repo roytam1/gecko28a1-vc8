@@ -1,0 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+interface nsIMobileMessageCallback;
+interface nsIDOMBlob;
+
+%{C++
+#define MMS_SERVICE_CID { 0x06d9124b, 0x80e0, 0x40ed, \
+  { 0x98, 0x71, 0x4d, 0x23, 0x4a, 0x0f, 0xd4, 0x31 } }
+#define MMS_SERVICE_CONTRACTID "@mozilla.org/mms/mmsservice;1"
+%}
+
+[scriptable, uuid(5dc8b3bc-c3a9-45ea-8ee0-7562b0e57257)]
+interface nsIMmsService : nsISupports
+{
+  readonly attribute unsigned long mmsDefaultServiceId;
+
+  void send(in jsval parameters /* MmsParameters */,
+            in nsIMobileMessageCallback request);
+
+  void retrieve(in long id,
+                in nsIMobileMessageCallback request);
+};

@@ -1,0 +1,62 @@
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+MODULE = 'xpconnect'
+
+EXPORTS += [
+    'BackstagePass.h',
+    'nsCxPusher.h',
+    'qsObjectHelper.h',
+    'XPCJSMemoryReporter.h',
+    'xpcObjectHelper.h',
+    'xpcpublic.h',
+]
+
+SOURCES += [
+    'nsCxPusher.cpp',
+    'nsScriptError.cpp',
+    'nsXPConnect.cpp',
+    'Sandbox.cpp',
+    'XPCCallContext.cpp',
+    'XPCComponents.cpp',
+    'XPCContext.cpp',
+    'XPCConvert.cpp',
+    'XPCDebug.cpp',
+    'XPCException.cpp',
+    'XPCJSContextStack.cpp',
+    'XPCJSID.cpp',
+    'XPCJSRuntime.cpp',
+    'XPCJSWeakReference.cpp',
+    'XPCLocale.cpp',
+    'XPCLog.cpp',
+    'XPCMaps.cpp',
+    'XPCModule.cpp',
+    'XPCQuickStubs.cpp',
+    'XPCRuntimeService.cpp',
+    'XPCShellImpl.cpp',
+    'XPCString.cpp',
+    'XPCThrower.cpp',
+    'XPCVariant.cpp',
+    'XPCWrappedJS.cpp',
+    'XPCWrappedJSClass.cpp',
+    'XPCWrappedNative.cpp',
+    'XPCWrappedNativeInfo.cpp',
+    'XPCWrappedNativeJSOps.cpp',
+    'XPCWrappedNativeProto.cpp',
+    'XPCWrappedNativeScope.cpp',
+    'XPCWrapper.cpp',
+]
+
+FAIL_ON_WARNINGS = True
+
+LIBXUL_LIBRARY = True
+
+MSVC_ENABLE_PGO = True
+
+LIBRARY_NAME = 'xpconnect_s'
+
+include('/ipc/chromium/chromium-config.mozbuild')
+
