@@ -13,6 +13,11 @@
 #define EGLAPI
 #include <EGL/egl.h>
 
+#if _MSC_VER <= 1400
+#define _interlockedbittestandreset _interlockedbittestandreset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
+#define _interlockedbittestandset _interlockedbittestandset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
+#endif
+
 #include <assert.h>
 #include <cstddef>
 #include <float.h>
