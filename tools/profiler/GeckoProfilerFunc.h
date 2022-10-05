@@ -8,7 +8,7 @@
 
 #include "mozilla/NullPtr.h"
 #include "js/TypeDecls.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 class TimeDuration;

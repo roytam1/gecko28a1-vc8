@@ -6,7 +6,7 @@
 #ifndef GFX_LAYERS_H
 #define GFX_LAYERS_H
 
-#include <stdint.h>                     // for uint32_t, uint64_t, uint8_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint64_t, uint8_t
 #include <stdio.h>                      // for FILE
 #include <sys/types.h>                  // for int32_t, int64_t
 #include "FrameMetrics.h"               // for FrameMetrics

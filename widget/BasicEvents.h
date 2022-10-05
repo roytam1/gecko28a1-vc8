@@ -6,7 +6,7 @@
 #ifndef mozilla_BasicEvents_h__
 #define mozilla_BasicEvents_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/dom/EventTarget.h"
 #include "nsCOMPtr.h"

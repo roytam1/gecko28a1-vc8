@@ -6,7 +6,7 @@
 #ifndef _NS_DEVICECONTEXT_H_
 #define _NS_DEVICECONTEXT_H_
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <sys/types.h>                  // for int32_t
 #include "gfxTypes.h"                   // for gfxFloat
 #include "mozilla/Assertions.h"         // for MOZ_ASSERT_HELPER2

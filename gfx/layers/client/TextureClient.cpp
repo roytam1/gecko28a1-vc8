@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/TextureClient.h"
-#include <stdint.h>                     // for uint8_t, uint32_t, etc
+#include "mozilla/StandardInteger.h"    // for uint8_t, uint32_t, etc
 #include "Layers.h"                     // for Layer, etc
 #include "gfxContext.h"                 // for gfxContext, etc
 #include "gfxPlatform.h"                // for gfxPlatform

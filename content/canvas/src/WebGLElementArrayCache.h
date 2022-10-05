@@ -7,7 +7,7 @@
 #define WEBGLELEMENTARRAYCACHE_H
 
 #include "mozilla/MemoryReporting.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nscore.h"
 #include "GLDefs.h"
 

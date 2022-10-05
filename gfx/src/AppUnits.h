@@ -6,7 +6,7 @@
 #ifndef mozilla_AppUnits_h
 #define mozilla_AppUnits_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 inline int32_t AppUnitsPerCSSPixel() { return 60; }

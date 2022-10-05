@@ -50,7 +50,7 @@
 #elif HAVE_SYS_INT_TYPES_H
 # include <sys/int_types.h>
 #elif defined(_MSC_VER)
-# include <stdint.h>
+# include "mozilla/StandardInteger.h"
 #ifndef _UINTPTR_T_DEFINED
 #ifdef _WIN64
   typedef unsigned __int64 uintptr_t;

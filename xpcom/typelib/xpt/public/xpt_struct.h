@@ -12,7 +12,7 @@
 #define __xpt_struct_h__
 
 #include "xpt_arena.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef __cplusplus
 extern "C" {

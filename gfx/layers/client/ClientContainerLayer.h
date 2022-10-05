@@ -6,7 +6,7 @@
 #ifndef GFX_CLIENTCONTAINERLAYER_H
 #define GFX_CLIENTCONTAINERLAYER_H
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "ClientLayerManager.h"         // for ClientLayerManager, etc
 #include "Layers.h"                     // for Layer, ContainerLayer, etc
 #include "gfx3DMatrix.h"                // for gfx3DMatrix

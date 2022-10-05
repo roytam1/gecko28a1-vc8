@@ -6,7 +6,7 @@
 #ifndef GFX_READBACKPROCESSOR_H
 #define GFX_READBACKPROCESSOR_H
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include "nsRect.h"                     // for nsIntRect
 #include "nsTArray.h"                   // for nsTArray
  

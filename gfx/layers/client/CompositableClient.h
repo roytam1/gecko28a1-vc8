@@ -6,7 +6,7 @@
 #ifndef MOZILLA_GFX_BUFFERCLIENT_H
 #define MOZILLA_GFX_BUFFERCLIENT_H
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include <vector>                       // for vector
 #include <map>                          // for map
 #include "mozilla/Assertions.h"         // for MOZ_CRASH

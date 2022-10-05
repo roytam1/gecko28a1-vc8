@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_TaskThrottler_h
 #define mozilla_dom_TaskThrottler_h
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "base/task.h"                  // for CancelableTask
 #include "mozilla/TimeStamp.h"          // for TimeDuration, TimeStamp
 #include "mozilla/mozalloc.h"           // for operator delete

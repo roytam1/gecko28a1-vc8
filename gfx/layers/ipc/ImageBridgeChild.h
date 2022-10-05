@@ -7,7 +7,7 @@
 #define MOZILLA_GFX_IMAGEBRIDGECHILD_H
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint32_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint64_t
 #include "gfxPoint.h"                   // for gfxIntSize
 #include "mozilla/Attributes.h"         // for MOZ_OVERRIDE
 #include "mozilla/RefPtr.h"             // for TemporaryRef

@@ -5,7 +5,7 @@
 
 #include "LayerSorter.h"
 #include <math.h>                       // for fabs
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <stdio.h>                      // for fprintf, stderr, FILE
 #include <stdlib.h>                     // for getenv
 #include "DirectedGraph.h"              // for DirectedGraph

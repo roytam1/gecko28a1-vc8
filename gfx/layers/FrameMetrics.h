@@ -6,7 +6,7 @@
 #ifndef GFX_FRAMEMETRICS_H
 #define GFX_FRAMEMETRICS_H
 
-#include <stdint.h>                     // for uint32_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint64_t
 #include "Units.h"                      // for CSSRect, CSSPixel, etc
 #include "mozilla/gfx/BasePoint.h"      // for BasePoint
 #include "mozilla/gfx/Rect.h"           // for RoundedIn

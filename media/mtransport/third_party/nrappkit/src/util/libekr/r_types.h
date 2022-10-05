@@ -89,7 +89,7 @@
 #ifdef R_PLATFORM_INT_TYPES
 #include R_PLATFORM_INT_TYPES
 #else
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #endif
 
 #ifndef R_DEFINED_INT2

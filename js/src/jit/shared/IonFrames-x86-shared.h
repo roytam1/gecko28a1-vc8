@@ -7,7 +7,7 @@
 #ifndef jit_shared_IonFrames_x86_shared_h
 #define jit_shared_IonFrames_x86_shared_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jit/shared/IonFrames-shared.h"
 

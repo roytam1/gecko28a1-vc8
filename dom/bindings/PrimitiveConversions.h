@@ -13,7 +13,7 @@
 
 #include <limits>
 #include <math.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jsapi.h"
 #include "mozilla/Assertions.h"

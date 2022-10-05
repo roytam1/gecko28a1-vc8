@@ -7,7 +7,7 @@
 #define SURFACE_TYPES_H_
 
 #include "mozilla/TypedEnum.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include <cstring>
 

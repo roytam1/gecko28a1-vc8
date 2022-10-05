@@ -18,7 +18,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Util.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <string.h>
 
 namespace mozilla {

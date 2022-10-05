@@ -16,7 +16,7 @@
 #endif
 #include "mozilla/Util.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "nsID.h"
 #include "nsMemory.h"

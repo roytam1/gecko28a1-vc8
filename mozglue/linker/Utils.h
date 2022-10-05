@@ -5,7 +5,7 @@
 #ifndef Utils_h
 #define Utils_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stddef.h>
 #include <sys/mman.h>
 #include <unistd.h>

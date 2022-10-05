@@ -9,7 +9,7 @@
 #define MOZILLA_LAYERS_LAYERTRANSACTIONPARENT_H
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint64_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint64_t, uint32_t
 #include "CompositableTransactionParent.h"
 #include "gfxPoint.h"                   // for gfxIntSize
 #include "mozilla/Attributes.h"         // for MOZ_OVERRIDE

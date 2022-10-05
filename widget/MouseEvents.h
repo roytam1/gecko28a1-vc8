@@ -6,7 +6,7 @@
 #ifndef mozilla_MouseEvents_h__
 #define mozilla_MouseEvents_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/MathAlgorithms.h"

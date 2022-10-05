@@ -7,7 +7,7 @@
 #define nsColor_h___
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint8_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint8_t, uint32_t
 #include "gfxCore.h"                    // for NS_GFX_
 #include "nscore.h"                     // for nsAString
 

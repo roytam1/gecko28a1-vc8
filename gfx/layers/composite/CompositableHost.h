@@ -6,7 +6,7 @@
 #ifndef MOZILLA_GFX_BUFFERHOST_H
 #define MOZILLA_GFX_BUFFERHOST_H
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include <stdio.h>                      // for FILE
 #include "gfxPoint.h"                   // for gfxSize
 #include "gfxRect.h"                    // for gfxRect

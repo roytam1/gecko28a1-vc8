@@ -6,7 +6,7 @@
 #define SHAREDRGBIMAGE_H_
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint8_t
+#include "mozilla/StandardInteger.h"    // for uint8_t
 #include "ImageContainer.h"             // for ISharedImage, Image, etc
 #include "gfxTypes.h"
 #include "gfxPoint.h"                   // for gfxIntSize

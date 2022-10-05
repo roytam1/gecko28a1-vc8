@@ -9,7 +9,7 @@
 
 #include "limits.h"
 #include "mozilla/Assertions.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #define BLOCKSIZE 4096
 #define ROUND_UP(n, incr) (((n) / (incr) + 1) * (incr))

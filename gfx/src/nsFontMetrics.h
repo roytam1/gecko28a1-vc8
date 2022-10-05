@@ -6,7 +6,7 @@
 #ifndef NSFONTMETRICS__H__
 #define NSFONTMETRICS__H__
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <sys/types.h>                  // for int32_t
 #include "gfxFont.h"                    // for gfxFont, gfxFontGroup
 #include "mozilla/Assertions.h"         // for MOZ_ASSERT_HELPER2

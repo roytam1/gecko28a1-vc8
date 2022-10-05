@@ -24,7 +24,7 @@
  * Incorporate the integer data types which XPCOM uses.
  */
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/NullPtr.h"
 

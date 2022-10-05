@@ -7,7 +7,7 @@
 #ifndef nsHttp_h__
 #define nsHttp_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "prtime.h"
 #include "nsString.h"
 #include "nsError.h"

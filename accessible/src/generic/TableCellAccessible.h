@@ -8,7 +8,7 @@
 #define mozilla_a11y_TableCellAccessible_h__
 
 #include "nsTArray.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 namespace a11y {

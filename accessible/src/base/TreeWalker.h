@@ -6,7 +6,7 @@
 #ifndef mozilla_a11y_TreeWalker_h_
 #define mozilla_a11y_TreeWalker_h_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 class nsIContent;
 

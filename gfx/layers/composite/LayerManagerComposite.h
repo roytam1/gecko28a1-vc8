@@ -6,7 +6,7 @@
 #ifndef GFX_LayerManagerComposite_H
 #define GFX_LayerManagerComposite_H
 
-#include <stdint.h>                     // for int32_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for int32_t, uint32_t
 #include "GLDefs.h"                     // for GLenum
 #include "Layers.h"
 #include "gfx3DMatrix.h"                // for gfx3DMatrix

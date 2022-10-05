@@ -50,7 +50,7 @@
 #ifndef GFX_SCRIPTITEMIZER_H
 #define GFX_SCRIPTITEMIZER_H
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsUnicodeScriptCodes.h"
 
 #define PAREN_STACK_DEPTH 32

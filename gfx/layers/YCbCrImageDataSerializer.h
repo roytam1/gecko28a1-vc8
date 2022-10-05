@@ -7,7 +7,7 @@
 #define MOZILLA_LAYERS_BLOBYCBCRSURFACE_H
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint8_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint8_t, uint32_t
 #include "ImageTypes.h"                 // for StereoMode
 #include "gfxPoint.h"                   // for gfxIntSize
 #include "mozilla/Attributes.h"         // for MOZ_STACK_CLASS

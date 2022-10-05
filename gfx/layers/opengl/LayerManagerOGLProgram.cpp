@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "LayerManagerOGLProgram.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "gfxMatrix.h"                  // for gfxMatrix
 #include "gfxPoint.h"                   // for gfxIntSize, gfxPoint, etc
 #include "gfxRect.h"                    // for gfxRect

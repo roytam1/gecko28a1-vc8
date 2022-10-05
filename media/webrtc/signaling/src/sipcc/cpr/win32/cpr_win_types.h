@@ -43,7 +43,7 @@
 #include <stdint.h>
 #elif defined(_MSC_VER) && defined(CPR_WIN32_SDK_MICROSOFT)
 #ifdef _MSC_VER
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #elif defined(CPR_STDINT_INCLUDE)
 #include CPR_STDINT_INCLUDE
 #else

@@ -30,7 +30,7 @@
 #ifndef GOOGLE_BREAKPAD_COMMON_MEMORY_H_
 #define GOOGLE_BREAKPAD_COMMON_MEMORY_H_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>

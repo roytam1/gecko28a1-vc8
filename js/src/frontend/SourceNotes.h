@@ -7,7 +7,7 @@
 #ifndef frontend_SourceNotes_h
 #define frontend_SourceNotes_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jstypes.h"
 

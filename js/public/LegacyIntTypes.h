@@ -22,7 +22,7 @@
 #ifndef js_LegacyIntTypes_h
 #define js_LegacyIntTypes_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "js-config.h"
 

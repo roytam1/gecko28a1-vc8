@@ -13,7 +13,7 @@
 // it. That is, when the server is all set up and ready to receive connections,
 // it will connect to a specified port and issue a simple HTTP request.
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "prio.h"
 #include "ScopedNSSTypes.h"
 #include "secerr.h"

@@ -6,7 +6,7 @@
 #ifndef GFX_IMAGECONTAINER_H
 #define GFX_IMAGECONTAINER_H
 
-#include <stdint.h>                     // for uint32_t, uint8_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint8_t, uint64_t
 #include <sys/types.h>                  // for int32_t
 #include "ImageTypes.h"                 // for ImageFormat, etc
 #include "gfxASurface.h"                // for gfxASurface, etc

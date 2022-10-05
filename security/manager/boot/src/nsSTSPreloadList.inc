@@ -7,7 +7,7 @@
 /* nsSiteSecurityService.cpp, you shouldn't be #including it.     */
 /*****************************************************************************/
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 const PRTime gPreloadListExpirationTime = INT64_C(1393668300858000);
 
 class nsSTSPreload

@@ -6,7 +6,7 @@
 #ifndef mozilla_TextRage_h_
 #define mozilla_TextRage_h_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "nsColor.h"
 #include "nsStyleConsts.h"

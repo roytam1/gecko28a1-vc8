@@ -8,7 +8,7 @@
 #include "nsISupports.h"
 #include "nsCoord.h"
 #include "mozilla/gfx/Types.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 class nsTableCellFrame;
 class nsCellMap;

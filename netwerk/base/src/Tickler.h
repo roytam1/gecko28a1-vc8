@@ -33,7 +33,7 @@
 
 #include "mozilla/Attributes.h"
 #include "nsISupports.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef MOZ_USE_WIFI_TICKLER
 #include "mozilla/Mutex.h"

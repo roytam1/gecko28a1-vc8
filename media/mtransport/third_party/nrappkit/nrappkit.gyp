@@ -137,7 +137,6 @@
           
           'defines' : [
               'SANITY_CHECKS',
-	      'R_PLATFORM_INT_TYPES=\'<stdint.h>\'',
 	      'R_DEFINED_INT2=int16_t',
 	      'R_DEFINED_UINT2=uint16_t',
 	      'R_DEFINED_INT4=int32_t',

@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BasicThebesLayer.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "GeckoProfiler.h"              // for PROFILER_LABEL
 #include "ReadbackLayer.h"              // for ReadbackLayer, ReadbackSink
 #include "ReadbackProcessor.h"          // for ReadbackProcessor::Update, etc

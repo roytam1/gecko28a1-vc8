@@ -6,7 +6,7 @@
 
 #include "GrallocImages.h"
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for int8_t, uint8_t, uint32_t, etc
+#include "mozilla/StandardInteger.h"    // for int8_t, uint8_t, uint32_t, etc
 #include "nsDebug.h"                    // for NS_WARNING, NS_PRECONDITION
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/GrallocTextureClient.h"

@@ -12,7 +12,7 @@
 #include "VideoUtils.h"
 #include "nsISeekableStream.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Util.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Endian.h"

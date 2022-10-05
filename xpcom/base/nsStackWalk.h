@@ -11,7 +11,7 @@
 /* WARNING: This file is intended to be included from C or C++ files. */
 
 #include "nscore.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef __cplusplus
 extern "C" {

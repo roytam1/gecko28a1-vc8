@@ -7,7 +7,7 @@
 #define nsExceptionHandler_h__
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsError.h"
 #include "nsStringGlue.h"
 

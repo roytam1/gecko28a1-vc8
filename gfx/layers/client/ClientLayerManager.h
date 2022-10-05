@@ -6,7 +6,7 @@
 #ifndef GFX_CLIENTLAYERMANAGER_H
 #define GFX_CLIENTLAYERMANAGER_H
 
-#include <stdint.h>                     // for int32_t
+#include "mozilla/StandardInteger.h"    // for int32_t
 #include "Layers.h"
 #include "gfxContext.h"                 // for gfxContext
 #include "mozilla/Attributes.h"         // for MOZ_OVERRIDE

@@ -119,7 +119,7 @@
 #include "nsMemoryInfoDumper.h"
 #include "xpcpublic.h"
 #include "GeckoProfiler.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdio.h>
 
 #include "mozilla/Likely.h"

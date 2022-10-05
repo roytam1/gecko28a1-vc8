@@ -6,7 +6,7 @@
 #ifndef mozilla_TouchEvents_h__
 #define mozilla_TouchEvents_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/dom/Touch.h"
 #include "mozilla/MouseEvents.h"

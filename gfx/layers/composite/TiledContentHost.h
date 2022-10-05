@@ -6,7 +6,7 @@
 #ifndef GFX_TILEDCONTENTHOST_H
 #define GFX_TILEDCONTENTHOST_H
 
-#include <stdint.h>                     // for uint16_t
+#include "mozilla/StandardInteger.h"    // for uint16_t
 #include <stdio.h>                      // for FILE
 #include <algorithm>                    // for swap
 #include "ContentHost.h"                // for ContentHost

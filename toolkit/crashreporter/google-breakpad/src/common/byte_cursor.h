@@ -40,7 +40,7 @@
 #define COMMON_BYTE_CURSOR_H_
 
 #include <assert.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdlib.h>
 #include <string.h>
 #include <string>

@@ -7,7 +7,7 @@
 #ifndef jsbytecode_h
 #define jsbytecode_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 typedef uint8_t jsbytecode;
 

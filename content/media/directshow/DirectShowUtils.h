@@ -6,7 +6,7 @@
 #ifndef _DirectShowUtils_h_
 #define _DirectShowUtils_h_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "dshow.h"
 #include "DShowTools.h"
 #include "prlog.h"

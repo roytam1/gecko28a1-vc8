@@ -31,7 +31,7 @@
 #define yarr_PageBlock_h
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace WTF {
 

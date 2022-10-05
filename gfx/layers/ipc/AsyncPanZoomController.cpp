@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <math.h>                       // for fabsf, fabs, atan2
-#include <stdint.h>                     // for uint32_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint64_t
 #include <sys/types.h>                  // for int32_t
 #include <algorithm>                    // for max, min
 #include "AnimationCommon.h"            // for ComputedTimingFunction

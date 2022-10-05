@@ -11,7 +11,7 @@
 #include "mozilla/NumericLimits.h"
 
 #include <math.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #if defined(XP_WIN) || defined(XP_OS2)
 #include <float.h>

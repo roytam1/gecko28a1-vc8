@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint32_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint64_t
 #include "CompositableTransactionParent.h"
 #include "gfxPoint.h"                   // for gfxIntSize
 #include "mozilla/Assertions.h"         // for MOZ_ASSERT_HELPER2

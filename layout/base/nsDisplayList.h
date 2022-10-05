@@ -26,7 +26,7 @@
 #include "nsDisplayListInvalidation.h"
 #include "DisplayListClipState.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include <stdlib.h>
 #include <algorithm>

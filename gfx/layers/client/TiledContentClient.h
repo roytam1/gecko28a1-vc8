@@ -7,7 +7,7 @@
 #define MOZILLA_GFX_TILEDCONTENTCLIENT_H
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint16_t
+#include "mozilla/StandardInteger.h"    // for uint16_t
 #include <algorithm>                    // for swap
 #include "Layers.h"                     // for LayerManager, etc
 #include "TiledLayerBuffer.h"           // for TiledLayerBuffer

@@ -17,7 +17,7 @@
 #include <stdint.h>  // for uintptr_t
 #endif
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 typedef uint64_t uint64;
 typedef int64_t  int64;
 #if defined(_MSC_VER)

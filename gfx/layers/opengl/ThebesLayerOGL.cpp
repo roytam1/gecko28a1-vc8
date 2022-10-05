@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ThebesLayerOGL.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <sys/types.h>                  // for int32_t
 #include "GLContext.h"                  // for GLContext, etc
 #include "GLContextTypes.h"             // for GLenum

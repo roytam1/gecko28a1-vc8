@@ -9,7 +9,7 @@
 #include "jsapi.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"

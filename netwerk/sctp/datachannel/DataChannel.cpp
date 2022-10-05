@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #define SCTP_DEBUG 1
-#define SCTP_STDINT_INCLUDE <stdint.h>
+#define SCTP_STDINT_INCLUDE "mozilla/StandardInteger.h"
 
 #ifdef _MSC_VER
 // Disable "warning C4200: nonstandard extension used : zero-sized array in

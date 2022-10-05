@@ -6,7 +6,7 @@
 #define Zip_h
 
 #include <cstring>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <vector>
 #include <zlib.h>
 #include "Utils.h"

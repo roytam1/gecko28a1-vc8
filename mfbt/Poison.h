@@ -15,7 +15,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 MOZ_BEGIN_EXTERN_C
 

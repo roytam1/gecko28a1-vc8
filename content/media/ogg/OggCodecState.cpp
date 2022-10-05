@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "mozilla/DebugOnly.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "nsDebug.h"
 #include "MediaDecoderReader.h"

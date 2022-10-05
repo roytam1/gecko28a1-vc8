@@ -6,7 +6,7 @@
 #ifndef GFX_COPYABLECANVASLAYER_H
 #define GFX_COPYABLECANVASLAYER_H
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "GLContextTypes.h"             // for GLContext
 #include "Layers.h"                     // for CanvasLayer, etc
 #include "gfxASurface.h"                // for gfxASurface

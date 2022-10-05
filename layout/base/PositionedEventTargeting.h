@@ -5,7 +5,7 @@
 #ifndef mozilla_PositionedEventTargeting_h
 #define mozilla_PositionedEventTargeting_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/EventForwards.h"
 
 class nsIFrame;

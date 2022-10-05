@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/CompositableClient.h"
-#include <stdint.h>                     // for uint64_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint64_t, uint32_t
 #include "gfxPlatform.h"                // for gfxPlatform
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/TextureClient.h"  // for DeprecatedTextureClient, etc

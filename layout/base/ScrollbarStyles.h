@@ -6,7 +6,7 @@
 #ifndef ScrollbarStyles_h
 #define ScrollbarStyles_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 

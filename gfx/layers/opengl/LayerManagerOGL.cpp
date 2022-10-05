@@ -5,7 +5,7 @@
 
 #include "LayerManagerOGL.h"
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint32_t, uint8_t, etc
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint8_t, etc
 #include "CanvasLayerOGL.h"             // for CanvasLayerOGL
 #include "ColorLayerOGL.h"              // for ColorLayerOGL
 #include "Composer2D.h"                 // for Composer2D

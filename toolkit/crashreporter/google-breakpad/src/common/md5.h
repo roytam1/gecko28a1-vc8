@@ -3,7 +3,7 @@
 #ifndef COMMON_MD5_H__
 #define COMMON_MD5_H__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace google_breakpad {
 

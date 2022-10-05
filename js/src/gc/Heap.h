@@ -11,7 +11,7 @@
 #include "mozilla/PodOperations.h"
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jspubtd.h"
 #include "jstypes.h"

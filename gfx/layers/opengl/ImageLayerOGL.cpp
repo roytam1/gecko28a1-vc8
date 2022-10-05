@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageLayerOGL.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "mozilla-config.h"             // for GL_PROVIDER_GLX
 #include "GLContext.h"                  // for GLContext, etc
 #include "ImageContainer.h"             // for CairoImage, etc

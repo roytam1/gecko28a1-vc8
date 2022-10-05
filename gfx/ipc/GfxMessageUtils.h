@@ -12,7 +12,7 @@
 #include "ipc/IPCMessageUtils.h"
 
 #include "mozilla/Util.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "gfx3DMatrix.h"
 #include "gfxColor.h"

@@ -68,7 +68,7 @@
 #endif
 #else
 #if defined(HAVE_STDINT_H) || defined(_MSC_VER)
-# include <stdint.h>
+# include "mozilla/StandardInteger.h"
 #endif
 #endif /* INTEGER_TYPES_H */
 #ifdef HAVE_INTTYPES_H

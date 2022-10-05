@@ -11,7 +11,7 @@
 //#define GFX_TILEDLAYER_DEBUG_OVERLAY
 //#define GFX_TILEDLAYER_PREF_WARNINGS
 
-#include <stdint.h>                     // for uint16_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint16_t, uint32_t
 #include <sys/types.h>                  // for int32_t
 #include "nsDebug.h"                    // for NS_ABORT_IF_FALSE
 #include "nsPoint.h"                    // for nsIntPoint

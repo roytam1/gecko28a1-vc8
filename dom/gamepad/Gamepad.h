@@ -7,7 +7,7 @@
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/GamepadButton.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsCOMPtr.h"
 #include "nsIVariant.h"
 #include "nsString.h"

@@ -48,7 +48,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <algorithm>
 
 using namespace mozilla;

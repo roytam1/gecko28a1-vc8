@@ -52,7 +52,7 @@
 #elif defined (_AIX)
 #  include <sys/inttypes.h>
 #else
-#  include <stdint.h>
+#  include "mozilla/StandardInteger.h"
 #endif
 
 #endif

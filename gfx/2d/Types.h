@@ -9,7 +9,7 @@
 #include "mozilla/NullPtr.h"
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 namespace gfx {

@@ -50,7 +50,7 @@
 #else  /* !_WIN32 */
 
 #if defined(_MSC_VER)
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #elif defined(BREAKPAD_CUSTOM_STDINT_H)
 /* Visual C++ Pre-2010 did not ship a stdint.h, so allow
  * consumers of this library to provide their own because

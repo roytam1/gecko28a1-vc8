@@ -20,7 +20,7 @@
  * to record in the log.
  */
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/GuardObjects.h"
 

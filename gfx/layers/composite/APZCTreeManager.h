@@ -6,7 +6,7 @@
 #ifndef mozilla_layers_APZCTreeManager_h
 #define mozilla_layers_APZCTreeManager_h
 
-#include <stdint.h>                     // for uint64_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint64_t, uint32_t
 #include "FrameMetrics.h"               // for FrameMetrics, etc
 #include "Units.h"                      // for CSSPoint, CSSRect, etc
 #include "gfxPoint.h"                   // for gfxPoint

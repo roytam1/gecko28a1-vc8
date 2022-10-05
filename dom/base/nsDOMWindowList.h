@@ -7,7 +7,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsIDOMWindowCollection.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsIDocShellTreeItem.h"
 
 class nsIDocShell;

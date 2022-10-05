@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <stdlib.h>                     // for rand, RAND_MAX
 #include <sys/types.h>                  // for int32_t
 #include "BasicContainerLayer.h"        // for BasicContainerLayer

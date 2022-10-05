@@ -5,7 +5,7 @@
 #ifndef nsViewportInfo_h___
 #define nsViewportInfo_h___
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Attributes.h"
 #include "Units.h"
 

@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageBridgeParent.h"
-#include <stdint.h>                     // for uint64_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint64_t, uint32_t
 #include "CompositableHost.h"           // for CompositableParent, Create
 #include "base/message_loop.h"          // for MessageLoop
 #include "base/process.h"               // for ProcessHandle

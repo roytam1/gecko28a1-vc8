@@ -7,7 +7,7 @@
 #define MOZILLA_GFX_TEXTURECLIENT_H
 
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint32_t, uint8_t, uint64_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint8_t, uint64_t
 #include "GLContextTypes.h"             // for GLContext (ptr only), etc
 #include "GLTextureImage.h"             // for TextureImage
 #include "ImageTypes.h"                 // for StereoMode

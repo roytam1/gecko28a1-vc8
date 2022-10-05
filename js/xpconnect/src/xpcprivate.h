@@ -86,7 +86,7 @@
 #include "mozilla/Util.h"
 
 #include <math.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdlib.h>
 #include <string.h>
 

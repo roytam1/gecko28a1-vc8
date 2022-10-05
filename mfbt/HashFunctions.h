@@ -51,7 +51,7 @@
 #include "mozilla/Char16.h"
 #include "mozilla/Types.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1600
 #undef static_assert

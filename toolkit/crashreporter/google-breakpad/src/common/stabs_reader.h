@@ -47,7 +47,7 @@
 #define COMMON_STABS_READER_H__
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

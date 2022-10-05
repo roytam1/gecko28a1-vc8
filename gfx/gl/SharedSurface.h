@@ -15,7 +15,7 @@
 #ifndef SHARED_SURFACE_H_
 #define SHARED_SURFACE_H_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Attributes.h"
 #include "GLDefs.h"
 #include "gfxPoint.h"

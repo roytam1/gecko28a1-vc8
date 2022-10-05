@@ -5,7 +5,7 @@
 
 #include "LayerManagerComposite.h"
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint16_t, uint32_t
+#include "mozilla/StandardInteger.h"    // for uint16_t, uint32_t
 #include "CanvasLayerComposite.h"       // for CanvasLayerComposite
 #include "ColorLayerComposite.h"        // for ColorLayerComposite
 #include "Composer2D.h"                 // for Composer2D

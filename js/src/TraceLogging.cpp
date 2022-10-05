@@ -9,7 +9,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <string.h>
 #include <unistd.h>
 

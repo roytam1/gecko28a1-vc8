@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsScriptableRegion.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <sys/types.h>                  // for int32_t
 #include "js/RootingAPI.h"              // for Rooted
 #include "js/Value.h"                   // for INT_TO_JSVAL, etc

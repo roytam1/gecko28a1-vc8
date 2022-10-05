@@ -5,7 +5,7 @@
 
 #include "CompositorOGL.h"
 #include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for uint32_t, uint8_t
+#include "mozilla/StandardInteger.h"    // for uint32_t, uint8_t
 #include <stdlib.h>                     // for free, malloc
 #include "FPSCounter.h"                 // for FPSState, FPSCounter
 #include "GLContextProvider.h"          // for GLContextProvider

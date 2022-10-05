@@ -8,7 +8,7 @@
 #define MAR_H__
 
 #include "mozilla/Assertions.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef __cplusplus
 extern "C" {

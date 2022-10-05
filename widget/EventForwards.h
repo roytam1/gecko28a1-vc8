@@ -6,7 +6,7 @@
 #ifndef mozilla_EventForwards_h__
 #define mozilla_EventForwards_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 /**
  * XXX Following enums should be in BasicEvents.h.  However, currently, it's

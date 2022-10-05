@@ -6,7 +6,7 @@
 #ifndef GFX_READBACKLAYER_H
 #define GFX_READBACKLAYER_H
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include "Layers.h"                     // for Layer, etc
 #include "gfx3DMatrix.h"                // for gfx3DMatrix
 #include "gfxColor.h"                   // for gfxRGBA

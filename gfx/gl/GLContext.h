@@ -8,7 +8,7 @@
 #define GLCONTEXT_H_
 
 #include <stdio.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <ctype.h>
 #include <map>
 #include <bitset>

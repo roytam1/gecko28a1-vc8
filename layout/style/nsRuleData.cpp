@@ -6,7 +6,7 @@
 #include "nsRuleData.h"
 
 #include "mozilla/Poison.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 inline size_t
 nsRuleData::GetPoisonOffset()

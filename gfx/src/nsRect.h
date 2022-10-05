@@ -8,7 +8,7 @@
 #define NSRECT_H
 
 #include <stdio.h>                      // for FILE
-#include <stdint.h>                     // for int32_t, int64_t
+#include "mozilla/StandardInteger.h"    // for int32_t, int64_t
 #include <algorithm>                    // for min/max
 #include "nsDebug.h"                    // for NS_WARNING
 #include "gfxCore.h"                    // for NS_GFX

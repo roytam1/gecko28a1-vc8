@@ -11,7 +11,7 @@
  * API to portable hash table code.
  */
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdio.h>
 
 extern "C" {

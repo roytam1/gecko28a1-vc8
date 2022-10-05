@@ -20,7 +20,7 @@
 #include "nsIScriptExternalNameSet.h"
 #include "js/TypeDecls.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 class nsIDocShell;
 class nsString;

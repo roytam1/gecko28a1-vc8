@@ -6,7 +6,7 @@
 #ifndef mozilla_TextEvents_h__
 #define mozilla_TextEvents_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/BasicEvents.h"

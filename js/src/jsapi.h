@@ -15,7 +15,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdio.h>
 
 #include "jsalloc.h"

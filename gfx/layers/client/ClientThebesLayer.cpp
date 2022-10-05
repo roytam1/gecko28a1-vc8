@@ -5,7 +5,7 @@
 
 #include "ClientThebesLayer.h"
 #include "ClientTiledThebesLayer.h"     // for ClientTiledThebesLayer
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "GeckoProfiler.h"              // for PROFILER_LABEL
 #include "client/ClientLayerManager.h"  // for ClientLayerManager, etc
 #include "gfxASurface.h"                // for gfxASurface, etc

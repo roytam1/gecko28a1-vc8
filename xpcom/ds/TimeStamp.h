@@ -7,7 +7,7 @@
 #ifndef mozilla_TimeStamp_h
 #define mozilla_TimeStamp_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "nscore.h"

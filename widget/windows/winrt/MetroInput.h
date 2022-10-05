@@ -15,7 +15,7 @@
 
 // System headers (alphabetical)
 #include <EventToken.h>     // EventRegistrationToken
-#include <stdint.h>         // uint32_t
+#include "mozilla/StandardInteger.h" // uint32_t
 #include <wrl\client.h>     // Microsoft::WRL::ComPtr class
 #include <wrl\implements.h> // Microsoft::WRL::InspectableClass macro
 

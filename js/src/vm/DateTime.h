@@ -10,7 +10,7 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "js/Value.h"
 #include "vm/NumericConversions.h"

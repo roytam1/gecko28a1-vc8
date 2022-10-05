@@ -18,7 +18,7 @@
 #include "nsContentUtils.h"
 #include "nsCxPusher.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Likely.h"
 #include "mozilla/dom/BindingUtils.h"
 #include <algorithm>

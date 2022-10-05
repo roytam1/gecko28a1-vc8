@@ -8,7 +8,7 @@
 
 #include "mozilla/PodOperations.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jscntxt.h"
 #include "jscompartment.h"

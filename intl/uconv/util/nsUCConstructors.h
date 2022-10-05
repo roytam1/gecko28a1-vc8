@@ -6,7 +6,7 @@
 #ifndef __nsUCConstructors_h
 #define __nsUCConstructors_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nscore.h"
 #include "nsID.h"
 #include "uconvutil.h"

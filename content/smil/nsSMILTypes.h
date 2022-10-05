@@ -6,7 +6,7 @@
 #ifndef NS_SMILTYPES_H_
 #define NS_SMILTYPES_H_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 // A timestamp in milliseconds
 //

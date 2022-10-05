@@ -7,7 +7,7 @@
 #ifndef mozilla_layers_GestureEventListener_h
 #define mozilla_layers_GestureEventListener_h
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include "InputData.h"                  // for MultiTouchInput, etc
 #include "Units.h"                      // for ScreenIntPoint
 #include "mozilla/Assertions.h"         // for MOZ_ASSERT_HELPER2

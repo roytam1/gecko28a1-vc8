@@ -11,7 +11,7 @@
 
 #include "mozilla/Assertions.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 

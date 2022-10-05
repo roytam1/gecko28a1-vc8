@@ -12,7 +12,7 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #endif
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "jspubtd.h"
 #include "js/GCAPI.h"
 #include "nsCOMPtr.h"

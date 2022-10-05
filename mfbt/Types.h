@@ -16,7 +16,7 @@
 
 /* Expose all <stdint.h> types and size_t. */
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 /* Implement compiler and linker macros needed for APIs. */
 

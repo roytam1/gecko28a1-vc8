@@ -10,7 +10,7 @@
 #ifndef nsAtomListUtils_h__
 #define nsAtomListUtils_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 class nsIAtom;
 struct nsStaticAtom;

@@ -6,7 +6,7 @@
 #define ubase_h__
 
 #include "prtypes.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #define PRIVATE 
 #define MODULE_PRIVATE

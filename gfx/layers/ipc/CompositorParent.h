@@ -15,7 +15,7 @@
 //       which the deadline will be 15ms + throttle threshold
 //#define COMPOSITOR_PERFORMANCE_WARNING
 
-#include <stdint.h>                     // for uint64_t
+#include "mozilla/StandardInteger.h"    // for uint64_t
 #include "Layers.h"                     // for Layer
 #include "ShadowLayersManager.h"        // for ShadowLayersManager
 #include "base/basictypes.h"            // for DISALLOW_EVIL_CONSTRUCTORS

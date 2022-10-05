@@ -10,7 +10,7 @@
 #endif
  
 #include "mozilla/DebugOnly.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "MediaDecoderStateMachine.h"
 #include "AudioStream.h"

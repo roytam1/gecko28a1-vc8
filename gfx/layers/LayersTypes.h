@@ -6,7 +6,7 @@
 #ifndef GFX_LAYERSTYPES_H
 #define GFX_LAYERSTYPES_H
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "nsPoint.h"                    // for nsIntPoint
 
 // Debugging define.

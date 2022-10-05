@@ -6,7 +6,7 @@
 #ifndef MOZILLA_GFX_CONTENTCLIENT_H
 #define MOZILLA_GFX_CONTENTCLIENT_H
 
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include "ThebesLayerBuffer.h"          // for ThebesLayerBuffer, etc
 #include "gfxTypes.h"
 #include "gfxPlatform.h"                // for gfxPlatform

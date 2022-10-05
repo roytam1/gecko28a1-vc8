@@ -34,7 +34,7 @@
 
 #include <algorithm>
 #include <elf.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <vector>
 #include <string>
 

@@ -6,7 +6,7 @@
 #ifndef nsFont_h___
 #define nsFont_h___
 
-#include <stdint.h>                     // for uint8_t, uint16_t
+#include "mozilla/StandardInteger.h"    // for uint8_t, uint16_t
 #include <sys/types.h>                  // for int16_t
 #include "gfxCore.h"                    // for NS_GFX
 #include "gfxFontFeatures.h"

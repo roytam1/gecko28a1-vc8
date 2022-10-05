@@ -10,7 +10,7 @@
 #define mozilla_Alignment_h
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 

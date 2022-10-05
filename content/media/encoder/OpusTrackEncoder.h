@@ -6,7 +6,7 @@
 #ifndef OpusTrackEncoder_h_
 #define OpusTrackEncoder_h_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <speex/speex_resampler.h>
 #include "TrackEncoder.h"
 

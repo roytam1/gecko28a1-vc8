@@ -12,7 +12,7 @@
 #include "mozilla/Char16.h"
 
 #include <limits>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 namespace mozilla {
 

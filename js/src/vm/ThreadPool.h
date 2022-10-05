@@ -8,7 +8,7 @@
 #define vm_ThreadPool_h
 
 #include <stddef.h>
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jsalloc.h"
 #include "jspubtd.h"

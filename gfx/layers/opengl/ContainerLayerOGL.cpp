@@ -4,7 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContainerLayerOGL.h"
-#include <stdint.h>                     // for uint32_t
+#include "mozilla/StandardInteger.h"    // for uint32_t
 #include <algorithm>                    // for min
 #include "GLContext.h"
 #include "gfx3DMatrix.h"                // for gfx3DMatrix

@@ -9,7 +9,7 @@
 
 #include "mozilla/NullPtr.h"
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "jstypes.h"
 

@@ -38,7 +38,7 @@
 #ifndef BREAKPAD_COMMON_STABS_TO_MODULE_H_
 #define BREAKPAD_COMMON_STABS_TO_MODULE_H_
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include <string>
 #include <vector>

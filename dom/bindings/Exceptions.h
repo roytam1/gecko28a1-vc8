@@ -8,7 +8,7 @@
 
 // DOM exception throwing machinery (for both main thread and workers).
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "jspubtd.h"
 #include "nsIException.h"
 

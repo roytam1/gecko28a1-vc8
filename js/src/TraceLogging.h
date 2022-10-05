@@ -7,7 +7,7 @@
 #ifndef TraceLogging_h
 #define TraceLogging_h
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include <stdio.h>
 
 #include "jsalloc.h"

@@ -12,7 +12,7 @@
 // Enable relying of Mozilla's MFBT for possibly-available C++11 features
 #define MOZ_CHECKEDINT_USE_MFBT
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #ifdef MOZ_CHECKEDINT_USE_MFBT
 #  include "mozilla/Assertions.h"

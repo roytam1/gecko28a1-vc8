@@ -6,7 +6,7 @@
 #ifndef nsMathMLOperators_h___
 #define nsMathMLOperators_h___
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "nsStringFwd.h"
 
 enum nsStretchDirection {

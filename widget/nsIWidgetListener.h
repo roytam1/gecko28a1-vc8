@@ -5,7 +5,7 @@
 #ifndef nsIWidgetListener_h__
 #define nsIWidgetListener_h__
 
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 #include "mozilla/EventForwards.h"
 

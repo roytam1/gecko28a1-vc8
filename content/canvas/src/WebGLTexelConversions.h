@@ -33,7 +33,7 @@
 #endif
 
 #include "WebGLTypes.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 #include "mozilla/Attributes.h"
 
 namespace mozilla {

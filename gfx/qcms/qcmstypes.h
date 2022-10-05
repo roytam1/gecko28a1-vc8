@@ -4,7 +4,7 @@
 #ifdef MOZ_QCMS
 
 #include "prtypes.h"
-#include <stdint.h>
+#include "mozilla/StandardInteger.h"
 
 /* prtypes.h defines IS_LITTLE_ENDIAN and IS_BIG ENDIAN */
 
