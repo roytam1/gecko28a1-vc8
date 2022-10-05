@@ -376,6 +376,10 @@ case "$WINSDK_TARGETVER" in
     ;;
 esac
 
+# add boost's parent dir to includes
+CXXFLAGS="$CXXFLAGS -I$_topsrcdir/../.."
+CPPFLAGS="$CPPFLAGS -I$_topsrcdir/../.."
+
 case "$target" in
 *-mingw*)
     if test "$GCC" != "yes" -a -z "$CLANG_CC"; then
