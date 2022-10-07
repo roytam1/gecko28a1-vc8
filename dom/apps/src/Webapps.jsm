@@ -2154,17 +2154,16 @@ this.DOMApplicationRegistry = {
   queuedDownload: {},
   queuedPackageDownload: {},
 
-onInstallSuccessAck: function onInstallSuccessAck(aManifestURL,
-                                                  aDontNeedNetwork) {
+  onInstallSuccessAck: function onInstallSuccessAck(aManifestURL) {
     // If we are offline, register to run when we'll be online.
-    if ((Services.io.offline) && !aDontNeedNetwork) {
+    if (Services.io.offline) {
       let onlineWrapper = {
         observe: function(aSubject, aTopic, aData) {
           Services.obs.removeObserver(onlineWrapper,
                                       "network:offline-status-changed");
           DOMApplicationRegistry.onInstallSuccessAck(aManifestURL);
         }
-      };
+      }
       Services.obs.addObserver(onlineWrapper,
                                "network:offline-status-changed", false);
       return;
@@ -2369,13 +2368,12 @@ onInstallSuccessAck: function onInstallSuccessAck(aManifestURL,
         aInstallSuccessCallback(app.manifest);
       }
     }
-    let dontNeedNetwork = false;
+
     if (manifest.package_path) {
       // If it is a local app then it must been installed from a local file
       // instead of web.
       let origPath = jsonManifest.package_path;
       if (aData.app.localInstallPath) {
-        dontNeedNetwork = true;
         jsonManifest.package_path = "file://" + aData.app.localInstallPath;
       }
       // origin for install apps is meaningless here, since it's app:// and this
@@ -2392,7 +2390,7 @@ onInstallSuccessAck: function onInstallSuccessAck(aManifestURL,
     if (aData.forceSuccessAck) {
       // If it's a local install, there's no content process so just
       // ack the install.
-      this.onInstallSuccessAck(app.manifestURL, dontNeedNetwork);
+      this.onInstallSuccessAck(app.manifestURL);
     }
   },
 

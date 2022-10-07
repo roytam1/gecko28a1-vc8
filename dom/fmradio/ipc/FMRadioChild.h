@@ -51,8 +51,6 @@ public:
   virtual void AddObserver(FMRadioEventObserver* aObserver) MOZ_OVERRIDE;
   virtual void RemoveObserver(FMRadioEventObserver* aObserver) MOZ_OVERRIDE;
 
-  virtual void EnableAudio(bool aAudioEnabled) MOZ_OVERRIDE;
-
   /* PFMRadioChild */
   virtual bool
   Recv__delete__() MOZ_OVERRIDE;

@@ -30,10 +30,6 @@ public class TopSitesGridItemView extends RelativeLayout {
     // Empty state, to denote there is no valid url.
     private static final int[] STATE_EMPTY = { android.R.attr.state_empty };
 
-    private static final ScaleType SCALE_TYPE_FAVICON   = ScaleType.CENTER;
-    private static final ScaleType SCALE_TYPE_RESOURCE  = ScaleType.CENTER;
-    private static final ScaleType SCALE_TYPE_THUMBNAIL = ScaleType.CENTER_CROP;
-
     // Child views.
     private final TextView mTitleView;
     private final ImageView mThumbnailView;
@@ -43,7 +39,7 @@ public class TopSitesGridItemView extends RelativeLayout {
     private String mUrl;
     private String mFaviconURL;
 
-    private boolean mThumbnailSet;
+    private Bitmap mThumbnail;
 
     // Pinned state.
     private boolean mIsPinned = false;
@@ -170,7 +166,7 @@ public class TopSitesGridItemView extends RelativeLayout {
         } else if (changed) {
             // Because we'll have a new favicon or thumbnail arriving shortly, and
             // we need to not reject it because we already had a thumbnail.
-            mThumbnailSet = false;
+            mThumbnail = null;
         }
 
         if (changed) {
@@ -193,10 +189,9 @@ public class TopSitesGridItemView extends RelativeLayout {
      * @param resId Resource ID of the drawable to show.
      */
     public void displayThumbnail(int resId) {
-        mThumbnailView.setScaleType(SCALE_TYPE_RESOURCE);
+        mThumbnailView.setScaleType(ScaleType.CENTER);
         mThumbnailView.setImageResource(resId);
         mThumbnailView.setBackgroundColor(0x0);
-        mThumbnailSet = false;
     }
 
     /**
@@ -210,10 +205,10 @@ public class TopSitesGridItemView extends RelativeLayout {
             displayThumbnail(R.drawable.favicon);
             return;
         }
-        mThumbnailSet = true;
+        mThumbnail = thumbnail;
         Favicons.cancelFaviconLoad(mLoadId);
 
-        mThumbnailView.setScaleType(SCALE_TYPE_THUMBNAIL);
+        mThumbnailView.setScaleType(ScaleType.CENTER_CROP);
         mThumbnailView.setImageBitmap(thumbnail);
         mThumbnailView.setBackgroundDrawable(null);
     }
@@ -235,7 +230,7 @@ public class TopSitesGridItemView extends RelativeLayout {
      * @param favicon The favicon to show as thumbnail.
      */
     public void displayFavicon(Bitmap favicon, String faviconURL) {
-        if (mThumbnailSet) {
+        if (mThumbnail != null) {
             // Already showing a thumbnail; do nothing.
             return;
         }
@@ -250,7 +245,7 @@ public class TopSitesGridItemView extends RelativeLayout {
             mFaviconURL = faviconURL;
         }
 
-        mThumbnailView.setScaleType(SCALE_TYPE_FAVICON);
+        mThumbnailView.setScaleType(ScaleType.CENTER);
         mThumbnailView.setImageBitmap(favicon);
 
         if (mFaviconURL != null) {

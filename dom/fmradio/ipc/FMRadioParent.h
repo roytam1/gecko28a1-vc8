@@ -33,9 +33,6 @@ public:
 
   /* FMRadioEventObserver */
   virtual void Notify(const FMRadioEventType& aType) MOZ_OVERRIDE;
-
-  virtual bool
-  RecvEnableAudio(const bool& aAudioEnabled) MOZ_OVERRIDE;
 };
 
 END_FMRADIO_NAMESPACE

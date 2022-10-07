@@ -222,6 +222,7 @@ MetroAppShell::Run(void)
 void // static
 MetroAppShell::MarkEventQueueForPurge()
 {
+  LogFunction();
   sWillEmptyThreadQueue = true;
 
   // If we're dispatching native events, wait until the dispatcher is
@@ -242,6 +243,7 @@ MetroAppShell::DispatchAllGeckoEvents()
     return;
   }
 
+  LogFunction();
   NS_ASSERTION(NS_IsMainThread(), "DispatchAllXPCOMEvents should be called on the main thread");
 
   sWillEmptyThreadQueue = false;

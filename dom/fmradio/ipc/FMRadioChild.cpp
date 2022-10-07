@@ -165,12 +165,6 @@ FMRadioChild::DeallocPFMRadioRequestChild(PFMRadioRequestChild* aActor)
   return true;
 }
 
-void
-FMRadioChild::EnableAudio(bool aAudioEnabled)
-{
-  SendEnableAudio(aAudioEnabled);
-}
-
 // static
 FMRadioChild*
 FMRadioChild::Singleton()

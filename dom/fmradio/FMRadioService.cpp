@@ -123,8 +123,12 @@ public:
     info.spaceType() = mSpaceType;
 
     EnableFMRadio(info);
-    IFMRadioService::Singleton()->EnableAudio(true);
 
+    nsCOMPtr<nsIAudioManager> audioManager =
+      do_GetService(NS_AUDIOMANAGER_CONTRACTID);
+    audioManager->SetFmRadioAudioEnabled(true);
+
+    // TODO apply path from bug 862899: AudioChannelAgent per process
     return NS_OK;
   }
 
@@ -205,7 +209,11 @@ public:
     // Fix Bug 796733. DisableFMRadio should be called before
     // SetFmRadioAudioEnabled to prevent the annoying beep sound.
     DisableFMRadio();
-    IFMRadioService::Singleton()->EnableAudio(false);
+
+    nsCOMPtr<nsIAudioManager> audioManager =
+      do_GetService(NS_AUDIOMANAGER_CONTRACTID);
+
+    audioManager->SetFmRadioAudioEnabled(false);
 
     return NS_OK;
   }
@@ -288,24 +296,6 @@ FMRadioService::RemoveObserver(FMRadioEventObserver* aObserver)
     if (IsFMRadioOn()) {
       NS_DispatchToMainThread(new DisableRunnable());
     }
-  }
-}
-
-void
-FMRadioService::EnableAudio(bool aAudioEnabled)
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
-
-  nsCOMPtr<nsIAudioManager> audioManager =
-    do_GetService("@mozilla.org/telephony/audiomanager;1");
-  if (!audioManager) {
-    return;
-  }
-
-  bool AudioEnabled;
-  audioManager->GetFmRadioAudioEnabled(&AudioEnabled);
-  if (AudioEnabled != aAudioEnabled) {
-    audioManager->SetFmRadioAudioEnabled(aAudioEnabled);
   }
 }
 

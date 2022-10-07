@@ -40,9 +40,6 @@ function BannerMessage(options) {
   if ("icon" in options && options.icon != null)
     this.iconURI = resolveGeckoURI(options.icon);
 
-  if ("onshown" in options && typeof options.onshown === "function")
-    this.onshown = options.onshown;
-
   if ("onclick" in options && typeof options.onclick === "function")
     this.onclick = options.onclick;
 }
@@ -79,9 +76,6 @@ let HomeBanner = {
       text: message.text,
       iconURI: message.iconURI
     });
-
-    if (message.onshown)
-      message.onshown();
   },
 
   _handleClick: function(id) {

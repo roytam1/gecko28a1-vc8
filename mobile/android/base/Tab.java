@@ -359,15 +359,8 @@ public class Tab {
         return mFaviconLoadId;
     }
 
-    /**
-     * Returns true if the favicon changed.
-     */
-    public boolean updateFavicon(Bitmap favicon) {
-        if (mFavicon == favicon) {
-            return false;
-        }
+    public void updateFavicon(Bitmap favicon) {
         mFavicon = favicon;
-        return true;
     }
 
     public synchronized void updateFaviconURL(String faviconUrl, int size) {
