@@ -31,6 +31,8 @@ from ..frontend.data import (
     GeneratedInclude,
     GeneratedWebIDLFile,
     HeaderFileSubstitution,
+    HostProgram,
+    HostSimpleProgram,
     InstallationTarget,
     IPDLFile,
     JavaJarData,
@@ -40,6 +42,7 @@ from ..frontend.data import (
     Program,
     SandboxDerived,
     SandboxWrapped,
+    SimpleProgram,
     TestWebIDLFile,
     VariablePassthru,
     XPIDLFile,
@@ -415,6 +418,15 @@ class RecursiveMakeBackend(CommonBackend):
         elif isinstance(obj, Program):
             self._process_program(obj.program, backend_file)
 
+        elif isinstance(obj, HostProgram):
+            self._process_host_program(obj.program, backend_file)
+
+        elif isinstance(obj, SimpleProgram):
+            self._process_simple_program(obj.program, backend_file)
+
+        elif isinstance(obj, HostSimpleProgram):
+            self._process_host_simple_program(obj.program, backend_file)
+
         elif isinstance(obj, TestManifest):
             self._process_test_manifest(obj, backend_file)
 
@@ -565,7 +577,8 @@ class RecursiveMakeBackend(CommonBackend):
                                  unified_suffix='cpp',
                                  extra_dependencies=[],
                                  unified_files_makefile_variable='unified_files',
-                                 include_curdir_build_rules=True):
+                                 include_curdir_build_rules=True,
+                                 poison_windows_h=False):
         files_per_unified_file = 16
 
         explanation = "\n" \
@@ -611,7 +624,15 @@ class RecursiveMakeBackend(CommonBackend):
             # handle source files being added/removed/renamed.  Therefore, we
             # generate them here also to make sure everything's up-to-date.
             with self._write_file(os.path.join(output_directory, unified_file)) as f:
-                f.write('\n'.join(['#include "%s"' % s for s in source_filenames]))
+                includeTemplate = '#include "%(cppfile)s"'
+                if poison_windows_h:
+                    includeTemplate += (
+                        '\n'
+                        '#ifdef _WINDOWS_\n'
+                        '#error "%(cppfile)s included windows.h"\n'
+                        "#endif")
+                f.write('\n'.join(includeTemplate % { "cppfile": s } for
+                                  s in source_filenames))
 
         if include_curdir_build_rules:
             makefile.add_statement('\n'
@@ -724,7 +745,8 @@ class RecursiveMakeBackend(CommonBackend):
         self._add_unified_build_rules(mk, all_webidl_sources,
                                       bindings_dir,
                                       unified_prefix='UnifiedBindings',
-                                      unified_files_makefile_variable='unified_binding_cpp_files')
+                                      unified_files_makefile_variable='unified_binding_cpp_files',
+                                      poison_windows_h=True)
 
         # Assume that Somebody Else has responsibility for correctly
         # specifying removal dependencies for |all_webidl_sources|.
@@ -966,6 +988,15 @@ class RecursiveMakeBackend(CommonBackend):
 
     def _process_program(self, program, backend_file):
         backend_file.write('PROGRAM = %s\n' % program)
+
+    def _process_host_program(self, program, backend_file):
+        backend_file.write('HOST_PROGRAM = %s\n' % program)
+
+    def _process_simple_program(self, program, backend_file):
+        backend_file.write('SIMPLE_PROGRAMS += %s\n' % program)
+
+    def _process_host_simple_program(self, program, backend_file):
+        backend_file.write('HOST_SIMPLE_PROGRAMS += %s\n' % program)
 
     def _process_webidl_basename(self, basename):
         header = 'mozilla/dom/%sBinding.h' % os.path.splitext(basename)[0]
