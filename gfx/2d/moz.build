@@ -86,6 +86,7 @@ SOURCES += [
     'ImageScaling.cpp',
     'Matrix.cpp',
     'PathCairo.cpp',
+    'PathHelpers.cpp',
     'PathRecording.cpp',
     'RecordedEvent.cpp',
     'Scale.cpp',
