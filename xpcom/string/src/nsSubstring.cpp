@@ -36,9 +36,9 @@ using mozilla::Atomic;
 
 static const PRUnichar gNullChar = 0;
 
-char* const      nsCharTraits<char>     ::sEmptyBuffer = 
+char* const nsCharTraits<char>::sEmptyBuffer =
   (char*) const_cast<PRUnichar*>(&gNullChar);
-PRUnichar* const nsCharTraits<PRUnichar>::sEmptyBuffer = 
+PRUnichar* const nsCharTraits<PRUnichar>::sEmptyBuffer =
   const_cast<PRUnichar*>(&gNullChar);
 
 // ---------------------------------------------------------------------------
