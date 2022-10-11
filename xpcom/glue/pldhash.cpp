@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prbit.h"
 #include "pldhash.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/MathAlgorithms.h"
 #include "nsDebug.h"     /* for PR_ASSERT */
 #include "nsAlgorithm.h"
 #include "mozilla/Likely.h"
@@ -48,22 +48,22 @@
      table_->recursionLevel == IMMUTABLE_RECURSION_LEVEL)
 
 #define INCREMENT_RECURSION_LEVEL(table_)                                     \
-    PR_BEGIN_MACRO                                                            \
+    do {                                                                      \
         if (table_->recursionLevel != IMMUTABLE_RECURSION_LEVEL)              \
             ++table_->recursionLevel;                                         \
-    PR_END_MACRO
+    } while(0)
 #define DECREMENT_RECURSION_LEVEL(table_)                                     \
-    PR_BEGIN_MACRO                                                            \
+    do {                                                                      \
         if (table->recursionLevel != IMMUTABLE_RECURSION_LEVEL) {             \
             MOZ_ASSERT(table->recursionLevel > 0);                            \
             --table->recursionLevel;                                          \
         }                                                                     \
-    PR_END_MACRO
+    } while(0)
 
 #else
 
-#define INCREMENT_RECURSION_LEVEL(table_)   PR_BEGIN_MACRO PR_END_MACRO
-#define DECREMENT_RECURSION_LEVEL(table_)   PR_BEGIN_MACRO PR_END_MACRO
+#define INCREMENT_RECURSION_LEVEL(table_)   do { } while(0)
+#define DECREMENT_RECURSION_LEVEL(table_)   do { } while(0)
 
 #endif /* defined(DEBUG) */
 
@@ -225,8 +225,7 @@ PL_DHashTableInit(PLDHashTable *table, const PLDHashTableOps *ops, void *data,
     if (capacity < PL_DHASH_MIN_SIZE)
         capacity = PL_DHASH_MIN_SIZE;
 
-    int log2;
-    PR_CEILING_LOG2(log2, capacity);
+    int log2 = CeilingLog2(capacity);
 
     capacity = 1u << log2;
     if (capacity > PL_DHASH_MAX_SIZE)
@@ -680,8 +679,7 @@ PL_DHashTableEnumerate(PLDHashTable *table, PLDHashEnumerator etor, void *arg)
         if (capacity < PL_DHASH_MIN_SIZE)
             capacity = PL_DHASH_MIN_SIZE;
 
-        uint32_t ceiling;
-        PR_CEILING_LOG2(ceiling, capacity);
+        uint32_t ceiling = CeilingLog2(capacity);
         ceiling -= PL_DHASH_BITS - table->hashShift;
 
         (void) ChangeTable(table, ceiling);
