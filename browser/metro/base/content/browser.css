@@ -203,7 +203,3 @@ textbox {
 textbox[type="search"] {
   -moz-binding: url("chrome://browser/content/bindings/bindings.xml#search-textbox");
 }
-
-tabmodalprompt {
-  -moz-binding: url("chrome://browser/content/bindings/tabprompts.xml#tabmodalprompt");
-}

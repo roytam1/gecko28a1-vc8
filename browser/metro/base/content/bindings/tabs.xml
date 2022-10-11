@@ -159,16 +159,10 @@
       </property>
 
       <method name="addTab">
-        <parameter name="aIndex"/>
         <body>
           <![CDATA[
             let tab = document.createElement("documenttab");
-            if (aIndex >= 0) {
-              let child = this.strip.children[aIndex];
-              this.strip.insertBefore(tab, child);
-            } else {
-              this.strip.appendChild(tab);
-            }
+            this.strip.appendChild(tab);
             return tab;
           ]]>
         </body>

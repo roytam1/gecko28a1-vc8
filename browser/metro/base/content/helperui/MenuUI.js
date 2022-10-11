@@ -244,9 +244,6 @@ var ContextMenuUI = {
   },
 
   hide: function hide () {
-    for (let command of this.commands.querySelectorAll("richlistitem[selected]")) {
-      command.removeAttribute("selected");
-    }
     this._menuPopup.hide();
     this._popupState = null;
   },

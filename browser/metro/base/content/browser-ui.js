@@ -433,7 +433,6 @@ var BrowserUI = {
 
   /**
    * Open a new tab in the foreground in response to a user action.
-   * See Browser.addTab for more documentation.
    */
   addAndShowTab: function (aURI, aOwner) {
     ContextUI.peekTabs(kNewTabAnimationDelayMsec);
