@@ -3599,6 +3599,14 @@ EscapeForShell(AutoCStringVector &argv)
 }
 #endif
 
+Vector<const char*, 4, js::SystemAllocPolicy> sPropagatedFlags;
+
+static bool
+PropagateFlagToNestedShells(const char *flag)
+{
+    return sPropagatedFlags.append(flag);
+}
+
 static bool
 NestedShell(JSContext *cx, unsigned argc, jsval *vp)
 {
@@ -3614,6 +3622,13 @@ NestedShell(JSContext *cx, unsigned argc, jsval *vp)
     }
     if (!argv.append(strdup(sArgv[0])))
         return false;
+
+    // Propagate selected flags from the current shell
+    for (unsigned i = 0; i < sPropagatedFlags.length(); i++) {
+        char *cstr = strdup(sPropagatedFlags[i]);
+        if (!cstr || !argv.append(cstr))
+            return false;
+    }
 
     // The arguments to nestedShell are stringified and append to argv.
     RootedString str(cx);
