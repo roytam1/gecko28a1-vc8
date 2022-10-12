@@ -1477,7 +1477,7 @@ ContainerState::CreateOrRecycleThebesLayer(const nsIFrame* aActiveScrolledRoot,
   return layer.forget();
 }
 
-#ifdef MOZ_DUMP_PAINTING
+#if defined(DEBUG) || defined(MOZ_DUMP_PAINTING)
 /**
  * Returns the appunits per dev pixel for the item's frame
  */

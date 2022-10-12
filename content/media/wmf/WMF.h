@@ -32,6 +32,8 @@ which makes Windows Media Foundation unavailable.
 #include <d3d9.h>
 #include <dxva2api.h>
 #include <wmcodecdsp.h>
+#include <ks.h>
+#include <codecapi.h>
 
 // Some SDK versions don't define the AAC decoder CLSID.
 #ifndef CLSID_CMSAACDecMFT
