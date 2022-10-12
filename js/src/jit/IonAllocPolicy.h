@@ -139,7 +139,7 @@ struct TempObject
     }
     template <class T>
     inline void *operator new(size_t nbytes, T *pos) {
-        static_assert(mozilla::IsConvertible<T*, TempObject*>::value,
+        static_assert((mozilla::IsConvertible<T*, TempObject*>::value),
                       "Placement new argument type must inherit from TempObject");
         return pos;
     }
