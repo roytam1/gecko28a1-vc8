@@ -6,6 +6,11 @@
 /*
  * Double hashing implementation.
  */
+#if _MSC_VER <= 1400
+#define _interlockedbittestandreset _interlockedbittestandreset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
+#define _interlockedbittestandset _interlockedbittestandset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
+#endif
+
 #if _MSC_VER >= 1400
 #include <intrin.h>
 #endif

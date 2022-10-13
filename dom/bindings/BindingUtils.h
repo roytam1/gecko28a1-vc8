@@ -20,6 +20,7 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/workers/Workers.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Util.h"
 #include "nsCycleCollector.h"
@@ -294,6 +295,11 @@ AllocateProtoAndIfaceCache(JSObject* obj)
 
   js::SetReservedSlot(obj, DOM_PROTOTYPE_SLOT,
                       JS::PrivateValue(protoAndIfaceArray));
+
+#ifdef NS_BUILD_REFCNT_LOGGING
+  NS_LogCtor((void*)protoAndIfaceArray, "ProtoAndIfaceArray",
+             sizeof(JS::Heap<JSObject*>) * kProtoAndIfaceCacheCount);
+#endif
 }
 
 inline void
@@ -317,6 +323,11 @@ DestroyProtoAndIfaceCache(JSObject* obj)
   MOZ_ASSERT(js::GetObjectClass(obj)->flags & JSCLASS_DOM_GLOBAL);
 
   JS::Heap<JSObject*>* protoAndIfaceArray = GetProtoAndIfaceArray(obj);
+
+#ifdef NS_BUILD_REFCNT_LOGGING
+  NS_LogDtor((void*)protoAndIfaceArray, "ProtoAndIfaceArray",
+             sizeof(JS::Heap<JSObject*>) * kProtoAndIfaceCacheCount);
+#endif
 
   delete [] protoAndIfaceArray;
 }
@@ -2278,6 +2289,9 @@ ThreadsafeCheckIsChrome(JSContext* aCx, JSObject* aObj);
 void
 TraceGlobal(JSTracer* aTrc, JSObject* aObj);
 
+void
+FinalizeGlobal(JSFreeOp* aFop, JSObject* aObj);
+
 bool
 ResolveGlobal(JSContext* aCx, JS::Handle<JSObject*> aObj,
               JS::MutableHandle<jsid> aId, unsigned aFlags,
@@ -2327,6 +2341,8 @@ CreateGlobal(JSContext* aCx, T* aObject, nsWrapperCache* aCache,
     NS_WARNING("Failed to set proto");
     return nullptr;
   }
+
+  mozilla::HoldJSObjects(aObject);
 
   return global;
 }

@@ -1669,9 +1669,9 @@ GCMarker::GCMarker(JSRuntime *rt)
 }
 
 bool
-GCMarker::init()
+GCMarker::init(JSGCMode gcMode)
 {
-    return stack.init(MARK_STACK_LENGTH);
+    return stack.init(gcMode);
 }
 
 void
@@ -1930,7 +1930,7 @@ void
 js::SetMarkStackLimit(JSRuntime *rt, size_t limit)
 {
     JS_ASSERT(!rt->isHeapBusy());
-    rt->gcMarker.setSizeLimit(limit);
+    rt->gcMarker.setMaxCapacity(limit);
 }
 
 void
@@ -4543,7 +4543,7 @@ BudgetIncrementalGC(JSRuntime *rt, int64_t *budget)
         return;
     }
 
-    if (rt->gcMode != JSGC_MODE_INCREMENTAL) {
+    if (rt->gcMode() != JSGC_MODE_INCREMENTAL) {
         ResetIncrementalGC(rt, "GC mode change");
         *budget = SliceBudget::Unlimited;
         rt->gcStats.nonincremental("GC mode");
@@ -4734,7 +4734,7 @@ Collect(JSRuntime *rt, bool incremental, int64_t budget,
     int compartmentCount = 0;
     int collectedCount = 0;
     for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
-        if (rt->gcMode == JSGC_MODE_GLOBAL)
+        if (rt->gcMode() == JSGC_MODE_GLOBAL)
             zone->scheduleGC();
 
         /* This is a heuristic to avoid resets. */
