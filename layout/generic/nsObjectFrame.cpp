@@ -869,14 +869,14 @@ public:
 
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
-                                             const ContainerLayerParameters& aContainerParameters)
+                                             const ContainerParameters& aContainerParameters)
   {
     return static_cast<nsObjectFrame*>(mFrame)->BuildLayer(aBuilder, aManager, this, aContainerParameters);
   }
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
-                                   const ContainerLayerParameters& aParameters)
+                                   const ContainerParameters& aParameters)
   {
     return LAYER_ACTIVE;
   }
@@ -939,14 +939,14 @@ public:
 
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
-                                             const ContainerLayerParameters& aContainerParameters)
+                                             const ContainerParameters& aContainerParameters)
   {
     return static_cast<nsObjectFrame*>(mFrame)->BuildLayer(aBuilder, aManager, this, aContainerParameters);
   }
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
-                                   const ContainerLayerParameters& aParameters)
+                                   const ContainerParameters& aParameters)
   {
     return LAYER_ACTIVE;
   }
@@ -1508,7 +1508,7 @@ already_AddRefed<Layer>
 nsObjectFrame::BuildLayer(nsDisplayListBuilder* aBuilder,
                           LayerManager* aManager,
                           nsDisplayItem* aItem,
-                          const ContainerLayerParameters& aContainerParameters)
+                          const ContainerParameters& aContainerParameters)
 {
   if (!mInstanceOwner)
     return nullptr;

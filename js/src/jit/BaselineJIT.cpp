@@ -226,7 +226,7 @@ jit::BaselineCompile(JSContext *cx, HandleScript script)
 
     IonContext ictx(cx, temp);
 
-    BaselineCompiler compiler(cx, *temp, script);
+    BaselineCompiler compiler(cx, script);
     if (!compiler.init())
         return Method_Error;
 

@@ -29,7 +29,7 @@ if CONFIG['MOZ_DEBUG']:
         'Logging.h',
     ]
 
-UNIFIED_SOURCES += [
+SOURCES += [
     'AccCollector.cpp',
     'AccEvent.cpp',
     'AccGroupInfo.cpp',
@@ -56,7 +56,7 @@ UNIFIED_SOURCES += [
 ]
 
 if a11y_log:
-    UNIFIED_SOURCES += [
+    SOURCES += [
         'Logging.cpp',
     ]
 

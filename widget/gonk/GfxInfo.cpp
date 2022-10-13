@@ -153,7 +153,7 @@ GfxInfo::GetGfxDriverInfo()
   return *mDriverInfo;
 }
 
-uint32_t GfxInfo::OperatingSystemVersion()
+uint32_t GfxInfo::OperatingSystemVersion() const
 {
   return 0;
 }

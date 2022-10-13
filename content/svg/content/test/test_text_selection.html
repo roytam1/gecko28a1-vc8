@@ -69,6 +69,10 @@ function testSelection()
 
   var text = doc.getElementsByTagName("text");
 
+  // Display all the <text> elements.
+  var style = doc.getElementsByTagName("style")[0];
+  style.parentNode.removeChild(style);
+
   // Drag to select the entire text element.
   drag(101, 50, 99 + text[0].getComputedTextLength(), 50);
   selection_is("hello there", "selecting entire simple text");
@@ -130,7 +134,8 @@ function testSelection()
 
 function runTest()
 {
-  SimpleTest.executeSoon(testSelection);
+  SpecialPowers.pushPrefEnv({ 'set': [['svg.text.css-frames.enabled', true]] },
+                            testSelection);
 }
 
 if (/Android/.test(navigator.userAgent)) {

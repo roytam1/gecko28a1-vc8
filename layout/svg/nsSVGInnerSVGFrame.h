@@ -3,9 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __NS_SVGINNERSVGFRAME_H__
-#define __NS_SVGINNERSVGFRAME_H__
-
 #include "mozilla/Attributes.h"
 #include "nsSVGContainerFrame.h"
 #include "nsISVGSVGFrame.h"
@@ -74,6 +71,3 @@ protected:
 
   nsAutoPtr<gfxMatrix> mCanvasTM;
 };
-
-#endif
-

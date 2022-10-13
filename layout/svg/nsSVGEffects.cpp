@@ -14,6 +14,7 @@
 #include "nsSVGPathGeometryElement.h"
 #include "nsSVGFilterFrame.h"
 #include "nsSVGMaskFrame.h"
+#include "nsSVGTextPathFrame.h"
 #include "nsIReflowCallback.h"
 #include "RestyleManager.h"
 

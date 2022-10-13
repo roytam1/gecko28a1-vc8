@@ -6,7 +6,7 @@
 
 MODULE = 'jsloader'
 
-UNIFIED_SOURCES += [
+SOURCES += [
     'mozJSComponentLoader.cpp',
     'mozJSLoaderUtils.cpp',
     'mozJSSubScriptLoader.cpp',

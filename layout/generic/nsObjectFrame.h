@@ -44,7 +44,7 @@ public:
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::ImageContainer ImageContainer;
-  typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
+  typedef mozilla::FrameLayerBuilder::ContainerParameters ContainerParameters;
 
   NS_DECL_FRAMEARENA_HELPERS
 
@@ -163,7 +163,7 @@ public:
   already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                      LayerManager* aManager,
                                      nsDisplayItem* aItem,
-                                     const ContainerLayerParameters& aContainerParameters);
+                                     const ContainerParameters& aContainerParameters);
 
   LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                            LayerManager* aManager);
@@ -318,7 +318,7 @@ public:
 
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
-                                             const ContainerLayerParameters& aContainerParameters) MOZ_OVERRIDE
+                                             const ContainerParameters& aContainerParameters) MOZ_OVERRIDE
   {
     return static_cast<nsObjectFrame*>(mFrame)->BuildLayer(aBuilder,
                                                            aManager, 
@@ -328,7 +328,7 @@ public:
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
-                                   const ContainerLayerParameters& aParameters) MOZ_OVERRIDE
+                                   const ContainerParameters& aParameters) MOZ_OVERRIDE
   {
     return static_cast<nsObjectFrame*>(mFrame)->GetLayerState(aBuilder,
                                                               aManager);

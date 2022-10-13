@@ -18,11 +18,7 @@ using namespace js;
 using namespace js::jit;
 
 LIRGraph::LIRGraph(MIRGraph *mir)
-  : blocks_(mir->alloc()),
-    constantPool_(mir->alloc()),
-    safepoints_(mir->alloc()),
-    nonCallSafepoints_(mir->alloc()),
-    numVirtualRegisters_(0),
+  : numVirtualRegisters_(0),
     numInstructions_(1), // First id is 1.
     localSlotCount_(0),
     argumentSlotCount_(0),
@@ -85,22 +81,22 @@ LBlock::lastId()
 }
 
 LMoveGroup *
-LBlock::getEntryMoveGroup(TempAllocator &alloc)
+LBlock::getEntryMoveGroup()
 {
     if (entryMoveGroup_)
         return entryMoveGroup_;
-    entryMoveGroup_ = new LMoveGroup(alloc);
+    entryMoveGroup_ = new LMoveGroup;
     JS_ASSERT(begin()->isLabel());
     insertAfter(*begin(), entryMoveGroup_);
     return entryMoveGroup_;
 }
 
 LMoveGroup *
-LBlock::getExitMoveGroup(TempAllocator &alloc)
+LBlock::getExitMoveGroup()
 {
     if (exitMoveGroup_)
         return exitMoveGroup_;
-    exitMoveGroup_ = new LMoveGroup(alloc);
+    exitMoveGroup_ = new LMoveGroup;
     insertBefore(*rbegin(), exitMoveGroup_);
     return exitMoveGroup_;
 }
@@ -346,10 +342,10 @@ LInstruction::print(FILE *fp)
 }
 
 void
-LInstruction::initSafepoint(TempAllocator &alloc)
+LInstruction::initSafepoint()
 {
     JS_ASSERT(!safepoint_);
-    safepoint_ = new LSafepoint(alloc);
+    safepoint_ = new LSafepoint();
     JS_ASSERT(safepoint_);
 }
 

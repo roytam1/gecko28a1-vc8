@@ -7,7 +7,7 @@
 #include "InterfaceInitFuncs.h"
 
 #include "Accessible-inl.h"
-#include "HyperTextAccessible-inl.h"
+#include "HyperTextAccessible.h"
 #include "nsMai.h"
 
 #include "nsString.h"
@@ -28,7 +28,7 @@ setTextContentsCB(AtkEditableText *aText, const gchar *aString)
     return;
 
   NS_ConvertUTF8toUTF16 strContent(aString);
-  text->ReplaceText(strContent);
+  text->SetTextContents(strContent);
 }
 
 static void

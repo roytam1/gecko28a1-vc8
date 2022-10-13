@@ -168,7 +168,6 @@ template <> struct ExecutionModeTraits<ParallelExecution>
 namespace jit {
     struct IonScript;
     class IonAllocPolicy;
-    class TempAllocator;
 }
 
 namespace analyze {
@@ -619,7 +618,7 @@ class HeapTypeSet : public ConstraintTypeSet
 class CompilerConstraintList;
 
 CompilerConstraintList *
-NewCompilerConstraintList(jit::TempAllocator &alloc);
+NewCompilerConstraintList();
 
 class TemporaryTypeSet : public TypeSet
 {

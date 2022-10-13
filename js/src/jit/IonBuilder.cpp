@@ -48,7 +48,7 @@ IonBuilder::IonBuilder(JSContext *analysisContext, JSCompartment *comp, TempAllo
     abortReason_(AbortReason_Disable),
     reprSetHash_(nullptr),
     constraints_(constraints),
-    analysis_(*temp, info->script()),
+    analysis_(info->script()),
     thisTypes(nullptr),
     argTypes(nullptr),
     typeArray(nullptr),
@@ -56,12 +56,6 @@ IonBuilder::IonBuilder(JSContext *analysisContext, JSCompartment *comp, TempAllo
     loopDepth_(loopDepth),
     callerResumePoint_(nullptr),
     callerBuilder_(nullptr),
-    cfgStack_(*temp),
-    loops_(*temp),
-    switches_(*temp),
-    labels_(*temp),
-    iterators_(*temp),
-    loopHeaders_(*temp),
     inspector(inspector),
     inliningDepth_(inliningDepth),
     numLoopRestarts_(0),
@@ -548,7 +542,7 @@ IonBuilder::init()
         return false;
     }
 
-    if (!analysis().init(alloc(), gsn))
+    if (!analysis().init(gsn))
         return false;
 
     return true;
@@ -1185,8 +1179,8 @@ IonBuilder::traverseBytecode()
         //
         // This is used to catch problems where IonBuilder pops a value without
         // adding any SSA uses and doesn't call setFoldedUnchecked on it.
-        Vector<MDefinition *, 4, IonAllocPolicy> popped(alloc());
-        Vector<size_t, 4, IonAllocPolicy> poppedUses(alloc());
+        Vector<MDefinition *, 4, IonAllocPolicy> popped;
+        Vector<size_t, 4, IonAllocPolicy> poppedUses;
         unsigned nuses = GetUseCount(script_, pc - script_->code);
 
         for (unsigned i = 0; i < nuses; i++) {
@@ -3808,7 +3802,7 @@ IonBuilder::inlineScriptedCall(CallInfo &callInfo, JSFunction *target)
     if (!info)
         return false;
 
-    MIRGraphExits saveExits(alloc());
+    MIRGraphExits saveExits;
     AutoAccumulateExits aae(graph(), saveExits);
 
     // Build the graph.
@@ -4162,7 +4156,7 @@ IonBuilder::inlineCallsite(ObjectVector &targets, ObjectVector &originals,
     }
 
     // Choose a subset of the targets for polymorphic inlining.
-    BoolVector choiceSet(alloc());
+    BoolVector choiceSet;
     uint32_t numInlined = selectInliningTargets(targets, callInfo, choiceSet);
     if (numInlined == 0)
         return InliningStatus_NotInlined;
@@ -4184,7 +4178,7 @@ IonBuilder::inlineGenericFallback(JSFunction *target, CallInfo &callInfo, MBasic
         return false;
 
     // Create a new CallInfo to track modified state within this block.
-    CallInfo fallbackInfo(alloc(), callInfo.constructing());
+    CallInfo fallbackInfo(callInfo.constructing());
     if (!fallbackInfo.init(callInfo))
         return false;
     fallbackInfo.popFormals(fallbackBlock);
@@ -4222,7 +4216,7 @@ IonBuilder::inlineTypeObjectFallback(CallInfo &callInfo, MBasicBlock *dispatchBl
     // We now move the MGetPropertyCache and friends into a fallback path.
 
     // Create a new CallInfo to track modified state within the fallback path.
-    CallInfo fallbackInfo(alloc(), callInfo.constructing());
+    CallInfo fallbackInfo(callInfo.constructing());
     if (!fallbackInfo.init(callInfo))
         return false;
 
@@ -4404,7 +4398,7 @@ IonBuilder::inlineCalls(CallInfo &callInfo, ObjectVector &targets,
         inlineBlock->rewriteSlot(funIndex, funcDef);
 
         // Create a new CallInfo to track modified state within the inline block.
-        CallInfo inlineInfo(alloc(), callInfo.constructing());
+        CallInfo inlineInfo(callInfo.constructing());
         if (!inlineInfo.init(callInfo))
             return false;
         inlineInfo.popFormals(inlineBlock);
@@ -4736,7 +4730,7 @@ IonBuilder::jsop_funcall(uint32_t argc)
     types::TemporaryTypeSet *calleeTypes = current->peek(calleeDepth)->resultTypeSet();
     JSFunction *native = getSingleCallTarget(calleeTypes);
     if (!native || !native->isNative() || native->native() != &js_fun_call) {
-        CallInfo callInfo(alloc(), false);
+        CallInfo callInfo(false);
         if (!callInfo.init(current, argc))
             return false;
         return makeCall(native, callInfo, false);
@@ -4771,7 +4765,7 @@ IonBuilder::jsop_funcall(uint32_t argc)
         argc -= 1;
     }
 
-    CallInfo callInfo(alloc(), false);
+    CallInfo callInfo(false);
     if (!callInfo.init(current, argc))
         return false;
 
@@ -4791,7 +4785,7 @@ IonBuilder::jsop_funapply(uint32_t argc)
     types::TemporaryTypeSet *calleeTypes = current->peek(calleeDepth)->resultTypeSet();
     JSFunction *native = getSingleCallTarget(calleeTypes);
     if (argc != 2) {
-        CallInfo callInfo(alloc(), false);
+        CallInfo callInfo(false);
         if (!callInfo.init(current, argc))
             return false;
         return makeCall(native, callInfo, false);
@@ -4809,7 +4803,7 @@ IonBuilder::jsop_funapply(uint32_t argc)
 
     // Fallback to regular call if arg 2 is not definitely |arguments|.
     if (argument->type() != MIRType_Magic) {
-        CallInfo callInfo(alloc(), false);
+        CallInfo callInfo(false);
         if (!callInfo.init(current, argc))
             return false;
         return makeCall(native, callInfo, false);
@@ -4887,7 +4881,7 @@ IonBuilder::jsop_funapplyarguments(uint32_t argc)
     // can inline the apply() target and don't care about the actual arguments
     // that were passed in.
 
-    CallInfo callInfo(alloc(), false);
+    CallInfo callInfo(false);
 
     // Vp
     MPassArg *passVp = current->pop()->toPassArg();
@@ -4896,7 +4890,7 @@ IonBuilder::jsop_funapplyarguments(uint32_t argc)
     passVp->block()->discard(passVp);
 
     // Arguments
-    MDefinitionVector args(alloc());
+    MDefinitionVector args;
     if (inliningDepth_) {
         if (!args.append(inlineCallInfo_->argv().begin(), inlineCallInfo_->argv().end()))
             return false;
@@ -4951,7 +4945,7 @@ IonBuilder::jsop_call(uint32_t argc, bool constructing)
     int calleeDepth = -((int)argc + 2);
 
     // Acquire known call target if existent.
-    ObjectVector originals(alloc());
+    ObjectVector originals;
     bool gotLambda = false;
     types::TemporaryTypeSet *calleeTypes = current->peek(calleeDepth)->resultTypeSet();
     if (calleeTypes) {
@@ -4963,7 +4957,7 @@ IonBuilder::jsop_call(uint32_t argc, bool constructing)
     // If any call targets need to be cloned, look for existing clones to use.
     // Keep track of the originals as we need to case on them for poly inline.
     bool hasClones = false;
-    ObjectVector targets(alloc());
+    ObjectVector targets;
     for (uint32_t i = 0; i < originals.length(); i++) {
         JSFunction *fun = &originals[i]->as<JSFunction>();
         if (fun->hasScript() && fun->nonLazyScript()->shouldCloneAtCallsite) {
@@ -4976,7 +4970,7 @@ IonBuilder::jsop_call(uint32_t argc, bool constructing)
             return false;
     }
 
-    CallInfo callInfo(alloc(), constructing);
+    CallInfo callInfo(constructing);
     if (!callInfo.init(current, argc))
         return false;
 
@@ -5298,7 +5292,7 @@ IonBuilder::jsop_eval(uint32_t argc)
         if (type != JSVAL_TYPE_OBJECT && type != JSVAL_TYPE_NULL && type != JSVAL_TYPE_UNDEFINED)
             return abort("Direct eval from script with maybe-primitive 'this'");
 
-        CallInfo callInfo(alloc(), /* constructing = */ false);
+        CallInfo callInfo(/* constructing = */ false);
         if (!callInfo.init(current, argc))
             return false;
         callInfo.unwrapArgs();
@@ -5331,7 +5325,7 @@ IonBuilder::jsop_eval(uint32_t argc)
                 current->push(dynamicName);
                 current->push(thisv);
 
-                CallInfo evalCallInfo(alloc(), /* constructing = */ false);
+                CallInfo evalCallInfo(/* constructing = */ false);
                 if (!evalCallInfo.init(current, /* argc = */ 0))
                     return false;
 
@@ -8355,7 +8349,7 @@ IonBuilder::getPropTryCommonGetter(bool *emitted, PropertyName *name,
     current->add(wrapper);
     current->push(wrapper);
 
-    CallInfo callInfo(alloc(), false);
+    CallInfo callInfo(false);
     if (!callInfo.init(current, 0))
         return false;
 
@@ -8395,7 +8389,7 @@ IonBuilder::getPropTryInlineAccess(bool *emitted, PropertyName *name,
     if (current->peek(-1)->type() != MIRType_Object)
         return true;
 
-    BaselineInspector::ShapeVector shapes(alloc());
+    BaselineInspector::ShapeVector shapes;
     if (!inspector->maybeShapesForPropertyOp(pc, shapes))
         return false;
 
@@ -8642,7 +8636,7 @@ IonBuilder::setPropTryCommonSetter(bool *emitted, MDefinition *obj,
 
     // Call the setter. Note that we have to push the original value, not
     // the setter's return value.
-    CallInfo callInfo(alloc(), false);
+    CallInfo callInfo(false);
     if (!callInfo.init(current, 1))
         return false;
 
@@ -8788,7 +8782,7 @@ IonBuilder::setPropTryInlineAccess(bool *emitted, MDefinition *obj,
     if (barrier)
         return true;
 
-    BaselineInspector::ShapeVector shapes(alloc());
+    BaselineInspector::ShapeVector shapes;
     if (!inspector->maybeShapesForPropertyOp(pc, shapes))
         return false;
 
@@ -9507,8 +9501,7 @@ TypeRepresentationSetHash *
 IonBuilder::getOrCreateReprSetHash()
 {
     if (!reprSetHash_) {
-        TypeRepresentationSetHash *hash =
-            alloc_->lifoAlloc()->new_<TypeRepresentationSetHash>(alloc());
+        TypeRepresentationSetHash *hash = alloc_->lifoAlloc()->new_<TypeRepresentationSetHash>();
         if (!hash || !hash->init())
             return nullptr;
 

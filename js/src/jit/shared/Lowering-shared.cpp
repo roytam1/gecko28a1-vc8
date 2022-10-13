@@ -183,7 +183,7 @@ LIRGeneratorShared::assignSafepoint(LInstruction *ins, MInstruction *mir)
     JS_ASSERT(!osiPoint_);
     JS_ASSERT(!ins->safepoint());
 
-    ins->initSafepoint(alloc());
+    ins->initSafepoint();
 
     MResumePoint *mrp = mir->resumePoint() ? mir->resumePoint() : lastResumePoint_;
     LSnapshot *postSnapshot = buildSnapshot(ins, mrp, Bailout_Normal);

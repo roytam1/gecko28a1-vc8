@@ -12,15 +12,14 @@
 using namespace js;
 using namespace js::jit;
 
-BaselineCompilerShared::BaselineCompilerShared(JSContext *cx, TempAllocator &alloc, HandleScript script)
+BaselineCompilerShared::BaselineCompilerShared(JSContext *cx, HandleScript script)
   : cx(cx),
     script(cx, script),
     pc(script->code),
     ionCompileable_(jit::IsIonEnabled(cx) && CanIonCompileScript(cx, script, false)),
     ionOSRCompileable_(jit::IsIonEnabled(cx) && CanIonCompileScript(cx, script, true)),
     debugMode_(cx->compartment()->debugMode()),
-    alloc_(alloc),
-    analysis_(alloc, script),
+    analysis_(script),
     frame(cx, script, masm),
     stubSpace_(),
     icEntries_(),

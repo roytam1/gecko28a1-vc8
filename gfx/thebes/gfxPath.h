@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 
 class gfxContext;
+struct gfxPoint;
 typedef struct cairo_path cairo_path_t;
 
 namespace mozilla {
@@ -28,14 +29,33 @@ class gfxPath {
 
     friend class gfxContext;
 
+protected:
     gfxPath(cairo_path_t* aPath);
+
+    void EnsureFlattenedPath();
 
 public:
     gfxPath(mozilla::gfx::Path* aPath);
     virtual ~gfxPath();
+    
+    /**
+     * Returns calculated total length of path
+     */
+    gfxFloat GetLength();
 
-private:
+    /**
+     * Returns a point a certain distance along the path.  Return is
+     * first or last point of the path if the requested length offset
+     * is outside the range for the path.
+     * @param aOffset offset inpath parameter space (x=length, y=normal offset)
+     * @param aAngle optional - output tangent
+     */
+    gfxPoint FindPoint(gfxPoint aOffset,
+                       gfxFloat* aAngle = nullptr);
+
+protected:
     cairo_path_t* mPath;
+    cairo_path_t* mFlattenedPath;
     mozilla::RefPtr<mozilla::gfx::Path> mMoz2DPath;
 };
 

@@ -10,7 +10,6 @@
 #include "gfxRect.h"
 #include "gfxMatrix.h"
 #include "GraphicsFilter.h"
-#include "mozilla/gfx/2D.h"
 
 class gfxASurface;
 class gfxImageSurface;
@@ -56,8 +55,6 @@ class gfxSurfaceDrawable : public gfxDrawable {
 public:
     gfxSurfaceDrawable(gfxASurface* aSurface, const gfxIntSize aSize,
                        const gfxMatrix aTransform = gfxMatrix());
-    gfxSurfaceDrawable(mozilla::gfx::DrawTarget* aDT, const gfxIntSize aSize,
-                       const gfxMatrix aTransform = gfxMatrix());
     virtual ~gfxSurfaceDrawable() {}
 
     virtual bool Draw(gfxContext* aContext,
@@ -70,7 +67,6 @@ public:
 
 protected:
     nsRefPtr<gfxASurface> mSurface;
-    mozilla::RefPtr<mozilla::gfx::DrawTarget> mDrawTarget;
     const gfxMatrix mTransform;
 };
 

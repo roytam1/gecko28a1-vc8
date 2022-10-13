@@ -1640,7 +1640,7 @@ IonCompile(JSContext *cx, JSScript *script,
     AutoFlushCache afc("IonCompile", cx->runtime()->jitRuntime());
 
     AutoTempAllocatorRooter root(cx, temp);
-    types::CompilerConstraintList *constraints = types::NewCompilerConstraintList(*temp);
+    types::CompilerConstraintList *constraints = types::NewCompilerConstraintList();
     if (!constraints)
         return AbortReason_Alloc;
 

@@ -811,7 +811,7 @@ XULTextFieldAccessible::CacheChildren()
 // XULTextFieldAccessible: HyperTextAccessible protected
 
 already_AddRefed<nsFrameSelection>
-XULTextFieldAccessible::FrameSelection() const
+XULTextFieldAccessible::FrameSelection()
 {
   nsCOMPtr<nsIContent> inputContent(GetInputField());
   NS_ASSERTION(inputContent, "No input content");

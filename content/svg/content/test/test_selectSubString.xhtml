@@ -23,6 +23,9 @@ function runTests()
 {
   var document = $("svg").contentWindow.document;
   var text = document.getElementById("text");
+  // ensure that frames are generated with svg.text.css-frames.enabled
+  text.setAttribute("display", "none");
+  text.setAttribute("display", "block");
 
   function expectThrow(charnum, nchars)
   {
@@ -59,7 +62,14 @@ function runTests()
   SimpleTest.finish();
 }
 
-window.addEventListener("load", runTests, false);
+function run()
+{
+  SpecialPowers.pushPrefEnv({'set': [['svg.text.css-frames.enabled', true]]},
+                            runTests);
+
+}
+
+window.addEventListener("load", run, false);
 </script>
 </pre>
 </body>

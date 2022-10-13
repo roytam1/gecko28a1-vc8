@@ -264,8 +264,7 @@ struct nsCSSRendering {
                                   nsRenderingContext& aRenderingContext,
                                   nsIFrame* aForFrame,
                                   const nsRect& aFrameArea,
-                                  const nsRect& aDirtyRect,
-                                  float aOpacity = 1.0);
+                                  const nsRect& aDirtyRect);
 
   static void ComputePixelRadii(const nscoord *aAppUnitsRadii,
                                 nscoord aAppUnitsPerPixel,

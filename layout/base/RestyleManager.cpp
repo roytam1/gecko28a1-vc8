@@ -28,6 +28,7 @@
 #include "nsBlockFrame.h"
 #include "nsViewportFrame.h"
 #include "nsSVGTextFrame2.h"
+#include "nsSVGTextPathFrame.h"
 #include "StickyScrollContainer.h"
 #include "nsIRootBox.h"
 #include "nsIDOMMutationEvent.h"
@@ -203,7 +204,10 @@ DoApplyRenderingChangeToTree(nsIFrame* aFrame,
       }
     }
     if (aChange & nsChangeHint_UpdateTextPath) {
-      if (aFrame->IsSVGText()) {
+      if (aFrame->GetType() == nsGkAtoms::svgTextPathFrame) {
+        // Invalidate and reflow the entire nsSVGTextFrame:
+        static_cast<nsSVGTextPathFrame*>(aFrame)->NotifyGlyphMetricsChange();
+      } else if (aFrame->IsSVGText()) {
         // Invalidate and reflow the entire nsSVGTextFrame2:
         NS_ASSERTION(aFrame->GetContent()->IsSVG(nsGkAtoms::textPath),
                      "expected frame for a <textPath> element");

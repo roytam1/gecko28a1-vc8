@@ -1044,9 +1044,8 @@ class js::jit::OutOfLineTableSwitch : public OutOfLineCodeBase<CodeGeneratorARM>
     }
 
   public:
-    OutOfLineTableSwitch(TempAllocator &alloc, MTableSwitch *mir)
-      : mir_(mir),
-        codeLabels_(alloc)
+    OutOfLineTableSwitch(MTableSwitch *mir)
+      : mir_(mir)
     {}
 
     MTableSwitch *mir() const {
@@ -1126,7 +1125,7 @@ CodeGeneratorARM::emitTableSwitchDispatch(MTableSwitch *mir, const Register &ind
     // To fill in the CodeLabels for the case entries, we need to first
     // generate the case entries (we don't yet know their offsets in the
     // instruction stream).
-    OutOfLineTableSwitch *ool = new OutOfLineTableSwitch(alloc(), mir);
+    OutOfLineTableSwitch *ool = new OutOfLineTableSwitch(mir);
     for (int32_t i = 0; i < cases; i++) {
         CodeLabel cl;
         masm.writeCodePointer(cl.dest());

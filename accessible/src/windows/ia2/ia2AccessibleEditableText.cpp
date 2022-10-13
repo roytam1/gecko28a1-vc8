@@ -8,7 +8,6 @@
 #include "ia2AccessibleEditableText.h"
 
 #include "AccessibleEditableText_i.c"
-#include "HyperTextAccessible-inl.h"
 #include "HyperTextAccessibleWrap.h"
 
 #include "nsCOMPtr.h"
@@ -27,11 +26,8 @@ ia2AccessibleEditableText::copyText(long aStartOffset, long aEndOffset)
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidRange(aStartOffset, aEndOffset))
-    return E_INVALIDARG;
-
-  textAcc->CopyText(aStartOffset, aEndOffset);
-  return S_OK;
+  nsresult rv = textAcc->CopyText(aStartOffset, aEndOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
@@ -45,11 +41,8 @@ ia2AccessibleEditableText::deleteText(long aStartOffset, long aEndOffset)
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidRange(aStartOffset, aEndOffset))
-    return E_INVALIDARG;
-
-  textAcc->DeleteText(aStartOffset, aEndOffset);
-  return S_OK;
+  nsresult rv = textAcc->DeleteText(aStartOffset, aEndOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
@@ -63,14 +56,11 @@ ia2AccessibleEditableText::insertText(long aOffset, BSTR *aText)
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidOffset(aOffset))
-    return E_INVALIDARG;
-
   uint32_t length = ::SysStringLen(*aText);
   nsAutoString text(*aText, length);
 
-  textAcc->InsertText(text, aOffset);
-  return S_OK;
+  nsresult rv = textAcc->InsertText(text, aOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
@@ -84,11 +74,8 @@ ia2AccessibleEditableText::cutText(long aStartOffset, long aEndOffset)
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidRange(aStartOffset, aEndOffset))
-    return E_INVALIDARG;
-
-  textAcc->CutText(aStartOffset, aEndOffset);
-  return S_OK;
+  nsresult rv = textAcc->CutText(aStartOffset, aEndOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
@@ -102,11 +89,8 @@ ia2AccessibleEditableText::pasteText(long aOffset)
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidOffset(aOffset))
-    return E_INVALIDARG;
-
-  textAcc->PasteText(aOffset);
-  return S_OK;
+  nsresult rv = textAcc->PasteText(aOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
@@ -121,16 +105,15 @@ ia2AccessibleEditableText::replaceText(long aStartOffset, long aEndOffset,
   if (textAcc->IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 
-  if (!textAcc->IsValidRange(aStartOffset, aEndOffset))
-    return E_INVALIDARG;
-
-  textAcc->DeleteText(aStartOffset, aEndOffset);
+  nsresult rv = textAcc->DeleteText(aStartOffset, aEndOffset);
+  if (NS_FAILED(rv))
+    return GetHRESULT(rv);
 
   uint32_t length = ::SysStringLen(*aText);
   nsAutoString text(*aText, length);
-  textAcc->InsertText(text, aStartOffset);
 
-  return S_OK;
+  rv = textAcc->InsertText(text, aStartOffset);
+  return GetHRESULT(rv);
 
   A11Y_TRYBLOCK_END
 }
