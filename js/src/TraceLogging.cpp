@@ -175,7 +175,7 @@ TraceLogging::log(Type type, const char* text /* = nullptr */, unsigned int numb
 void
 TraceLogging::log(Type type, const JS::CompileOptions &options)
 {
-    this->log(type, options.filename, options.lineno);
+    this->log(type, options.filename(), options.lineno);
 }
 
 void

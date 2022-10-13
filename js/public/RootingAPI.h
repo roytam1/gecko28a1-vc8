@@ -220,6 +220,11 @@ class Heap : public js::HeapBase<T>
         return *this;
     }
 
+    Heap<T> &operator=(const Heap<T>& other) {
+        set(other.get());
+        return *this;
+    }
+
     void set(T newPtr) {
         JS_ASSERT(!js::GCMethods<T>::poisoned(newPtr));
         if (js::GCMethods<T>::needsPostBarrier(newPtr)) {
@@ -343,6 +348,11 @@ class TenuredHeap : public js::HeapBase<T>
 
     TenuredHeap<T> &operator=(T p) {
         setPtr(p);
+        return *this;
+    }
+
+    TenuredHeap<T> &operator=(const TenuredHeap<T>& other) {
+        bits = other.bits;
         return *this;
     }
 
@@ -568,6 +578,9 @@ class InternalHandle<T*>
       : holder((void**)root.address()), offset(uintptr_t(field) - uintptr_t(root.get()))
     {}
 
+    InternalHandle(const InternalHandle<T*>& other)
+      : holder(other.holder), offset(other.offset) {}
+
     T *get() const { return reinterpret_cast<T*>(uintptr_t(*holder) + offset); }
 
     const T &operator*() const { return *get(); }
@@ -591,6 +604,8 @@ class InternalHandle<T*>
       : holder(reinterpret_cast<void * const *>(&js::NullPtr::constNullValue)),
         offset(uintptr_t(field))
     {}
+
+    void operator=(InternalHandle<T*> other) MOZ_DELETE;
 };
 
 /*
@@ -912,10 +927,16 @@ class FakeRooted : public RootedBase<T>
     T &get() { return ptr; }
     const T &get() const { return ptr; }
 
-    T &operator=(T value) {
+    FakeRooted<T> &operator=(T value) {
         JS_ASSERT(!GCMethods<T>::poisoned(value));
         ptr = value;
-        return ptr;
+        return *this;
+    }
+
+    FakeRooted<T> &operator=(const FakeRooted<T> &other) {
+        JS_ASSERT(!GCMethods<T>::poisoned(other.ptr));
+        ptr = other.ptr;
+        return *this;
     }
 
     bool operator!=(const T &other) const { return ptr != other; }
@@ -960,6 +981,8 @@ class FakeMutableHandle : public js::MutableHandleBase<T>
 
     template <typename S>
     void operator=(S v) MOZ_DELETE;
+
+    void operator=(const FakeMutableHandle<T>& other) MOZ_DELETE;
 };
 
 /*
