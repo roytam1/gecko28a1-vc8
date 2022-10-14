@@ -3966,6 +3966,13 @@ IonBuilder::makeInliningDecision(JSFunction *target, CallInfo &callInfo)
                         targetScript->filename(), targetScript->lineno);
                 return false;
             }
+
+            // Caller must not be excessively large.
+            if (script()->length >= js_IonOptions.inliningMaxCallerBytecodeLength) {
+                IonSpew(IonSpew_Inlining, "%s:%d - Vetoed: caller excessively large.",
+                        targetScript->filename(), targetScript->lineno);
+                return false;
+            }
         }
 
         // Callee must not be excessively large.
@@ -4563,13 +4570,8 @@ IonBuilder::createCallObject(MDefinition *callee, MDefinition *scope)
     // instructions could potentially bailout, thus leaking the dynamic slots
     // pointer. Run-once scripts need a singleton type, so always do a VM call
     // in such cases.
-    MInstruction *callObj = MNewCallObject::New(alloc(), templateObj, script()->treatAsRunOnce, slots);
+    MNewCallObject *callObj = MNewCallObject::New(alloc(), templateObj, script()->treatAsRunOnce, slots);
     current->add(callObj);
-
-    // Insert a post barrier to protect the following writes if we allocated
-    // the new call object directly into tenured storage.
-    if (templateObj->type()->isLongLivedForJITAlloc())
-        current->add(MPostWriteBarrier::New(alloc(), callObj));
 
     // Initialize the object's reserved slots. No post barrier is needed here,
     // for the same reason as in createDeclEnvObject.
@@ -4673,7 +4675,9 @@ IonBuilder::createThisScriptedSingleton(JSFunction *target, MDefinition *callee)
 
     // Generate an inline path to create a new |this| object with
     // the given singleton prototype.
-    MCreateThisWithTemplate *createThis = MCreateThisWithTemplate::New(alloc(), templateObject);
+    MCreateThisWithTemplate *createThis =
+        MCreateThisWithTemplate::New(alloc(), templateObject,
+                                     templateObject->type()->initialHeap(constraints()));
     current->add(createThis);
 
     return createThis;
@@ -5368,7 +5372,9 @@ IonBuilder::jsop_newarray(uint32_t count)
     if (conversion == types::TemporaryTypeSet::AlwaysConvertToDoubles)
         templateObject->setShouldConvertDoubleElements();
 
-    MNewArray *ins = MNewArray::New(alloc(), count, templateObject, MNewArray::NewArray_Allocating);
+    MNewArray *ins = MNewArray::New(alloc(), count, templateObject,
+                                    templateObject->type()->initialHeap(constraints()),
+                                    MNewArray::NewArray_Allocating);
 
     current->add(ins);
     current->push(ins);
@@ -5388,6 +5394,9 @@ IonBuilder::jsop_newobject()
 
     JS_ASSERT(templateObject->is<JSObject>());
     MNewObject *ins = MNewObject::New(alloc(), templateObject,
+                                      templateObject->hasSingletonType()
+                                      ? gc::TenuredHeap
+                                      : templateObject->type()->initialHeap(constraints()),
                                       /* templateObjectIsClassPrototype = */ false);
 
     current->add(ins);
@@ -7705,7 +7714,9 @@ IonBuilder::jsop_rest()
     unsigned numFormals = info().nargs() - 1;
     unsigned numRest = numActuals > numFormals ? numActuals - numFormals : 0;
 
-    MNewArray *array = MNewArray::New(alloc(), numRest, templateObject, MNewArray::NewArray_Allocating);
+    MNewArray *array = MNewArray::New(alloc(), numRest, templateObject,
+                                      templateObject->type()->initialHeap(constraints()),
+                                      MNewArray::NewArray_Allocating);
     current->add(array);
 
     if (numActuals <= numFormals) {
