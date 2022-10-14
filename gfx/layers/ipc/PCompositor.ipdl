@@ -10,6 +10,7 @@ include protocol PGrallocBuffer;
 include protocol PLayerTransaction;
 include "mozilla/layers/CompositorTypes.h";
 include "mozilla/GfxMessageUtils.h";
+include "nsRegion.h";
 
 using mozilla::null_t;
 using mozilla::layers::TextureFactoryIdentifier;
@@ -65,6 +66,9 @@ parent:
   // that hint is ignored.
   sync PLayerTransaction(LayersBackend[] layersBackendHints, uint64_t id)
     returns (TextureFactoryIdentifier textureFactoryIdentifier, bool success);
+
+  // Notify the compositor that a region of the screen has been invalidated.
+  async NotifyRegionInvalidated(nsIntRegion region);
 };
 
 } // layers
