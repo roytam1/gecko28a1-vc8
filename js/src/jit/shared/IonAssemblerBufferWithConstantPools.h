@@ -15,10 +15,10 @@
 
 namespace js {
 namespace jit {
-typedef Vector<BufferOffset, 512, OldIonAllocPolicy> LoadOffsets;
+typedef Vector<BufferOffset, 512, IonAllocPolicy> LoadOffsets;
 
 struct Pool
-  : public OldIonAllocPolicy
+  : public IonAllocPolicy
 {
     const int maxOffset;
     const int immSize;

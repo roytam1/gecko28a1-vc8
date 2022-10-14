@@ -13,9 +13,9 @@
 using namespace js;
 using namespace js::jit;
 
-BytecodeAnalysis::BytecodeAnalysis(TempAllocator &alloc, JSScript *script)
+BytecodeAnalysis::BytecodeAnalysis(JSScript *script)
   : script_(script),
-    infos_(alloc),
+    infos_(),
     usesScopeChain_(false),
     hasTryFinally_(false),
     hasSetArg_(false)
@@ -40,7 +40,7 @@ struct CatchFinallyRange
 };
 
 bool
-BytecodeAnalysis::init(TempAllocator &alloc, GSNCache &gsn)
+BytecodeAnalysis::init(GSNCache &gsn)
 {
     if (!infos_.growByUninitialized(script_->length))
         return false;
@@ -51,7 +51,7 @@ BytecodeAnalysis::init(TempAllocator &alloc, GSNCache &gsn)
     mozilla::PodZero(infos_.begin(), infos_.length());
     infos_[0].init(/*stackDepth=*/0);
 
-    Vector<CatchFinallyRange, 0, IonAllocPolicy> catchFinallyRanges(alloc);
+    Vector<CatchFinallyRange, 0, IonAllocPolicy> catchFinallyRanges;
 
     for (jsbytecode *pc = script_->code; pc < end; pc += GetBytecodeLength(pc)) {
         JSOp op = JSOp(*pc);

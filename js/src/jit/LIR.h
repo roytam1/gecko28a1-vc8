@@ -667,7 +667,7 @@ class LInstruction
         return mir_;
     }
     void assignSnapshot(LSnapshot *snapshot);
-    void initSafepoint(TempAllocator &alloc);
+    void initSafepoint();
 
     // For an instruction which has a MUST_REUSE_INPUT output, whether that
     // output register will be restored to its original value when bailing out.
@@ -736,16 +736,15 @@ class LBlock : public TempObject
     LMoveGroup *entryMoveGroup_;
     LMoveGroup *exitMoveGroup_;
 
-    LBlock(TempAllocator &alloc, MBasicBlock *block)
+    LBlock(MBasicBlock *block)
       : block_(block),
-        phis_(alloc),
         entryMoveGroup_(nullptr),
         exitMoveGroup_(nullptr)
     { }
 
   public:
-    static LBlock *New(TempAllocator &alloc, MBasicBlock *from) {
-        return new(alloc) LBlock(alloc, from);
+    static LBlock *New(MBasicBlock *from) {
+        return new LBlock(from);
     }
     void add(LInstruction *ins) {
         instructions_.pushBack(ins);
@@ -799,8 +798,8 @@ class LBlock : public TempObject
     uint32_t firstId();
     uint32_t lastId();
     Label *label();
-    LMoveGroup *getEntryMoveGroup(TempAllocator &alloc);
-    LMoveGroup *getExitMoveGroup(TempAllocator &alloc);
+    LMoveGroup *getEntryMoveGroup();
+    LMoveGroup *getExitMoveGroup();
 };
 
 template <size_t Defs, size_t Operands, size_t Temps>
@@ -1022,16 +1021,12 @@ class LSafepoint : public TempObject
     SlotList slotsOrElementsSlots_;
 
   public:
-    LSafepoint(TempAllocator &alloc)
+    LSafepoint()
       : safepointOffset_(INVALID_SAFEPOINT_OFFSET)
       , osiCallPointOffset_(0)
-      , gcSlots_(alloc)
-      , valueSlots_(alloc)
 #ifdef JS_NUNBOX32
-      , nunboxParts_(alloc)
       , partialNunboxes_(0)
 #endif
-      , slotsOrElementsSlots_(alloc)
     { }
     void addLiveRegister(AnyRegister reg) {
         liveRegs_.addUnchecked(reg);

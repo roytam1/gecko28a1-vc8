@@ -194,7 +194,7 @@ class BaselineCompiler : public BaselineCompilerSpecific
     }
 
   public:
-    BaselineCompiler(JSContext *cx, TempAllocator &alloc, HandleScript script);
+    BaselineCompiler(JSContext *cx, HandleScript script);
     bool init();
 
     MethodStatus compile();

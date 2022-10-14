@@ -713,7 +713,7 @@ MCompare::NewAsmJS(TempAllocator &alloc, MDefinition *left, MDefinition *right, 
 MTableSwitch *
 MTableSwitch::New(TempAllocator &alloc, MDefinition *ins, int32_t low, int32_t high)
 {
-    return new(alloc) MTableSwitch(alloc, ins, low, high);
+    return new(alloc) MTableSwitch(ins, low, high);
 }
 
 MGoto *
@@ -1966,8 +1966,7 @@ MTypeOf::foldsTo(TempAllocator &alloc, bool useValueNumbers)
         return this;
     }
 
-    JSRuntime *rt = GetIonContext()->runtime;
-    return MConstant::New(alloc, StringValue(TypeName(type, rt)));
+    return MConstant::New(alloc, StringValue(TypeName(type, GetIonContext()->runtime->names())));
 }
 
 void

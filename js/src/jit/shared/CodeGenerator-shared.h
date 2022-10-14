@@ -98,10 +98,6 @@ class CodeGeneratorShared : public LInstructionVisitor
     // beginning of the code buffer.
     size_t osrEntryOffset_;
 
-    TempAllocator &alloc() const {
-        return graph.mir().alloc();
-    }
-
     inline void setOsrEntryOffset(size_t offset) {
         JS_ASSERT(osrEntryOffset_ == 0);
         osrEntryOffset_ = offset;

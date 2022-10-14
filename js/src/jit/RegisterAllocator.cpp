@@ -487,7 +487,7 @@ RegisterAllocator::getInputMoveGroup(uint32_t ins)
     if (data->inputMoves())
         return data->inputMoves();
 
-    LMoveGroup *moves = new LMoveGroup(alloc());
+    LMoveGroup *moves = new LMoveGroup;
     data->setInputMoves(moves);
     data->block()->insertBefore(data->ins(), moves);
 
@@ -503,11 +503,11 @@ RegisterAllocator::getMoveGroupAfter(uint32_t ins)
     if (data->movesAfter())
         return data->movesAfter();
 
-    LMoveGroup *moves = new LMoveGroup(alloc());
+    LMoveGroup *moves = new LMoveGroup;
     data->setMovesAfter(moves);
 
     if (data->ins()->isLabel())
-        data->block()->insertAfter(data->block()->getEntryMoveGroup(alloc()), moves);
+        data->block()->insertAfter(data->block()->getEntryMoveGroup(), moves);
     else
         data->block()->insertAfter(data->ins(), moves);
     return moves;

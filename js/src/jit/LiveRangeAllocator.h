@@ -232,29 +232,21 @@ class LiveInterval
     InlineForwardList<UsePosition> uses_;
     size_t lastProcessedRange_;
 
-    LiveInterval(TempAllocator &alloc, uint32_t vreg, uint32_t index)
-      : ranges_(alloc),
-        spillInterval_(nullptr),
+  public:
+
+    LiveInterval(uint32_t vreg, uint32_t index)
+      : spillInterval_(nullptr),
         vreg_(vreg),
         index_(index),
         lastProcessedRange_(size_t(-1))
     { }
 
-    LiveInterval(TempAllocator &alloc, uint32_t index)
-      : ranges_(alloc),
-        spillInterval_(nullptr),
+    LiveInterval(uint32_t index)
+      : spillInterval_(nullptr),
         vreg_(UINT32_MAX),
         index_(index),
         lastProcessedRange_(size_t(-1))
     { }
-
-  public:
-    static LiveInterval *New(TempAllocator &alloc, uint32_t vreg, uint32_t index) {
-        return new(alloc) LiveInterval(alloc, vreg, index);
-    }
-    static LiveInterval *New(TempAllocator &alloc, uint32_t index) {
-        return new(alloc) LiveInterval(alloc, index);
-    }
 
     bool addRange(CodePosition from, CodePosition to);
     bool addRangeAtHead(CodePosition from, CodePosition to);
@@ -395,11 +387,6 @@ class VirtualRegister
     void operator=(const VirtualRegister &) MOZ_DELETE;
     VirtualRegister(const VirtualRegister &) MOZ_DELETE;
 
-  protected:
-    VirtualRegister(TempAllocator &alloc)
-      : intervals_(alloc)
-    {}
-
   public:
     bool init(TempAllocator &alloc, LBlock *block, LInstruction *ins, LDefinition *def,
               bool isTemp)
@@ -409,7 +396,7 @@ class VirtualRegister
         ins_ = ins;
         def_ = def;
         isTemp_ = isTemp;
-        LiveInterval *initial = LiveInterval::New(alloc, def->virtualRegister(), 0);
+        LiveInterval *initial = new(alloc) LiveInterval(def->virtualRegister(), 0);
         if (!initial)
             return false;
         return intervals_.append(initial);
@@ -493,9 +480,6 @@ class VirtualRegisterMap
         if (!vregs_)
             return false;
         memset(vregs_, 0, sizeof(VREG) * numVregs);
-        TempAllocator &alloc = gen->alloc();
-        for (uint32_t i = 0; i < numVregs; i++)
-            new(&vregs_[i]) VREG(alloc);
         return true;
     }
     VREG &operator[](unsigned int index) {

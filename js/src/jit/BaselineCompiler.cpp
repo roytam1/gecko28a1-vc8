@@ -24,8 +24,8 @@
 using namespace js;
 using namespace js::jit;
 
-BaselineCompiler::BaselineCompiler(JSContext *cx, TempAllocator &alloc, HandleScript script)
-  : BaselineCompilerSpecific(cx, alloc, script),
+BaselineCompiler::BaselineCompiler(JSContext *cx, HandleScript script)
+  : BaselineCompilerSpecific(cx, script),
     modifiesArguments_(false)
 {
 }
@@ -33,7 +33,7 @@ BaselineCompiler::BaselineCompiler(JSContext *cx, TempAllocator &alloc, HandleSc
 bool
 BaselineCompiler::init()
 {
-    if (!analysis_.init(alloc_, cx->runtime()->gsnCache))
+    if (!analysis_.init(cx->runtime()->gsnCache))
         return false;
 
     if (!labels_.init(script->length))

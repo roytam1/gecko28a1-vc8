@@ -16,7 +16,6 @@ using namespace js::jit;
 ValueNumberer::ValueNumberer(MIRGenerator *mir, MIRGraph &graph, bool optimistic)
   : mir(mir),
     graph_(graph),
-    values(graph.alloc()),
     pessimisticPass_(!optimistic),
     count_(0)
 { }
@@ -341,7 +340,7 @@ ValueNumberer::eliminateRedundancies()
     // is not in dominated scope), then we insert the current instruction,
     // since it is the most dominant instruction with the given value number.
 
-    InstructionMap defs(alloc());
+    InstructionMap defs;
 
     if (!defs.init())
         return false;
@@ -349,7 +348,7 @@ ValueNumberer::eliminateRedundancies()
     IonSpew(IonSpew_GVN, "Eliminating redundant instructions");
 
     // Stack for pre-order CFG traversal.
-    Vector<MBasicBlock *, 1, IonAllocPolicy> worklist(alloc());
+    Vector<MBasicBlock *, 1, IonAllocPolicy> worklist;
 
     // The index of the current block in the CFG traversal.
     size_t index = 0;

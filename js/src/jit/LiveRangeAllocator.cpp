@@ -406,12 +406,12 @@ LiveRangeAllocator<VREG>::init()
     // Initialize fixed intervals.
     for (size_t i = 0; i < AnyRegister::Total; i++) {
         AnyRegister reg = AnyRegister::FromCode(i);
-        LiveInterval *interval = LiveInterval::New(alloc(), 0);
+        LiveInterval *interval = new(alloc()) LiveInterval(0);
         interval->setAllocation(LAllocation(reg));
         fixedIntervals[i] = interval;
     }
 
-    fixedIntervalsUnion = LiveInterval::New(alloc(), 0);
+    fixedIntervalsUnion = new(alloc()) LiveInterval(0);
 
     if (!vregs.init(mir, graph.numVirtualRegisters()))
         return false;

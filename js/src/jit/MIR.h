@@ -1081,11 +1081,11 @@ class MTableSwitch MOZ_FINAL
     int32_t low_;
     int32_t high_;
 
-    MTableSwitch(TempAllocator &alloc, MDefinition *ins,
+    MTableSwitch(MDefinition *ins,
                  int32_t low, int32_t high)
-      : successors_(alloc),
-        cases_(alloc),
-        blocks_(alloc),
+      : successors_(),
+        cases_(),
+        blocks_(),
         low_(low),
         high_(high)
     {
@@ -3801,9 +3801,9 @@ class MMathFunction
 
   private:
     Function function_;
-    MathCache *cache_;
+    const MathCache *cache_;
 
-    MMathFunction(MDefinition *input, Function function, MathCache *cache)
+    MMathFunction(MDefinition *input, Function function, const MathCache *cache)
       : MUnaryInstruction(input), function_(function), cache_(cache)
     {
         setResultType(MIRType_Double);
@@ -3816,14 +3816,14 @@ class MMathFunction
 
     // A nullptr cache means this function will neither access nor update the cache.
     static MMathFunction *New(TempAllocator &alloc, MDefinition *input, Function function,
-                              MathCache *cache)
+                              const MathCache *cache)
     {
         return new(alloc) MMathFunction(input, function, cache);
     }
     Function function() const {
         return function_;
     }
-    MathCache *cache() const {
+    const MathCache *cache() const {
         return cache_;
     }
     TypePolicy *typePolicy() {
@@ -4347,9 +4347,8 @@ class MPhi MOZ_FINAL : public MDefinition, public InlineForwardListNode<MPhi>
     uint32_t capacity_;
 #endif
 
-    MPhi(TempAllocator &alloc, uint32_t slot, MIRType resultType)
-      : inputs_(alloc),
-        slot_(slot),
+    MPhi(uint32_t slot, MIRType resultType)
+      : slot_(slot),
         hasBackedgeType_(false),
         triedToSpecialize_(false),
         isIterator_(false),
@@ -4371,7 +4370,7 @@ class MPhi MOZ_FINAL : public MDefinition, public InlineForwardListNode<MPhi>
   public:
     INSTRUCTION_HEADER(Phi)
     static MPhi *New(TempAllocator &alloc, uint32_t slot, MIRType resultType = MIRType_Value) {
-        return new(alloc) MPhi(alloc, slot, resultType);
+        return new(alloc) MPhi(slot, resultType);
     }
 
     void setOperand(size_t index, MDefinition *operand) {
@@ -6348,8 +6347,8 @@ class InlinePropertyTable : public TempObject
     Vector<Entry *, 4, IonAllocPolicy> entries_;
 
   public:
-    InlinePropertyTable(TempAllocator &alloc, jsbytecode *pc)
-      : pc_(pc), priorResumePoint_(nullptr), entries_(alloc)
+    InlinePropertyTable(jsbytecode *pc)
+      : pc_(pc), priorResumePoint_(nullptr), entries_()
     { }
 
     void setPriorResumePoint(MResumePoint *resumePoint) {
@@ -6442,7 +6441,7 @@ class MGetPropertyCache
 
     InlinePropertyTable *initInlinePropertyTable(TempAllocator &alloc, jsbytecode *pc) {
         JS_ASSERT(inlinePropertyTable_ == nullptr);
-        inlinePropertyTable_ = new(alloc) InlinePropertyTable(alloc, pc);
+        inlinePropertyTable_ = new(alloc) InlinePropertyTable(pc);
         return inlinePropertyTable_;
     }
 
@@ -6518,9 +6517,8 @@ class MGetPropertyPolymorphic
     Vector<Entry, 4, IonAllocPolicy> shapes_;
     CompilerRootPropertyName name_;
 
-    MGetPropertyPolymorphic(TempAllocator &alloc, MDefinition *obj, PropertyName *name)
+    MGetPropertyPolymorphic(MDefinition *obj, PropertyName *name)
       : MUnaryInstruction(obj),
-        shapes_(alloc),
         name_(name)
     {
         setMovable();
@@ -6535,7 +6533,7 @@ class MGetPropertyPolymorphic
     INSTRUCTION_HEADER(GetPropertyPolymorphic)
 
     static MGetPropertyPolymorphic *New(TempAllocator &alloc, MDefinition *obj, PropertyName *name) {
-        return new(alloc) MGetPropertyPolymorphic(alloc, obj, name);
+        return new(alloc) MGetPropertyPolymorphic(obj, name);
     }
 
     bool congruentTo(MDefinition *ins) const {
@@ -6591,9 +6589,8 @@ class MSetPropertyPolymorphic
     Vector<Entry, 4, IonAllocPolicy> shapes_;
     bool needsBarrier_;
 
-    MSetPropertyPolymorphic(TempAllocator &alloc, MDefinition *obj, MDefinition *value)
+    MSetPropertyPolymorphic(MDefinition *obj, MDefinition *value)
       : MBinaryInstruction(obj, value),
-        shapes_(alloc),
         needsBarrier_(false)
     {
     }
@@ -6602,7 +6599,7 @@ class MSetPropertyPolymorphic
     INSTRUCTION_HEADER(SetPropertyPolymorphic)
 
     static MSetPropertyPolymorphic *New(TempAllocator &alloc, MDefinition *obj, MDefinition *value) {
-        return new(alloc) MSetPropertyPolymorphic(alloc, obj, value);
+        return new(alloc) MSetPropertyPolymorphic(obj, value);
     }
 
     TypePolicy *typePolicy() {
@@ -6660,8 +6657,8 @@ class MDispatchInstruction
     MUse operand_;
 
   public:
-    MDispatchInstruction(TempAllocator &alloc, MDefinition *input)
-      : map_(alloc), fallback_(nullptr)
+    MDispatchInstruction(MDefinition *input)
+      : map_(), fallback_(nullptr)
     {
         setOperand(0, input);
     }
@@ -6746,8 +6743,8 @@ class MTypeObjectDispatch : public MDispatchInstruction
     // Map TypeObject (of CallProp's Target Object) -> JSFunction (yielded by the CallProp).
     InlinePropertyTable *inlinePropertyTable_;
 
-    MTypeObjectDispatch(TempAllocator &alloc, MDefinition *input, InlinePropertyTable *table)
-      : MDispatchInstruction(alloc, input),
+    MTypeObjectDispatch(MDefinition *input, InlinePropertyTable *table)
+      : MDispatchInstruction(input),
         inlinePropertyTable_(table)
     { }
 
@@ -6757,7 +6754,7 @@ class MTypeObjectDispatch : public MDispatchInstruction
     static MTypeObjectDispatch *New(TempAllocator &alloc, MDefinition *ins,
                                     InlinePropertyTable *table)
     {
-        return new(alloc) MTypeObjectDispatch(alloc, ins, table);
+        return new(alloc) MTypeObjectDispatch(ins, table);
     }
 
     InlinePropertyTable *propTable() const {
@@ -6768,15 +6765,15 @@ class MTypeObjectDispatch : public MDispatchInstruction
 // Polymorphic dispatch for inlining, keyed off incoming JSFunction*.
 class MFunctionDispatch : public MDispatchInstruction
 {
-    MFunctionDispatch(TempAllocator &alloc, MDefinition *input)
-      : MDispatchInstruction(alloc, input)
+    MFunctionDispatch(MDefinition *input)
+      : MDispatchInstruction(input)
     { }
 
   public:
     INSTRUCTION_HEADER(FunctionDispatch)
 
     static MFunctionDispatch *New(TempAllocator &alloc, MDefinition *ins) {
-        return new(alloc) MFunctionDispatch(alloc, ins);
+        return new(alloc) MFunctionDispatch(ins);
     }
 };
 
