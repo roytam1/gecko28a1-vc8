@@ -94,9 +94,7 @@ public:
     }
     mDT->mDevice->CopyResource(tmpTexture, mDT->mTexture);
 
-    D2D1_BITMAP_PROPERTIES props =
-      D2D1::BitmapProperties(D2D1::PixelFormat(DXGIFormat(format),
-                             AlphaMode(format)));
+    D2D1_BITMAP_PROPERTIES props = D2D1::BitmapProperties(D2DPixelFormat(format));
 
     RefPtr<IDXGISurface> surf;
 
@@ -315,7 +313,7 @@ DrawTargetD2D::GetBitmapForSurface(SourceSurface *aSurface,
                             (uint32_t)aSource.x * BytesPerPixel(srcSurf->GetFormat());
 
       D2D1_BITMAP_PROPERTIES props =
-        D2D1::BitmapProperties(D2D1::PixelFormat(DXGIFormat(srcSurf->GetFormat()), AlphaMode(srcSurf->GetFormat())));
+        D2D1::BitmapProperties(D2DPixelFormat(srcSurf->GetFormat()));
       mRT->CreateBitmap(D2D1::SizeU(UINT32(aSource.width), UINT32(aSource.height)), data, stride, props, byRef(bitmap));
 
       // subtract the integer part leaving the fractional part
