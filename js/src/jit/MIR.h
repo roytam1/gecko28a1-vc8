@@ -5963,7 +5963,9 @@ class MLoadTypedArrayElementStatic
         return new(alloc) MLoadTypedArrayElementStatic(typedArray, ptr);
     }
 
-    ArrayBufferView::ViewType viewType() const { return JS_GetArrayBufferViewType(typedArray_); }
+    ArrayBufferView::ViewType viewType() const {
+        return (ArrayBufferView::ViewType) typedArray_->type();
+    }
     void *base() const;
     size_t length() const;
 
@@ -6145,7 +6147,9 @@ class MStoreTypedArrayElementStatic :
         return this;
     }
 
-    ArrayBufferView::ViewType viewType() const { return JS_GetArrayBufferViewType(typedArray_); }
+    ArrayBufferView::ViewType viewType() const {
+        return (ArrayBufferView::ViewType) typedArray_->type();
+    }
     bool isFloatArray() const {
         return (viewType() == ArrayBufferView::TYPE_FLOAT32 ||
                 viewType() == ArrayBufferView::TYPE_FLOAT64);
