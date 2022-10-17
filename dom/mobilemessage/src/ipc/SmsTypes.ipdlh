@@ -10,6 +10,7 @@ include protocol PBlob;
 using DeliveryState;
 using DeliveryStatus;
 using MessageClass;
+using ReadStatus;
 using ReadState;
 using MessageType;
 
@@ -52,6 +53,8 @@ struct MmsDeliveryInfoData
   nsString        receiver;
   DeliveryStatus  deliveryStatus;
   uint64_t        deliveryTimestamp;
+  ReadStatus      readStatus;
+  uint64_t        readTimestamp;
 };
 
 struct MmsMessageData
