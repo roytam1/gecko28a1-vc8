@@ -43,6 +43,8 @@
 #include "BasicLayers.h"
 #include "libdisplay/GonkDisplay.h"
 #include "pixelflinger/format.h"
+#include "mozilla/layers/CompositorParent.h"
+#include "ParentProcessController.h"
 
 #include "HwcComposer2D.h"
 
@@ -588,6 +590,10 @@ nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
     if (sUsingOMTC) {
         CreateCompositor();
+        if (mCompositorParent) {
+            uint64_t rootLayerTreeId = mCompositorParent->RootLayerTreeId();
+            CompositorParent::SetControllerForLayerTree(rootLayerTreeId, new ParentProcessController());
+        }
         if (mLayerManager)
             return mLayerManager;
     }

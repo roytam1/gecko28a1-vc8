@@ -39,19 +39,21 @@ LinuxKernelMemoryBarrierFunc pLinuxKernelMemoryBarrier __attribute__((weak)) =
 # define STORE_SEQUENCER() pLinuxKernelMemoryBarrier()
 #elif defined(V8_HOST_ARCH_IA32) || defined(V8_HOST_ARCH_X64)
 # if defined(_MSC_VER)
-#if _MSC_VER > 1400
-#  include <intrin.h>
-#else // _MSC_VER > 1400
-    // MSVC2005 has a name collision bug caused when both <intrin.h> and <winnt.h> are included together.
-#ifdef _WINNT_
-#  define _interlockedbittestandreset _interlockedbittestandreset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
-#  define _interlockedbittestandset _interlockedbittestandset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
-#  include <intrin.h>
-#else
-#  include <intrin.h>
-#  define _interlockedbittestandreset _interlockedbittestandreset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
-#  define _interlockedbittestandset _interlockedbittestandset_NAME_CHANGED_TO_AVOID_MSVS2005_ERROR
-#endif
+#if _MSC_VER >= 1400
+//  Following 8 lines: workaround for a bug in some older SDKs
+#   pragma push_macro("_interlockedbittestandset")
+#   pragma push_macro("_interlockedbittestandreset")
+#   pragma push_macro("_interlockedbittestandset64")
+#   pragma push_macro("_interlockedbittestandreset64")
+#   define _interlockedbittestandset _local_interlockedbittestandset
+#   define _interlockedbittestandreset _local_interlockedbittestandreset
+#   define _interlockedbittestandset64 _local_interlockedbittestandset64
+#   define _interlockedbittestandreset64 _local_interlockedbittestandreset64
+#   include <intrin.h> // to force the header not to be included elsewhere
+#   pragma pop_macro("_interlockedbittestandreset64")
+#   pragma pop_macro("_interlockedbittestandset64")
+#   pragma pop_macro("_interlockedbittestandreset")
+#   pragma pop_macro("_interlockedbittestandset")
    // Even though MSVC2005 has the intrinsic _ReadWriteBarrier, it fails to link to it when it's
    // not explicitly declared.
 #  pragma intrinsic(_ReadWriteBarrier)
@@ -80,7 +82,7 @@ class StackEntry : public js::ProfileEntry
 {
 public:
 
-  bool isCopyLabel() volatile {
+  bool isCopyLabel() const volatile {
     return !((uintptr_t)stackAddress() & 0x1);
   }
 
