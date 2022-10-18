@@ -78,11 +78,12 @@ IonBuilder::clearForBackEnd()
     JS_ASSERT(!analysisContext);
     baselineFrame_ = nullptr;
 
-    // The GSN cache allocates data from the malloc heap. Release this before
+    // The caches below allocate data from the malloc heap. Release this before
     // later phases of compilation to avoid leaks, as the top level IonBuilder
     // is not explicitly destroyed. Note that builders for inner scripts are
     // constructed on the stack and will release this memory on destruction.
     gsn.purge();
+    scopeCoordinateNameCache.purge();
 }
 
 bool
@@ -3975,22 +3976,13 @@ IonBuilder::makeInliningDecision(JSFunction *target, CallInfo &callInfo)
             return false;
         }
 
-        // Caller must be... somewhat hot. Ignore use counts when inlining for
-        // the definite properties analysis, as the caller has not run yet.
-        uint32_t callerUses = script()->getUseCount();
-        if (callerUses < js_IonOptions.usesBeforeInlining() &&
+        // Callee must have been called a few times to have somewhat stable
+        // type information, except for definite properties analysis,
+        // as the caller has not run yet.
+        if (targetScript->getUseCount() < js_IonOptions.usesBeforeInlining() &&
             info().executionMode() != DefinitePropertiesAnalysis)
         {
-            IonSpew(IonSpew_Inlining, "%s:%d - Vetoed: caller is insufficiently hot.",
-                    targetScript->filename(), targetScript->lineno);
-            return false;
-        }
-
-        // Callee must be hot relative to the caller.
-        if (targetScript->getUseCount() * js_IonOptions.inlineUseCountRatio < callerUses &&
-            info().executionMode() != DefinitePropertiesAnalysis)
-        {
-            IonSpew(IonSpew_Inlining, "%s:%d - Vetoed: callee is not hot.",
+            IonSpew(IonSpew_Inlining, "%s:%d - Vetoed: callee is insufficiently hot.",
                     targetScript->filename(), targetScript->lineno);
             return false;
         }
@@ -9316,7 +9308,7 @@ IonBuilder::jsop_getaliasedvar(ScopeCoordinate sc)
 {
     JSObject *call = nullptr;
     if (hasStaticScopeObject(sc, &call) && call) {
-        PropertyName *name = ScopeCoordinateName(script(), pc);
+        PropertyName *name = ScopeCoordinateName(scopeCoordinateNameCache, script(), pc);
         bool succeeded;
         if (!getStaticName(call, name, &succeeded))
             return false;
@@ -9356,7 +9348,7 @@ IonBuilder::jsop_setaliasedvar(ScopeCoordinate sc)
                 return false;
         }
         MDefinition *value = current->pop();
-        PropertyName *name = ScopeCoordinateName(script(), pc);
+        PropertyName *name = ScopeCoordinateName(scopeCoordinateNameCache, script(), pc);
 
         if (call) {
             // Push the object on the stack to match the bound object expected in
@@ -9656,7 +9648,8 @@ IonBuilder::loadTypedObjectElements(MDefinition *typedObj,
 
     // Scale to a different unit for compat with typed array MIRs.
     if (unit != 1) {
-        MDiv *scaledOffset = MDiv::NewAsmJS(alloc(), ownerOffset, constantInt(unit), MIRType_Int32);
+        MDiv *scaledOffset = MDiv::NewAsmJS(alloc(), ownerOffset, constantInt(unit), MIRType_Int32,
+                                            /* unsignd = */ false);
         current->add(scaledOffset);
         *ownerScaledOffset = scaledOffset;
     } else {
