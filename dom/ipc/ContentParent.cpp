@@ -2758,7 +2758,7 @@ ContentParent::RecvSyncMessage(const nsString& aMsg,
                                InfallibleTArray<nsString>* aRetvals)
 {
   nsIPrincipal* principal = aPrincipal;
-  if (!Preferences::GetBool("geo.testing.ignore_ipc_principal", false) &&
+  if (!Preferences::GetBool("dom.testing.ignore_ipc_principal", false) &&
       principal && !AssertAppPrincipal(this, principal)) {
     return false;
   }
@@ -2782,7 +2782,7 @@ ContentParent::AnswerRpcMessage(const nsString& aMsg,
                                 InfallibleTArray<nsString>* aRetvals)
 {
   nsIPrincipal* principal = aPrincipal;
-  if (!Preferences::GetBool("geo.testing.ignore_ipc_principal", false) &&
+  if (!Preferences::GetBool("dom.testing.ignore_ipc_principal", false) &&
       principal && !AssertAppPrincipal(this, principal)) {
     return false;
   }
@@ -2804,7 +2804,7 @@ ContentParent::RecvAsyncMessage(const nsString& aMsg,
                                 const IPC::Principal& aPrincipal)
 {
   nsIPrincipal* principal = aPrincipal;
-  if (!Preferences::GetBool("geo.testing.ignore_ipc_principal", false) &&
+  if (!Preferences::GetBool("dom.testing.ignore_ipc_principal", false) &&
       principal && !AssertAppPrincipal(this, principal)) {
     return false;
   }
@@ -2860,7 +2860,7 @@ ContentParent::RecvAddGeolocationListener(const IPC::Principal& aPrincipal,
                                           const bool& aHighAccuracy)
 {
 #ifdef MOZ_CHILD_PERMISSIONS
-  if (!Preferences::GetBool("geo.testing.ignore_ipc_principal", false)) {
+  if (!Preferences::GetBool("dom.testing.ignore_ipc_principal", false)) {
     uint32_t permission = mozilla::CheckPermission(this, aPrincipal,
                                                    "geolocation");
     if (permission != nsIPermissionManager::ALLOW_ACTION) {
