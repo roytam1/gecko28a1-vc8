@@ -1287,6 +1287,10 @@ SocialSidebar = {
     sbrowser.stop();
     sbrowser.removeAttribute("origin");
     sbrowser.setAttribute("src", "about:blank");
+    // We need to explicitly create a new content viewer because the old one
+    // doesn't get destroyed until about:blank has loaded (which does not happen
+    // as long as the element is hidden).
+    sbrowser.docShell.createAboutBlankContentViewer(null);
     SocialFlyout.unload();
   },
 
