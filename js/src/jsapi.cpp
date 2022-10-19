@@ -4426,11 +4426,7 @@ JS::Compile(JSContext *cx, HandleObject obj, CompileOptions options, const char 
 JS_PUBLIC_API(bool)
 JS::CanCompileOffThread(JSContext *cx, const CompileOptions &options)
 {
-#ifdef JS_WORKER_THREADS
-    if (!cx->runtime()->useHelperThreads() || !cx->runtime()->helperThreadCount())
-        return false;
-
-    if (!cx->runtime()->useHelperThreadsForParsing())
+    if (!cx->runtime()->canUseParallelParsing())
         return false;
 
     // Off thread compilation can't occur during incremental collections on the
@@ -4441,9 +4437,6 @@ JS::CanCompileOffThread(JSContext *cx, const CompileOptions &options)
         return false;
 
     return true;
-#else
-    return false;
-#endif
 }
 
 JS_PUBLIC_API(bool)
@@ -4451,12 +4444,8 @@ JS::CompileOffThread(JSContext *cx, Handle<JSObject*> obj, CompileOptions option
                      const jschar *chars, size_t length,
                      OffThreadCompileCallback callback, void *callbackData)
 {
-#ifdef JS_WORKER_THREADS
     JS_ASSERT(CanCompileOffThread(cx, options));
     return StartOffThreadParseScript(cx, options, chars, length, obj, callback, callbackData);
-#else
-    MOZ_ASSUME_UNREACHABLE("Off thread compilation is not available.");
-#endif
 }
 
 JS_PUBLIC_API(JSScript *)
@@ -5927,7 +5916,7 @@ JS_PUBLIC_API(void)
 JS_SetParallelParsingEnabled(JSContext *cx, bool enabled)
 {
 #ifdef JS_ION
-    cx->runtime()->setCanUseHelperThreadsForParsing(enabled);
+    cx->runtime()->setParallelParsingEnabled(enabled);
 #endif
 }
 
@@ -5935,7 +5924,7 @@ JS_PUBLIC_API(void)
 JS_SetParallelIonCompilationEnabled(JSContext *cx, bool enabled)
 {
 #ifdef JS_ION
-    cx->runtime()->setCanUseHelperThreadsForIonCompilation(enabled);
+    cx->runtime()->setParallelIonCompilationEnabled(enabled);
 #endif
 }
 
