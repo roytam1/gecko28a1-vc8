@@ -2504,6 +2504,20 @@ function BrowserFullScreen()
   window.fullScreen = !window.fullScreen;
 }
 
+function SwitchToMetro() {
+  let appStartup = Components.classes["@mozilla.org/toolkit/app-startup;1"].
+    getService(Components.interfaces.nsIAppStartup);
+
+  appStartup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit |
+                  Components.interfaces.nsIAppStartup.eRestartTouchEnvironment);
+}
+
+function updateSwitchToMetroVisibility() {
+  if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+    document.getElementById("switch-to-metro").hidden = true;
+  }
+}
+
 function onFullScreen(event) {
   FullScreen.toggle(event);
 }

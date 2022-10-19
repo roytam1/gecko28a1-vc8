@@ -403,6 +403,8 @@
 @BINPATH@/components/jsconsole-clhandler.js
 @BINPATH@/components/nsDownloadManagerUI.manifest
 @BINPATH@/components/nsDownloadManagerUI.js
+@BINPATH@/components/Downloads.manifest
+@BINPATH@/components/DownloadLegacy.js
 @BINPATH@/components/nsSidebar.manifest
 @BINPATH@/components/nsSidebar.js
 
@@ -571,6 +573,9 @@
 @BINPATH@/components/PaymentFlowInfo.js
 @BINPATH@/components/PaymentRequestInfo.js
 @BINPATH@/components/Payment.manifest
+
+@BINPATH@/components/DownloadsAPI.js
+@BINPATH@/components/DownloadsAPI.manifest
 
 ; InputMethod API
 @BINPATH@/components/MozKeyboard.js
@@ -795,6 +800,7 @@ bin/components/@DLL_PREFIX@nkgnomevfs@DLL_SUFFIX@
 @BINPATH@/components/B2GAboutRedirector.js
 @BINPATH@/components/FilePicker.js
 @BINPATH@/components/HelperAppDialog.js
+@BINPATH@/components/DownloadsUI.js
 
 @BINPATH@/components/DataStore.manifest
 @BINPATH@/components/DataStoreService.js

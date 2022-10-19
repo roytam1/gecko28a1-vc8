@@ -6,6 +6,7 @@
 <menupopup id="appmenu-popup"
            onpopupshowing="if (event.target == this) {
                              updateEditUIVisibility();
+                             updateSwitchToMetroVisibility();
 #ifdef MOZ_SERVICES_SYNC
                              gSyncUI.updateUI();
 #endif
@@ -172,7 +173,8 @@
 #include browser-charsetmenu.inc
 #undef ID_PREFIX
 #undef OMIT_ACCESSKEYS
-          <menuitem label="&goOfflineCmd.label;"
+          <menuitem id="appmenu_offlineMode"
+                    label="&goOfflineCmd.label;"
                     type="checkbox"
                     observes="workOfflineMenuitemState"
                     oncommand="BrowserOffline.toggleOfflineStatus();"/>
@@ -201,6 +203,9 @@
                 observes="sync-syncnow-state"
                 oncommand="gSyncUI.doSync(event);"/>
 #endif
+      <menuitem id="switch-to-metro"
+                label="&switchToMetroCmd.label;"
+                oncommand="SwitchToMetro()"/>
       <menuitem id="appmenu-quit"
                 class="menuitem-iconic"
 #ifdef XP_WIN
