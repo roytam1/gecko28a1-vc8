@@ -1698,6 +1698,58 @@ GetFlashChildOfPID(DWORD pid, HANDLE snapshot)
     return 0;
 }
 
+static DWORD
+GetProcId(DWORD handle)
+{
+  // Dynamically get a pointer to GetProcessId().
+  typedef DWORD (WINAPI *GetProcessIdFunction)(HANDLE);
+  static GetProcessIdFunction GetProcessIdPtr = NULL;
+  static bool initialize_get_process_id = true;
+  if (initialize_get_process_id) {
+    initialize_get_process_id = false;
+    HMODULE kernel32_handle = GetModuleHandle(L"kernel32.dll");
+    if (!kernel32_handle) {
+      return 0;
+    }
+    GetProcessIdPtr = reinterpret_cast<GetProcessIdFunction>(GetProcAddress(
+        kernel32_handle, "GetProcessId"));
+  }
+  if (GetProcessIdPtr) {
+    return (*GetProcessIdPtr)(handle);
+  } else {
+    // Dynamically get a pointer to NtQueryInformationProcess().
+    typedef NTSTATUS (WINAPI *NtQueryInformationProcessFunction)(
+        HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
+    static NtQueryInformationProcessFunction NtQueryInformationProcessPtr = NULL;
+    static bool initialize_query_information_process = true;
+    if (initialize_query_information_process) {
+      initialize_query_information_process = false;
+      // According to nsylvain, ntdll.dll is guaranteed to be loaded, even though
+      // the Windows docs seem to imply that you should LoadLibrary() it.
+      HMODULE ntdll_handle = GetModuleHandle(L"ntdll.dll");
+      if (!ntdll_handle) {
+        return 0;
+      }
+      NtQueryInformationProcessPtr =
+          reinterpret_cast<NtQueryInformationProcessFunction>(GetProcAddress(
+              ntdll_handle, "NtQueryInformationProcess"));
+    }
+    if (!NtQueryInformationProcessPtr)
+      return 0; // both failed
+
+    // Ask for the process ID.
+    PROCESS_BASIC_INFORMATION info;
+    ULONG bytes_returned;
+    NTSTATUS status = (*NtQueryInformationProcessPtr)(handle,
+                                                      ProcessBasicInformation,
+                                                      &info, sizeof info,
+                                                      &bytes_returned);
+    if (!SUCCEEDED(status) || (bytes_returned != (sizeof info)))
+      return 0; // failed
+    return info.UniqueProcessId;
+  }
+}
+
 // We only look for child processes of the Flash plugin, NPSWF*
 #define FLASH_PLUGIN_PREFIX "NPSWF"
 
@@ -1721,7 +1773,7 @@ PluginModuleParent::InitializeInjector()
     if (INVALID_HANDLE_VALUE == snapshot)
         return;
 
-    DWORD pluginProcessPID = GetProcessId(Process()->GetChildProcessHandle());
+    DWORD pluginProcessPID = GetProcId(Process()->GetChildProcessHandle());
     mFlashProcess1 = GetFlashChildOfPID(pluginProcessPID, snapshot);
     if (mFlashProcess1) {
         InjectCrashReporterIntoProcess(mFlashProcess1, this);
