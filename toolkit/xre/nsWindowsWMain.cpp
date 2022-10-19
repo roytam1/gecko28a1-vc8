@@ -82,7 +82,16 @@ int wmain(int argc, WCHAR **argv)
 {
 #ifndef XRE_DONT_PROTECT_DLL_LOAD
   mozilla::SanitizeEnvironmentVariables();
-  SetDllDirectoryW(L"");
+
+  HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
+  typedef BOOL (WINAPI *SetDllDirectoryType)(LPCWSTR);
+  SetDllDirectoryType SetDllDirectoryFn =
+    (SetDllDirectoryType)GetProcAddress(kernel32, "SetDllDirectoryW");
+
+  if (SetDllDirectoryFn) {
+    SetDllDirectoryFn(L"");
+  }
+  FreeLibrary(kernel32);
 #endif
 
   char **argvConverted = new char*[argc + 1];

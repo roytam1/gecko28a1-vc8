@@ -299,16 +299,21 @@ nsresult nsPluginFile::LoadPlugin(PRLibrary **outLibrary)
     NS_ASSERTION(restoreOrigDir, "Error in Loading plugin");
   }
 
-  if (protectCurrentDirectory) {
-    SetDllDirectory(nullptr);
+  HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
+  typedef BOOL (WINAPI *SetDllDirectoryType)(LPCWSTR);
+  SetDllDirectoryType SetDllDirectoryFn =
+    (SetDllDirectoryType)GetProcAddress(kernel32, "SetDllDirectoryW");
+
+  if (SetDllDirectoryFn && protectCurrentDirectory) {
+    SetDllDirectoryFn(nullptr);
   }
 
   nsresult rv = mPlugin->Load(outLibrary);
   if (NS_FAILED(rv))
       *outLibrary = nullptr;
 
-  if (protectCurrentDirectory) {
-    SetDllDirectory(L"");
+  if (SetDllDirectoryFn && protectCurrentDirectory) {
+    SetDllDirectoryFn(L"");
   }
 
   if (restoreOrigDir) {
@@ -316,6 +321,7 @@ nsresult nsPluginFile::LoadPlugin(PRLibrary **outLibrary)
     NS_ASSERTION(bCheck, "Error in Loading plugin");
   }
 
+  FreeLibrary(kernel32);
   return rv;
 }
 

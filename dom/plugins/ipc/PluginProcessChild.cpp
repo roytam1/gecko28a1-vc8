@@ -106,7 +106,16 @@ PluginProcessChild::Init()
 
     if (ShouldProtectPluginCurrentDirectory(values[0].c_str())) {
         SanitizeEnvironmentVariables();
-        SetDllDirectory(L"");
+
+        HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
+        typedef BOOL (WINAPI *SetDllDirectoryType)(LPCWSTR);
+        SetDllDirectoryType SetDllDirectoryFn =
+          (SetDllDirectoryType)GetProcAddress(kernel32, "SetDllDirectoryW");
+
+        if (SetDllDirectoryFn) {
+          SetDllDirectoryFn(L"");
+        }
+        FreeLibrary(kernel32);
     }
 
     pluginFilename = WideToUTF8(values[0]);
