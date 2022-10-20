@@ -1397,13 +1397,14 @@ class MOZ_STACK_CLASS ModuleCompiler
 
     const Global *lookupGlobal(PropertyName *name) const {
         if (GlobalMap::Ptr p = globals_.lookup(name))
-            return p->value;
+            return p->value();
         return nullptr;
     }
     Func *lookupFunction(PropertyName *name) {
         if (GlobalMap::Ptr p = globals_.lookup(name)) {
-            if (p->value->which() == Global::Function)
-                return functions_[p->value->funcIndex()];
+            Global *value = p->value();
+            if (value->which() == Global::Function)
+                return functions_[value->funcIndex()];
         }
         return nullptr;
     }
@@ -1421,7 +1422,7 @@ class MOZ_STACK_CLASS ModuleCompiler
     }
     bool lookupStandardLibraryMathName(PropertyName *name, AsmJSMathBuiltin *mathBuiltin) const {
         if (MathNameMap::Ptr p = standardLibraryMathNames_.lookup(name)) {
-            *mathBuiltin = p->value;
+            *mathBuiltin = p->value();
             return true;
         }
         return false;
@@ -1552,7 +1553,7 @@ class MOZ_STACK_CLASS ModuleCompiler
         ExitDescriptor exitDescriptor(name, sig);
         ExitMap::AddPtr p = exits_.lookupForAdd(exitDescriptor);
         if (p) {
-            *exitIndex = p->value;
+            *exitIndex = p->value();
             return true;
         }
         if (!module_->addExit(ffiIndex, exitIndex))
@@ -1980,7 +1981,7 @@ class FunctionCompiler
     const Local *lookupLocal(PropertyName *name) const
     {
         if (LocalMap::Ptr p = locals_.lookup(name))
-            return &p->value;
+            return &p->value();
         return nullptr;
     }
 
@@ -2537,7 +2538,7 @@ class FunctionCompiler
     {
         bool createdJoinBlock = false;
         if (UnlabeledBlockMap::Ptr p = unlabeledContinues_.lookup(pn)) {
-            if (!bindBreaksOrContinues(&p->value, &createdJoinBlock, pn))
+            if (!bindBreaksOrContinues(&p->value(), &createdJoinBlock, pn))
                 return false;
             unlabeledContinues_.remove(p);
         }
@@ -2699,7 +2700,7 @@ class FunctionCompiler
         const LabelVector &labels = *maybeLabels;
         for (unsigned i = 0; i < labels.length(); i++) {
             if (LabeledBlockMap::Ptr p = map->lookup(labels[i])) {
-                if (!bindBreaksOrContinues(&p->value, createdJoinBlock, pn))
+                if (!bindBreaksOrContinues(&p->value(), createdJoinBlock, pn))
                     return false;
                 map->remove(p);
             }
@@ -2718,7 +2719,7 @@ class FunctionCompiler
             if (!map->add(p, key, OldMove(empty)))
                 return false;
         }
-        if (!p->value.append(curBlock_))
+        if (!p->value().append(curBlock_))
             return false;
         curBlock_ = nullptr;
         return true;
@@ -2728,7 +2729,7 @@ class FunctionCompiler
     {
         bool createdJoinBlock = false;
         if (UnlabeledBlockMap::Ptr p = unlabeledBreaks_.lookup(pn)) {
-            if (!bindBreaksOrContinues(&p->value, &createdJoinBlock, pn))
+            if (!bindBreaksOrContinues(&p->value(), &createdJoinBlock, pn))
                 return false;
             unlabeledBreaks_.remove(p);
         }
@@ -6374,7 +6375,7 @@ GenerateStubs(ModuleCompiler &m)
     // The order of the iterations here is non-deterministic, since
     // m.allExits() is a hash keyed by pointer values!
     for (ModuleCompiler::ExitMap::Range r = m.allExits(); !r.empty(); r.popFront()) {
-        GenerateFFIExit(m, r.front().key, r.front().value, &throwLabel);
+        GenerateFFIExit(m, r.front().key(), r.front().value(), &throwLabel);
         if (m.masm().oom())
             return false;
     }

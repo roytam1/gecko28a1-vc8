@@ -2100,6 +2100,12 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
                                            bool&                   aCreateLayer,
                                            bool                    aPositioned)
 {
+  nsITheme* theme = mOuter->PresContext()->GetTheme();
+  if (theme &&
+      theme->ShouldHideScrollbars()) {
+    return;
+  }
+
   bool overlayScrollbars =
     LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0;
 
