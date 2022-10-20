@@ -501,8 +501,9 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
 
     // Word-sized fields.
 
+  private:
+    jsbytecode      *code_;     /* bytecodes and their immediate operands */
   public:
-    jsbytecode      *code;      /* bytecodes and their immediate operands */
     uint8_t         *data;      /* pointer to variable-length data array (see
                                    comment above Create() for details) */
 
@@ -537,9 +538,8 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
 
     // 32-bit fields.
 
+    uint32_t        length_;    /* length of code vector */
   public:
-    uint32_t        length;     /* length of code vector */
-
     uint32_t        dataSize;   /* size of the used part of the data array */
 
     uint32_t        lineno;     /* base line number of script */
@@ -707,9 +707,38 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
 
     void setVersion(JSVersion v) { version = v; }
 
+    // Script bytecode is immutable after creation.
+    jsbytecode *code() const {
+        js::AutoThreadSafeAccess ts(this);
+        return code_;
+    }
+    size_t length() const {
+        js::AutoThreadSafeAccess ts(this);
+        return length_;
+    }
+
+    void setCode(jsbytecode *code) { code_ = code; }
+    void setLength(size_t length) { length_ = length; }
+
+    jsbytecode *codeEnd() const { return code() + length(); }
+
+    bool containsPC(const jsbytecode *pc) const {
+        return pc >= code() && pc < codeEnd();
+    }
+
+    size_t pcToOffset(const jsbytecode *pc) const {
+        JS_ASSERT(containsPC(pc));
+        return size_t(pc - code());
+    }
+
+    jsbytecode *offsetToPC(size_t offset) const {
+        JS_ASSERT(offset < length());
+        return code() + offset;
+    }
+
     /* See ContextFlags::funArgumentsHasLocalBinding comment. */
     bool argumentsHasVarBinding() const { return argsHasVarBinding_; }
-    jsbytecode *argumentsBytecode() const { JS_ASSERT(code[0] == JSOP_ARGUMENTS); return code; }
+    jsbytecode *argumentsBytecode() const { JS_ASSERT(code()[0] == JSOP_ARGUMENTS); return code(); }
     void setArgumentsHasVarBinding();
     bool argumentsAliasesFormals() const {
         return argumentsHasVarBinding() && !strict;
@@ -932,7 +961,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
     void destroyScriptCounts(js::FreeOp *fop);
 
     jsbytecode *main() {
-        return code + mainOffset;
+        return code() + mainOffset;
     }
 
     /*
@@ -947,7 +976,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
     uint32_t numNotes();  /* Number of srcnote slots in the srcnotes section */
 
     /* Script notes are allocated right after the code. */
-    jssrcnote *notes() { return (jssrcnote *)(code + length); }
+    jssrcnote *notes() { return (jssrcnote *)(code() + length()); }
 
     bool hasArray(ArrayKind kind)           { return (hasArrayBits & (1 << kind)); }
     void setHasArray(ArrayKind kind)        { hasArrayBits |= (1 << kind); }
@@ -1000,7 +1029,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
     }
 
     js::HeapPtrAtom &getAtom(jsbytecode *pc) const {
-        JS_ASSERT(pc >= code && pc + sizeof(uint32_t) < code + length);
+        JS_ASSERT(containsPC(pc) && containsPC(pc + sizeof(uint32_t)));
         return getAtom(GET_UINT32_INDEX(pc));
     }
 
@@ -1009,7 +1038,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
     }
 
     js::PropertyName *getName(jsbytecode *pc) const {
-        JS_ASSERT(pc >= code && pc + sizeof(uint32_t) < code + length);
+        JS_ASSERT(containsPC(pc) && containsPC(pc + sizeof(uint32_t)));
         return getAtom(GET_UINT32_INDEX(pc))->asPropertyName();
     }
 
@@ -1025,7 +1054,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
     }
 
     JSObject *getObject(jsbytecode *pc) {
-        JS_ASSERT(pc >= code && pc + sizeof(uint32_t) < code + length);
+        JS_ASSERT(containsPC(pc) && containsPC(pc + sizeof(uint32_t)));
         return getObject(GET_UINT32_INDEX(pc));
     }
 
@@ -1051,10 +1080,10 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
      * JSVAL_VOID, or any other effects.
      */
     bool isEmpty() const {
-        if (length > 3)
+        if (length() > 3)
             return false;
 
-        jsbytecode *pc = code;
+        jsbytecode *pc = code();
         if (noScriptRval && JSOp(*pc) == JSOP_FALSE)
             ++pc;
         return JSOp(*pc) == JSOP_RETRVAL;
@@ -1085,8 +1114,7 @@ class JSScript : public js::gc::BarrieredCell<JSScript>
 
     js::BreakpointSite *getBreakpointSite(jsbytecode *pc)
     {
-        JS_ASSERT(size_t(pc - code) < length);
-        return hasDebugScript ? debugScript()->breakpoints[pc - code] : nullptr;
+        return hasDebugScript ? debugScript()->breakpoints[pcToOffset(pc)] : nullptr;
     }
 
     js::BreakpointSite *getOrCreateBreakpointSite(JSContext *cx, jsbytecode *pc);
@@ -1471,8 +1499,7 @@ struct ScriptAndCounts
     ScriptCounts scriptCounts;
 
     PCCounts &getPCCounts(jsbytecode *pc) const {
-        JS_ASSERT(unsigned(pc - script->code) < script->length);
-        return scriptCounts.pcCountsVector[pc - script->code];
+        return scriptCounts.pcCountsVector[script->pcToOffset(pc)];
     }
 
     jit::IonScriptCounts *getIonCounts() const {

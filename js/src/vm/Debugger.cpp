@@ -3019,7 +3019,7 @@ DebuggerScript_getOffsetLine(JSContext *cx, unsigned argc, Value *vp)
     size_t offset;
     if (!ScriptOffset(cx, script, args[0], &offset))
         return false;
-    unsigned lineno = JS_PCToLineNumber(cx, script, script->code + offset);
+    unsigned lineno = JS_PCToLineNumber(cx, script, script->offsetToPC(offset));
     args.rval().setNumber(lineno);
     return true;
 }
@@ -3036,7 +3036,7 @@ class BytecodeRangeWithPosition : private BytecodeRange
 
     BytecodeRangeWithPosition(JSContext *cx, JSScript *script)
       : BytecodeRange(cx, script), lineno(script->lineno), column(0),
-        sn(script->notes()), snpc(script->code)
+        sn(script->notes()), snpc(script->code())
     {
         if (!SN_IS_TERMINATOR(sn))
             snpc += SN_DELTA(sn);
@@ -3193,11 +3193,11 @@ class FlowGraphSummary {
     }
 
     bool populate(JSContext *cx, JSScript *script) {
-        if (!entries_.growBy(script->length))
+        if (!entries_.growBy(script->length()))
             return false;
-        unsigned mainOffset = script->main() - script->code;
+        unsigned mainOffset = script->pcToOffset(script->main());
         entries_[mainOffset] = Entry::createWithMultipleEdgesFromMultipleLines();
-        for (size_t i = mainOffset + 1; i < script->length; i++)
+        for (size_t i = mainOffset + 1; i < script->length(); i++)
             entries_[i] = Entry::createWithNoEdges();
 
         size_t prevLineno = script->lineno;
@@ -3490,7 +3490,7 @@ DebuggerScript_setBreakpoint(JSContext *cx, unsigned argc, Value *vp)
     if (!handler)
         return false;
 
-    jsbytecode *pc = script->code + offset;
+    jsbytecode *pc = script->offsetToPC(offset);
     BreakpointSite *site = script->getOrCreateBreakpointSite(cx, pc);
     if (!site)
         return false;
@@ -3515,7 +3515,7 @@ DebuggerScript_getBreakpoints(JSContext *cx, unsigned argc, Value *vp)
         size_t offset;
         if (!ScriptOffset(cx, script, args[0], &offset))
             return false;
-        pc = script->code + offset;
+        pc = script->offsetToPC(offset);
     } else {
         pc = nullptr;
     }
@@ -3524,8 +3524,8 @@ DebuggerScript_getBreakpoints(JSContext *cx, unsigned argc, Value *vp)
     if (!arr)
         return false;
 
-    for (unsigned i = 0; i < script->length; i++) {
-        BreakpointSite *site = script->getBreakpointSite(script->code + i);
+    for (unsigned i = 0; i < script->length(); i++) {
+        BreakpointSite *site = script->getBreakpointSite(script->offsetToPC(i));
         if (site && (!pc || site->pc == pc)) {
             for (Breakpoint *bp = site->firstBreakpoint(); bp; bp = bp->nextInSite()) {
                 if (bp->debugger == dbg &&
@@ -4194,9 +4194,7 @@ DebuggerFrame_getOffset(JSContext *cx, unsigned argc, Value *vp)
     JSScript *script = iter.script();
     iter.updatePcQuadratic();
     jsbytecode *pc = iter.pc();
-    JS_ASSERT(script->code <= pc);
-    JS_ASSERT(pc < script->code + script->length);
-    size_t offset = pc - script->code;
+    size_t offset = script->pcToOffset(pc);
     args.rval().setNumber(double(offset));
     return true;
 }

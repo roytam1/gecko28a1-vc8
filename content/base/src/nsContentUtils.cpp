@@ -4371,6 +4371,11 @@ public:
     mParent = mContent->GetParent();
     mDoc = mContent->OwnerDoc();
   }
+  AnonymousContentDestroyer(nsCOMPtr<Element>* aElement) {
+    mContent = aElement->forget();
+    mParent = mContent->GetParent();
+    mDoc = mContent->OwnerDoc();
+  }
   NS_IMETHOD Run() {
     mContent->UnbindFromTree();
     return NS_OK;
@@ -4389,6 +4394,15 @@ nsContentUtils::DestroyAnonymousContent(nsCOMPtr<nsIContent>* aContent)
 {
   if (*aContent) {
     AddScriptRunner(new AnonymousContentDestroyer(aContent));
+  }
+}
+
+/* static */
+void
+nsContentUtils::DestroyAnonymousContent(nsCOMPtr<Element>* aElement)
+{
+  if (*aElement) {
+    AddScriptRunner(new AnonymousContentDestroyer(aElement));
   }
 }
 

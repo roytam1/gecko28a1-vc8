@@ -4717,7 +4717,7 @@ JS::Evaluate(JSContext *cx, HandleObject obj, CompileOptions options,
     // which for large scripts means significant memory. Perform a GC eagerly
     // to clear out this analysis data before anything happens to inhibit the
     // flushing of this memory (such as setting requestAnimationFrame).
-    if (script->length > LARGE_SCRIPT_LENGTH) {
+    if (script->length() > LARGE_SCRIPT_LENGTH) {
         script = nullptr;
         PrepareZoneForGC(cx->zone());
         GC(cx->runtime(), GC_NORMAL, gcreason::FINISH_LARGE_EVALUTE);
