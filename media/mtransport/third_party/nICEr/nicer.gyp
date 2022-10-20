@@ -166,7 +166,7 @@
                      'NEW_STDIO'
                      'RETSIGTYPE=void',
                      'TIME_WITH_SYS_TIME_H=1',
-                     '__UNUSED__="__attribute__((unused))"',
+                     '__UNUSED__=__attribute__((unused))',
                  ],
 
 		 'include_dirs': [
@@ -214,7 +214,7 @@
                      'NEW_STDIO'
                      'RETSIGTYPE=void',
                      'TIME_WITH_SYS_TIME_H=1',
-                     '__UNUSED__="__attribute__((unused))"',
+                     '__UNUSED__=__attribute__((unused))',
                  ],
 
 		 'include_dirs': [
