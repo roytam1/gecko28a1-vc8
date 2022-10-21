@@ -2076,7 +2076,7 @@ class MGetDynamicName
 // Bailout if the input string contains 'arguments' or 'eval'.
 class MFilterArgumentsOrEval
   : public MAryInstruction<1>,
-    public StringPolicy<0>
+    public BoxExceptPolicy<0, MIRType_String>
 {
   protected:
     MFilterArgumentsOrEval(MDefinition *string)
@@ -2107,7 +2107,8 @@ class MFilterArgumentsOrEval
 
 class MCallDirectEval
   : public MAryInstruction<3>,
-    public MixPolicy<ObjectPolicy<0>, MixPolicy<StringPolicy<1>, BoxPolicy<2> > >
+    public MixPolicy<ObjectPolicy<0>,
+                     MixPolicy<BoxExceptPolicy<1, MIRType_String>, BoxPolicy<2> > >
 {
   protected:
     MCallDirectEval(MDefinition *scopeChain, MDefinition *string, MDefinition *thisValue,
