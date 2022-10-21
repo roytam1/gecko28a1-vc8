@@ -3014,7 +3014,6 @@ let RIL = {
       }
 
       ICCRecordHelper.fetchICCRecords();
-      this.reportStkServiceIsRunning();
     }
 
     this.cardState = newCardState;
@@ -11129,6 +11128,7 @@ let ICCRecordHelper = {
       if (DEBUG) debug("ICCID: " + RIL.iccInfo.iccid);
       if (RIL.iccInfo.iccid) {
         ICCUtilsHelper.handleICCInfoChange();
+        RIL.reportStkServiceIsRunning();
       }
     }
 
