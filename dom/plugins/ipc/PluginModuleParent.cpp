@@ -658,8 +658,10 @@ RemoveMinidump(nsIFile* minidump)
 void
 PluginModuleParent::ProcessFirstMinidump()
 {
-#if defined(XP_WIN) && defined(MOZ_CRASHREPORTER)
+#ifdef MOZ_CRASHREPORTER
+#ifdef XP_WIN
     mozilla::MutexAutoLock lock(mCrashReporterMutex);
+#endif
 #endif
     CrashReporterParent* crashReporter = CrashReporter();
     if (!crashReporter)
@@ -1560,11 +1562,13 @@ PluginModuleParent::AllocPCrashReporterParent(mozilla::dom::NativeThreadId* id,
 bool
 PluginModuleParent::DeallocPCrashReporterParent(PCrashReporterParent* actor)
 {
-#if defined(XP_WIN) && defined(MOZ_CRASHREPORTER)
+#ifdef MOZ_CRASHREPORTER
+#ifdef XP_WIN
     mozilla::MutexAutoLock lock(mCrashReporterMutex);
     if (actor == static_cast<PCrashReporterParent*>(mCrashReporter)) {
         mCrashReporter = nullptr;
     }
+#endif
 #endif
     delete actor;
     return true;
