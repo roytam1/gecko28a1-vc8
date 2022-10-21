@@ -1328,13 +1328,6 @@ MDiv::computeRange()
     // won't be further from zero than lhs.
     if (lhs.lower() >= 0 && rhs.lower() >= 1) {
         setRange(new Range(0, lhs.upper(), true, lhs.exponent()));
-
-        // Also, we can optimize by converting this to an unsigned div.
-        if (specialization() == MIRType_Int32 &&
-            !lhs.canHaveFractionalPart() && !rhs.canHaveFractionalPart())
-        {
-            unsigned_ = true;
-        }
     } else if (unsigned_ && rhs.lower() >= 1) {
         // We shouldn't set the unsigned flag if the inputs can have
         // fractional parts.

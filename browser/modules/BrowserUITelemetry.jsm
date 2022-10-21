@@ -197,6 +197,28 @@ XPCOMUtils.defineLazyGetter(this, "DEFAULT_ITEMS", function() {
   return result;
 });
 
+XPCOMUtils.defineLazyGetter(this, "ALL_BUILTIN_ITEMS", function() {
+  // We also want to detect clicks on individual parts of the URL bar container,
+  // so we special-case them here.
+  const SPECIAL_CASES = [
+    "back-button",
+    "forward-button",
+    "urlbar-stop-button",
+    "urlbar-go-button",
+    "urlbar-reload-button",
+    "searchbar:child"
+  ]
+  return DEFAULT_ITEMS.concat(PALETTE_ITEMS)
+                      .concat(SPECIAL_CASES);
+});
+
+const OTHER_MOUSEUP_MONITORED_ITEMS = [
+   "appmenu-button",
+   "PlacesChevron",
+   "PlacesToolbarItems",
+   "star-button",
+];
+
 this.BrowserUITelemetry = {
   init: function() {
     UITelemetry.addSimpleMeasureFunction("toolbars",
@@ -228,9 +250,16 @@ this.BrowserUITelemetry = {
     aWindow.addEventListener("unload", this);
     let document = aWindow.document;
 
-    let appMenuButton = document.getElementById("appmenu-button");
-    if (appMenuButton) {
-      appMenuButton.addEventListener("mouseup", this);
+    let toolbars = document.querySelectorAll("toolbar[customizable=true]");
+    for (let toolbar of toolbars) {
+      toolbar.addEventListener("mouseup", this);
+    }
+
+    for (let itemID of OTHER_MOUSEUP_MONITORED_ITEMS) {
+      let item = document.getElementById(itemID);
+      if (item) {
+        item.addEventListener("mouseup", this);
+      }
     }
   },
 
@@ -238,9 +267,16 @@ this.BrowserUITelemetry = {
     aWindow.removeEventListener("unload", this);
     let document = aWindow.document;
 
-    let appMenuButton = document.getElementById("appmenu-button");
-    if (appMenuButton) {
-      appMenuButton.removeEventListener("mouseup", this);
+    let toolbars = document.querySelectorAll("toolbar[customizable=true]");
+    for (let toolbar of toolbars) {
+      toolbar.removeEventListener("mouseup", this);
+    }
+
+    for (let itemID of OTHER_MOUSEUP_MONITORED_ITEMS) {
+      let item = document.getElementById(itemID);
+      if (item) {
+        item.removeEventListener("mouseup", this);
+      }
     }
   },
 
@@ -256,6 +292,27 @@ this.BrowserUITelemetry = {
   },
 
   _handleMouseUp: function(aEvent) {
+    let targetID = aEvent.currentTarget.id;
+
+    switch (targetID) {
+      case "appmenu-button":
+        this._appmenuMouseUp(aEvent);
+        break;
+      case "PlacesToolbarItems":
+        this._PlacesToolbarItemsMouseUp(aEvent);
+        break;
+      case "PlacesChevron":
+        this._PlacesChevronMouseUp(aEvent);
+        break;
+      case "star-button":
+        this._starButtonMouseUp(aEvent);
+        break;
+      default:
+        this._checkForBuiltinItem(aEvent);
+    }
+  },
+
+  _appmenuMouseUp: function(aEvent) {
     let itemId;
 
     if (aEvent.originalTarget.id == "appmenu-button") {
@@ -284,6 +341,52 @@ this.BrowserUITelemetry = {
     return "unrecognized";
   },
 
+  _PlacesChevronMouseUp: function(aEvent) {
+    let target = aEvent.originalTarget;
+    let result = target.id == "PlacesChevron" ? "chevron" : "overflowed-item";
+    this._countEvent("click-bookmarks-bar", result);
+  },
+
+  _PlacesToolbarItemsMouseUp: function(aEvent) {
+    let target = aEvent.originalTarget;
+    // If this isn't a bookmark-item, we don't care about it.
+    if (!target.classList.contains("bookmark-item")) {
+      return;
+    }
+
+    let result = target.hasAttribute("container") ? "container" : "item";
+    this._countEvent("click-bookmarks-bar", result);
+  },
+
+  _checkForBuiltinItem: function(aEvent) {
+    let item = aEvent.originalTarget;
+    // Perhaps we're seeing one of the default toolbar items
+    // being clicked.
+    if (ALL_BUILTIN_ITEMS.indexOf(item.id) != -1) {
+      // Base case - we clicked directly on one of our built-in items,
+      // and we can go ahead and register that click.
+      this._countEvent("click-builtin-item", item.id);
+      return;
+    }
+
+    let toolbarID = aEvent.currentTarget.id;
+    // If not, we need to check if one of the ancestors of the clicked
+    // item is in our list of built-in items to check.
+    let candidate = getIDBasedOnFirstIDedAncestor(item, toolbarID);
+    if (ALL_BUILTIN_ITEMS.indexOf(candidate) != -1) {
+      this._countEvent("click-builtin-item", candidate);
+    }
+  },
+
+  _starButtonMouseUp: function(aEvent) {
+    let starButton = aEvent.originalTarget;
+    if (starButton.hasAttribute("starred")) {
+      this._countEvent("click-star-button", "edit");
+    } else {
+      this._countEvent("click-star-button", "add");
+    }
+  },
+
   countCustomizationEvent: function(aCustomizationEvent) {
     this._countEvent("customize", aCustomizationEvent);
   },
@@ -307,6 +410,10 @@ this.BrowserUITelemetry = {
     // Determine if the add-on bar is currently visible
     let addonBar = document.getElementById("addon-bar");
     result.addonBarEnabled = addonBar && !addonBar.collapsed;
+
+    // Determine if the Bookmarks bar is currently visible
+    let bookmarksBar = document.getElementById("PersonalToolbar");
+    result.bookmarksBarEnabled = bookmarksBar && !bookmarksBar.collapsed;
 
     // Examine the default toolbars and see what default items
     // are present and missing.
@@ -366,12 +473,19 @@ this.BrowserUITelemetry = {
  * Returns the id of the first ancestor of aNode that has an id, with
  * ":child" appended to it. If aNode has no parent, or no ancestor has an
  * id, returns null.
+ *
+ * @param aNode the node to find the first ID'd ancestor of
+ * @param aLimitID [optional] if we reach a parent with this ID, we should
+ *                 stop there.
  */
-function getIDBasedOnFirstIDedAncestor(aNode) {
+function getIDBasedOnFirstIDedAncestor(aNode, aLimitID) {
   while (!aNode.id) {
     aNode = aNode.parentNode;
     if (!aNode) {
       return null;
+    }
+    if (aNode.id && aNode.id == aLimitID) {
+      break;
     }
   }
 
