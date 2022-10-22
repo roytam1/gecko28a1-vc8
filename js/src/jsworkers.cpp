@@ -176,12 +176,12 @@ static const JSClass workerGlobalClass = {
     JS_ConvertStub,   nullptr
 };
 
-ParseTask::ParseTask(ExclusiveContext *cx, const CompileOptions &options,
+ParseTask::ParseTask(ExclusiveContext *cx, JSObject *exclusiveContextGlobal, const CompileOptions &options,
                      const jschar *chars, size_t length, JSObject *scopeChain,
                      JS::OffThreadCompileCallback callback, void *callbackData)
   : cx(cx), options(options), chars(chars), length(length),
     alloc(JSRuntime::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE), scopeChain(scopeChain),
-    callback(callback), callbackData(callbackData), script(nullptr),
+    exclusiveContextGlobal(exclusiveContextGlobal), callback(callback), callbackData(callbackData), script(nullptr),
     errors(cx), overRecursed(false)
 {
     JSRuntime *rt = scopeChain->runtimeFromMainThread();
@@ -192,6 +192,15 @@ ParseTask::ParseTask(ExclusiveContext *cx, const CompileOptions &options,
         JS_HoldPrincipals(options.originPrincipals());
     if (!AddObjectRoot(rt, &this->scopeChain, "ParseTask::scopeChain"))
         MOZ_CRASH();
+    if (!AddObjectRoot(rt, &this->exclusiveContextGlobal, "ParseTask::exclusiveContextGlobal"))
+        MOZ_CRASH();
+}
+
+void
+ParseTask::activate(JSRuntime *rt)
+{
+    rt->setUsedByExclusiveThread(exclusiveContextGlobal->zone());
+    cx->enterCompartment(exclusiveContextGlobal->compartment());
 }
 
 ParseTask::~ParseTask()
@@ -203,6 +212,7 @@ ParseTask::~ParseTask()
     if (options.originPrincipals())
         JS_DropPrincipals(rt, options.originPrincipals());
     JS_RemoveObjectRootRT(rt, &scopeChain);
+    JS_RemoveObjectRootRT(rt, &exclusiveContextGlobal);
 
     // ParseTask takes over ownership of its input exclusive context.
     js_delete(cx);
@@ -259,18 +269,14 @@ js::StartOffThreadParseScript(JSContext *cx, const CompileOptions &options,
         }
     }
 
-    cx->runtime()->setUsedByExclusiveThread(global->zone());
-
     ScopedJSDeletePtr<ExclusiveContext> workercx(
         cx->new_<ExclusiveContext>(cx->runtime(), (PerThreadData *) nullptr,
                                    ThreadSafeContext::Context_Exclusive));
     if (!workercx)
         return false;
 
-    workercx->enterCompartment(global->compartment());
-
     ScopedJSDeletePtr<ParseTask> task(
-        cx->new_<ParseTask>(workercx.get(), options, chars, length,
+        cx->new_<ParseTask>(workercx.get(), global, options, chars, length,
                             scopeChain, callback, callbackData));
     if (!task)
         return false;
@@ -280,15 +286,53 @@ js::StartOffThreadParseScript(JSContext *cx, const CompileOptions &options,
     WorkerThreadState &state = *cx->runtime()->workerThreadState;
     JS_ASSERT(state.numThreads);
 
-    AutoLockWorkerThreadState lock(state);
+    // Off thread parsing can't occur during incremental collections on the
+    // atoms compartment, to avoid triggering barriers. (Outside the atoms
+    // compartment, the compilation will use a new zone which doesn't require
+    // barriers itself.) If an atoms-zone GC is in progress, hold off on
+    // executing the parse task until the atoms-zone GC completes (see
+    // EnqueuePendingParseTasksAfterGC).
+    if (cx->runtime()->activeGCInAtomsZone()) {
+        if (!state.parseWaitingOnGC.append(task.get()))
+            return false;
+    } else {
+        task->activate(cx->runtime());
 
-    if (!state.parseWorklist.append(task.get()))
-        return false;
+        AutoLockWorkerThreadState lock(state);
+
+        if (!state.parseWorklist.append(task.get()))
+            return false;
+
+        state.notifyAll(WorkerThreadState::PRODUCER);
+    }
 
     task.forget();
 
-    state.notifyAll(WorkerThreadState::PRODUCER);
     return true;
+}
+
+void
+js::EnqueuePendingParseTasksAfterGC(JSRuntime *rt)
+{
+    JS_ASSERT(!rt->activeGCInAtomsZone());
+
+    if (!rt->workerThreadState || rt->workerThreadState->parseWaitingOnGC.empty())
+        return;
+
+    // This logic should mirror the contents of the !activeGCInAtomsZone()
+    // branch in StartOffThreadParseScript:
+
+    WorkerThreadState &state = *rt->workerThreadState;
+
+    for (size_t i = 0; i < state.parseWaitingOnGC.length(); i++)
+        state.parseWaitingOnGC[i]->activate(rt);
+
+    AutoLockWorkerThreadState lock(state);
+
+    JS_ASSERT(state.parseWorklist.empty());
+    state.parseWorklist.swap(state.parseWaitingOnGC);
+
+    state.notifyAll(WorkerThreadState::PRODUCER);
 }
 
 void
