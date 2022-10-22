@@ -4380,7 +4380,9 @@ TypeScript::printTypes(JSContext *cx, HandleScript script) const
 /////////////////////////////////////////////////////////////////////
 
 bool
-TypeObject::addTypedObjectAddendum(JSContext *cx, TypeRepresentation *repr)
+TypeObject::addTypedObjectAddendum(JSContext *cx,
+                                   TypeTypedObject::Kind kind,
+                                   TypeRepresentation *repr)
 {
     if (!cx->typeInferenceEnabled())
         return true;
@@ -4398,7 +4400,7 @@ TypeObject::addTypedObjectAddendum(JSContext *cx, TypeRepresentation *repr)
         return true;
     }
 
-    TypeTypedObject *typedObject = js_new<TypeTypedObject>(repr);
+    TypeTypedObject *typedObject = js_new<TypeTypedObject>(kind, repr);
     if (!typedObject)
         return false;
     addendum = typedObject;
@@ -4417,8 +4419,10 @@ TypeNewScript::TypeNewScript()
   : TypeObjectAddendum(NewScript)
 {}
 
-TypeTypedObject::TypeTypedObject(TypeRepresentation *repr)
+TypeTypedObject::TypeTypedObject(Kind kind,
+                                 TypeRepresentation *repr)
   : TypeObjectAddendum(TypedObject),
+    kind(kind),
     typeRepr(repr)
 {
 }
