@@ -3776,7 +3776,6 @@ IonBuilder::inlineScriptedCall(CallInfo &callInfo, JSFunction *target)
     AutoAccumulateReturns aar(graph(), returns);
 
     // Build the graph.
-    JS_ASSERT_IF(analysisContext, !analysisContext->isExceptionPending());
     IonBuilder inlineBuilder(analysisContext, compartment,
                              &alloc(), &graph(), constraints(), &inspector, info, nullptr,
                              inliningDepth_ + 1, loopDepth_);

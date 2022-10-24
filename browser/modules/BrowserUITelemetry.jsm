@@ -93,6 +93,7 @@ const APPMENU_WHITELIST = [
   "appmenu_fullScreen",
   "sync-setup-appmenu",
   "sync-syncnowitem-appmenu",
+  "switch-to-metro",
   "appmenu-quit",
 
   "appmenu_bookmarks:child",
@@ -138,11 +139,12 @@ const APPMENU_PREFIX_WHITELIST = [
 ];
 
 const DEFAULT_TOOLBAR_SETS = {
-#ifndef XP_MACOSX
+  // It's true that toolbar-menubar is not visible
+  // on OS X, but the XUL node is definitely present
+  // in the document.
   "toolbar-menubar": [
     "menubar-items"
   ],
-#endif
   "nav-bar": [
     "unified-back-forward-button",
     "urlbar-container",
@@ -197,6 +199,10 @@ XPCOMUtils.defineLazyGetter(this, "DEFAULT_ITEMS", function() {
   return result;
 });
 
+XPCOMUtils.defineLazyGetter(this, "DEFAULT_TOOLBARS", function() {
+  return Object.keys(DEFAULT_TOOLBAR_SETS);
+});
+
 XPCOMUtils.defineLazyGetter(this, "ALL_BUILTIN_ITEMS", function() {
   // We also want to detect clicks on individual parts of the URL bar container,
   // so we special-case them here.
@@ -206,7 +212,8 @@ XPCOMUtils.defineLazyGetter(this, "ALL_BUILTIN_ITEMS", function() {
     "urlbar-stop-button",
     "urlbar-go-button",
     "urlbar-reload-button",
-    "searchbar:child"
+    "searchbar:child",
+    "BMB_bookmarksPopup:child",
   ]
   return DEFAULT_ITEMS.concat(PALETTE_ITEMS)
                       .concat(SPECIAL_CASES);
@@ -218,6 +225,13 @@ const OTHER_MOUSEUP_MONITORED_ITEMS = [
    "PlacesToolbarItems",
    "star-button",
 ];
+
+// Weakly maps browser windows to objects whose keys are relative
+// timestamps for when some kind of session started. For example,
+// when a customization session started. That way, when the window
+// exits customization mode, we can determine how long the session
+// lasted.
+const WINDOW_DURATION_MAP = new WeakMap();
 
 this.BrowserUITelemetry = {
   init: function() {
@@ -232,18 +246,69 @@ this.BrowserUITelemetry = {
     }
   },
 
+  /**
+   * For the _countableEvents object, constructs a chain of
+   * Javascript Objects with the keys in aKeys, with the final
+   * key getting the value in aEndWith. If the final key already
+   * exists in the final object, its value is not set. In either
+   * case, a reference to the second last object in the chain is
+   * returned.
+   *
+   * Example - suppose I want to store:
+   * _countableEvents: {
+   *   a: {
+   *     b: {
+   *       c: 0
+   *     }
+   *   }
+   * }
+   *
+   * And then increment the "c" value by 1, you could call this
+   * function like this:
+   *
+   * let example = this._ensureObjectChain([a, b, c], 0);
+   * example["c"]++;
+   *
+   * Subsequent repetitions of these last two lines would
+   * simply result in the c value being incremented again
+   * and again.
+   *
+   * @param aKeys the Array of keys to chain Objects together with.
+   * @param aEndWith the value to assign to the last key.
+   * @returns a reference to the second last object in the chain -
+   *          so in our example, that'd be "b".
+   */
+  _ensureObjectChain: function(aKeys, aEndWith) {
+    let current = this._countableEvents;
+    let parent = null;
+    for (let [i, key] of Iterator(aKeys)) {
+      if (!(key in current)) {
+        if (i == aKeys.length - 1) {
+          current[key] = aEndWith;
+        } else {
+          current[key] = {};
+        }
+      }
+      parent = current;
+      current = current[key];
+    }
+    return parent;
+  },
+
   _countableEvents: {},
   _countEvent: function(aCategory, aAction) {
-    if (!(aCategory in this._countableEvents)) {
-      this._countableEvents[aCategory] = {};
-    }
+    let countObject = this._ensureObjectChain([aCategory, aAction], 0);
+    countObject[aAction]++;
+  },
 
-    let categoryEvents = this._countableEvents[aCategory];
-
-    if (!(aAction in categoryEvents)) {
-      categoryEvents[aAction] = 0;
+  _countMouseUpEvent: function(aCategory, aAction, aButton) {
+    const BUTTONS = ["left", "middle", "right"];
+    let buttonKey = BUTTONS[aButton];
+    if (buttonKey) {
+      let countObject =
+        this._ensureObjectChain([aCategory, aAction, buttonKey], 0);
+      countObject[buttonKey]++;
     }
-    categoryEvents[aAction]++;
   },
 
   _registerWindow: function(aWindow) {
@@ -261,6 +326,8 @@ this.BrowserUITelemetry = {
         item.addEventListener("mouseup", this);
       }
     }
+
+    WINDOW_DURATION_MAP.set(aWindow, {});
   },
 
   _unregisterWindow: function(aWindow) {
@@ -322,7 +389,7 @@ this.BrowserUITelemetry = {
       itemId = this._getAppmenuItemId(aEvent);
     }
 
-    this._countEvent("click-appmenu", itemId);
+    this._countMouseUpEvent("click-appmenu", itemId, aEvent.button);
   },
 
   _getAppmenuItemId: function(aEvent) {
@@ -344,7 +411,7 @@ this.BrowserUITelemetry = {
   _PlacesChevronMouseUp: function(aEvent) {
     let target = aEvent.originalTarget;
     let result = target.id == "PlacesChevron" ? "chevron" : "overflowed-item";
-    this._countEvent("click-bookmarks-bar", result);
+    this._countMouseUpEvent("click-bookmarks-bar", result, aEvent.button);
   },
 
   _PlacesToolbarItemsMouseUp: function(aEvent) {
@@ -355,7 +422,7 @@ this.BrowserUITelemetry = {
     }
 
     let result = target.hasAttribute("container") ? "container" : "item";
-    this._countEvent("click-bookmarks-bar", result);
+    this._countMouseUpEvent("click-bookmarks-bar", result, aEvent.button);
   },
 
   _checkForBuiltinItem: function(aEvent) {
@@ -365,7 +432,7 @@ this.BrowserUITelemetry = {
     if (ALL_BUILTIN_ITEMS.indexOf(item.id) != -1) {
       // Base case - we clicked directly on one of our built-in items,
       // and we can go ahead and register that click.
-      this._countEvent("click-builtin-item", item.id);
+      this._countMouseUpEvent("click-builtin-item", item.id, aEvent.button);
       return;
     }
 
@@ -374,21 +441,37 @@ this.BrowserUITelemetry = {
     // item is in our list of built-in items to check.
     let candidate = getIDBasedOnFirstIDedAncestor(item, toolbarID);
     if (ALL_BUILTIN_ITEMS.indexOf(candidate) != -1) {
-      this._countEvent("click-builtin-item", candidate);
+      this._countMouseUpEvent("click-builtin-item", candidate, aEvent.button);
     }
   },
 
   _starButtonMouseUp: function(aEvent) {
     let starButton = aEvent.originalTarget;
-    if (starButton.hasAttribute("starred")) {
-      this._countEvent("click-star-button", "edit");
-    } else {
-      this._countEvent("click-star-button", "add");
-    }
+    let action = starButton.hasAttribute("starred") ? "edit" : "add";
+    this._countMouseUpEvent("click-star-button", action, aEvent.button);
   },
 
   countCustomizationEvent: function(aCustomizationEvent) {
     this._countEvent("customize", aCustomizationEvent);
+  },
+
+  startCustomizing: function(aWindow) {
+    this.countCustomizationEvent("start");
+    let durationMap = WINDOW_DURATION_MAP.get(aWindow);
+    durationMap.customization = aWindow.performance.now();
+  },
+
+  _durations: {
+    customization: [],
+  },
+
+  stopCustomizing: function(aWindow) {
+    let durationMap = WINDOW_DURATION_MAP.get(aWindow);
+    if ("customization" in durationMap) {
+      let duration = aWindow.performance.now() - durationMap.customization;
+      this._durations.customization.push(duration);
+      delete durationMap.customization;
+    }
   },
 
   getToolbarMeasures: function() {
@@ -420,6 +503,8 @@ this.BrowserUITelemetry = {
     let defaultKept = [];
     let defaultMoved = [];
     let nondefaultAdded = [];
+    let customToolbars = 0;
+    let addonBarItems = 0;
 
     let toolbars = document.querySelectorAll("toolbar[customizable=true]");
     for (let toolbar of toolbars) {
@@ -447,8 +532,22 @@ this.BrowserUITelemetry = {
           // It's a palette item that's been moved into a toolbar
           nondefaultAdded.push(item);
         }
+        // While we're here, if we're in the add-on bar, we're interested in
+        // counting how many items (built-in AND add-on provided) are in the
+        // toolbar, not counting the addonbar-closebutton and status-bar. We
+        // ignore springs, spacers and separators though.
+        if (toolbarID == "addon-bar" &&
+            DEFAULT_TOOLBAR_SETS["addon-bar"].indexOf(item) == -1 &&
+            !isSpecialToolbarItem(item)) {
+          addonBarItems++;
+        }
+
         // else, it's a generated item (like springs, spacers, etc), or
         // provided by an add-on, and we won't record it.
+      }
+      // Finally, let's see if this is a custom toolbar.
+      if (toolbar.hasAttribute("customindex")) {
+        customToolbars++;
       }
     }
 
@@ -458,12 +557,36 @@ this.BrowserUITelemetry = {
     let defaultRemoved = [node.id for (node of paletteChildren)
                           if (DEFAULT_ITEMS.indexOf(node.id) != -1)];
 
+    let addonToolbars = toolbars.length - DEFAULT_TOOLBARS.length - customToolbars;
+
     result.defaultKept = defaultKept;
     result.defaultMoved = defaultMoved;
     result.nondefaultAdded = nondefaultAdded;
     result.defaultRemoved = defaultRemoved;
+    result.customToolbars = customToolbars;
+    result.addonToolbars = addonToolbars;
+    result.addonBarItems = addonBarItems;
+
+    result.smallIcons = win.gNavToolbox.getAttribute("iconsize") == "small";
+    result.buttonMode = win.gNavToolbox.getAttribute("mode");
+
+    // Find out how many open tabs we have in each window
+    let winEnumerator = Services.wm.getEnumerator("navigator:browser");
+    let visibleTabs = [];
+    let hiddenTabs = [];
+    while (winEnumerator.hasMoreElements()) {
+      let someWin = winEnumerator.getNext();
+      if (someWin.gBrowser) {
+        let visibleTabsNum = someWin.gBrowser.visibleTabs.length;
+        visibleTabs.push(visibleTabsNum);
+        hiddenTabs.push(someWin.gBrowser.tabs.length - visibleTabsNum);
+      }
+    }
+    result.visibleTabs = visibleTabs;
+    result.hiddenTabs = hiddenTabs;
 
     result.countableEvents = this._countableEvents;
+    result.durations = this._durations;
 
     return result;
   },
@@ -490,4 +613,16 @@ function getIDBasedOnFirstIDedAncestor(aNode, aLimitID) {
   }
 
   return aNode.id + ":child";
+}
+
+/**
+ * Returns whether or not the toolbar item ID being passed in is one of
+ * our "special" items (spring, spacer, separator).
+ *
+ * @param aItemID the item ID to check.
+ */
+function isSpecialToolbarItem(aItemID) {
+  return aItemID == "spring" ||
+         aItemID == "spacer" ||
+         aItemID == "separator";
 }

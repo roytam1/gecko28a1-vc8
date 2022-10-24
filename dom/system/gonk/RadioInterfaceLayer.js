@@ -92,6 +92,8 @@ const RIL_IPC_MOBILECONNECTION_MSG_NAMES = [
   "RIL:GetAvailableNetworks",
   "RIL:SelectNetwork",
   "RIL:SelectNetworkAuto",
+  "RIL:SetPreferredNetworkType",
+  "RIL:GetPreferredNetworkType",
   "RIL:SendMMI",
   "RIL:CancelMMI",
   "RIL:RegisterMobileConnectionMsg",
@@ -489,7 +491,7 @@ XPCOMUtils.defineLazyGetter(this, "gRadioEnabledController", function () {
     receiveMessage: function(msg) {
       if (DEBUG) debug("setRadioEnabled: receiveMessage: " + JSON.stringify(msg));
       this.pendingMessages.push(msg);
-      if (this.pendingMessages.length === 1) {
+      if (this.pendingMessages.length === 1 && !this.isDeactivatingDataCalls()) {
         this._processNextMessage();
       }
     },
@@ -538,7 +540,6 @@ XPCOMUtils.defineLazyGetter(this, "gRadioEnabledController", function () {
       } else {
         this.request = (function() {
           radioInterface.receiveMessage(msg);
-          this._processNextMessage();
         }).bind(this);
 
         // In some DSDS architecture with only one modem, toggling one radio may
@@ -594,6 +595,7 @@ XPCOMUtils.defineLazyGetter(this, "gRadioEnabledController", function () {
         this.request();
         this.request = null;
       }
+      this._processNextMessage();
     }
   };
 });
@@ -1054,6 +1056,12 @@ RadioInterface.prototype = {
       case "RIL:SelectNetworkAuto":
         this.workerMessenger.sendWithIPCMessage(msg, "selectNetworkAuto");
         break;
+      case "RIL:SetPreferredNetworkType":
+        this.setPreferredNetworkType(msg.target, msg.json.data);
+        break;
+      case "RIL:GetPreferredNetworkType":
+        this.getPreferredNetworkType(msg.target, msg.json.data);
+        break;
       case "RIL:GetCardLockState":
         this.workerMessenger.sendWithIPCMessage(msg, "iccGetCardLockState",
                                                 "RIL:CardLockResult");
@@ -1488,7 +1496,58 @@ RadioInterface.prototype = {
   },
 
   _preferredNetworkType: null,
-  setPreferredNetworkType: function setPreferredNetworkType(value) {
+  getPreferredNetworkType: function getPreferredNetworkType(target, message) {
+    this.workerMessenger.send("getPreferredNetworkType", message, (function(response) {
+      if (response.success) {
+        this._preferredNetworkType = response.networkType;
+        response.type = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType];
+        if (DEBUG) {
+          this.debug("_preferredNetworkType is now " +
+                     RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]);
+        }
+      }
+
+      target.sendAsyncMessage("RIL:GetPreferredNetworkType", {
+        clientId: this.clientId,
+        data: response
+      });
+      return false;
+    }).bind(this));
+  },
+
+  setPreferredNetworkType: function setPreferredNetworkType(target, message) {
+    if (DEBUG) this.debug("setPreferredNetworkType: " + JSON.stringify(message));
+    let networkType = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO.indexOf(message.type);
+    if (networkType < 0) {
+      message.errorMsg = RIL.GECKO_ERROR_INVALID_PARAMETER;
+      target.sendAsyncMessage("RIL:SetPreferredNetworkType", {
+        clientId: this.clientId,
+        data: message
+      });
+      return false;
+    }
+    message.networkType = networkType;
+
+    this.workerMessenger.send("setPreferredNetworkType", message, (function(response) {
+      if (response.success) {
+        this._preferredNetworkType = response.networkType;
+        if (DEBUG) {
+          this.debug("_preferredNetworkType is now " +
+                      RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]);
+        }
+      }
+
+      target.sendAsyncMessage("RIL:SetPreferredNetworkType", {
+        clientId: this.clientId,
+        data: response
+      });
+      return false;
+    }).bind(this));
+  },
+
+  // TODO: Bug 946589 - B2G RIL: follow-up to bug 944225 - remove
+  // 'ril.radio.preferredNetworkType' setting handler
+  setPreferredNetworkTypeBySetting: function setPreferredNetworkTypeBySetting(value) {
     let networkType = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO.indexOf(value);
     if (networkType < 0) {
       networkType = (this._preferredNetworkType != null)
@@ -2499,9 +2558,11 @@ RadioInterface.prototype = {
   // nsISettingsServiceCallback
   handle: function handle(aName, aResult) {
     switch(aName) {
+      // TODO: Bug 946589 - B2G RIL: follow-up to bug 944225 - remove
+      // 'ril.radio.preferredNetworkType' setting handler
       case "ril.radio.preferredNetworkType":
         if (DEBUG) this.debug("'ril.radio.preferredNetworkType' is now " + aResult);
-        this.setPreferredNetworkType(aResult);
+        this.setPreferredNetworkTypeBySetting(aResult);
         break;
       case "ril.data.enabled":
         if (DEBUG) this.debug("'ril.data.enabled' is now " + aResult);
