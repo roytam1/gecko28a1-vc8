@@ -12,7 +12,6 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Constants.h"
-#include "mozilla/Util.h"
 #include "nsAutoPtr.h"
 
 #include "2D.h"

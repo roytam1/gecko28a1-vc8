@@ -13,7 +13,7 @@
 #include "nsISeekableStream.h"
 
 #include "mozilla/StandardInteger.h"
-#include "mozilla/Util.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Endian.h"
 #include <algorithm>

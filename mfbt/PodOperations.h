@@ -16,9 +16,10 @@
 #define mozilla_PodOperations_h
 
 #include "mozilla/Array.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Util.h"
 
+#include "mozilla/StandardInteger.h"
 #include <string.h>
 
 namespace mozilla {

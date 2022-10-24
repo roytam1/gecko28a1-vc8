@@ -20,7 +20,8 @@
 #include "nsTraceRefcnt.h"              // for MOZ_COUNT_CTOR, etc
 #include "nscore.h"                     // for NS_BUILD_REFCNT_LOGGING
 
-#include "mozilla/Util.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Alignment.h"
 #include "mozilla/SSE.h"
 
 #if _MSC_VER == 1400
