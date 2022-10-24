@@ -3357,9 +3357,8 @@ nsDisplayStickyPosition::BuildLayer(nsDisplayListBuilder* aBuilder,
   }
 
   nsLayoutUtils::SetFixedPositionLayerData(layer, scrollFrame, scrollFrameSize,
-                                           mStickyPosFrame, ReferenceFrame(),
-                                           presContext,
-                                           aContainerParameters);
+                                           mStickyPosFrame,
+                                           presContext, aContainerParameters);
 
   ViewID scrollId = nsLayoutUtils::FindOrCreateIDFor(
     stickyScrollContainer->ScrollFrame()->GetScrolledFrame()->GetContent());
@@ -3491,6 +3490,16 @@ nsDisplayScrollLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
                      scrollId, false, aContainerParameters);
 
   return layer.forget();
+}
+
+bool
+nsDisplayScrollLayer::ShouldBuildLayerEvenIfInvisible(nsDisplayListBuilder* aBuilder)
+{
+  if (nsLayoutUtils::GetDisplayPort(mScrolledFrame->GetContent(), nullptr)) {
+    return true;
+  }
+
+  return nsDisplayWrapList::ShouldBuildLayerEvenIfInvisible(aBuilder);
 }
 
 bool

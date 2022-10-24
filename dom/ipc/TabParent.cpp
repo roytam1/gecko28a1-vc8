@@ -484,10 +484,6 @@ TabParent::UpdateDimensions(const nsRect& rect, const nsIntSize& size)
     mOrientation = orientation;
 
     unused << SendUpdateDimensions(mRect, mDimensions, mOrientation);
-    if (RenderFrameParent* rfp = GetRenderFrame()) {
-      rfp->NotifyDimensionsChanged(ScreenIntSize::FromUnknownSize(
-        gfx::IntSize(mDimensions.width, mDimensions.height)));
-    }
   }
 }
 
@@ -518,6 +514,13 @@ void TabParent::HandleLongTap(const CSSIntPoint& aPoint, int32_t aModifiers)
 {
   if (!mIsDestroyed) {
     unused << SendHandleLongTap(aPoint);
+  }
+}
+
+void TabParent::HandleLongTapUp(const CSSIntPoint& aPoint, int32_t aModifiers)
+{
+  if (!mIsDestroyed) {
+    unused << SendHandleLongTapUp(aPoint);
   }
 }
 
@@ -711,6 +714,15 @@ bool TabParent::SendHandleLongTap(const CSSIntPoint& aPoint)
   }
 
   return PBrowserParent::SendHandleLongTap(AdjustTapToChildWidget(aPoint));
+}
+
+bool TabParent::SendHandleLongTapUp(const CSSIntPoint& aPoint)
+{
+  if (mIsDestroyed) {
+    return false;
+  }
+
+  return PBrowserParent::SendHandleLongTapUp(AdjustTapToChildWidget(aPoint));
 }
 
 bool TabParent::SendHandleDoubleTap(const CSSIntPoint& aPoint)
@@ -1671,12 +1683,6 @@ TabParent::RecvPRenderFrameConstructor(PRenderFrameParent* actor,
                                        TextureFactoryIdentifier* factoryIdentifier,
                                        uint64_t* layersId)
 {
-  RenderFrameParent* rfp = GetRenderFrame();
-  if (mDimensions != nsIntSize() && rfp) {
-    rfp->NotifyDimensionsChanged(ScreenIntSize::FromUnknownSize(
-      gfx::IntSize(mDimensions.width, mDimensions.height)));
-  }
-
   return true;
 }
 

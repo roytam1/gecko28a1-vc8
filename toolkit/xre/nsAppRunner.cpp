@@ -574,6 +574,22 @@ ProcessDDE(nsINativeAppSupport* aNative, bool aWait)
 }
 #endif
 
+/**
+ * Determines if there is support for showing the profile manager
+ *
+ * @return true in all environments except for Windows Metro
+*/
+static bool
+CanShowProfileManager()
+{
+#if defined(XP_WIN)
+  return XRE_GetWindowsEnvironment() == WindowsEnvironmentType_Desktop;
+#else
+  return true;
+#endif
+}
+
+
 bool gSafeMode = false;
 
 /**
@@ -1883,6 +1899,10 @@ static nsresult
 ShowProfileManager(nsIToolkitProfileService* aProfileSvc,
                    nsINativeAppSupport* aNative)
 {
+  if (!CanShowProfileManager()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   nsresult rv;
 
   nsCOMPtr<nsIFile> profD, profLD;
@@ -2233,7 +2253,10 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
       PR_fprintf(PR_STDERR, "Error: argument -p is invalid when argument -osint is specified\n");
       return NS_ERROR_FAILURE;
     }
-    return ShowProfileManager(aProfileSvc, aNative);
+
+    if (CanShowProfileManager()) {
+      return ShowProfileManager(aProfileSvc, aNative);
+    }
   }
   if (ar) {
     ar = CheckArg("osint");
@@ -2261,14 +2284,16 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
       return ProfileLockedDialog(profile, unlocker, aNative, aResult);
     }
 
-    return ShowProfileManager(aProfileSvc, aNative);
+    if (CanShowProfileManager()) {
+      return ShowProfileManager(aProfileSvc, aNative);
+    }
   }
 
   ar = CheckArg("profilemanager", true);
   if (ar == ARG_BAD) {
     PR_fprintf(PR_STDERR, "Error: argument -profilemanager is invalid when argument -osint is specified\n");
     return NS_ERROR_FAILURE;
-  } else if (ar == ARG_FOUND) {
+  } else if (ar == ARG_FOUND && CanShowProfileManager()) {
     return ShowProfileManager(aProfileSvc, aNative);
   }
 
@@ -2293,8 +2318,9 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
   }
 
   bool useDefault = true;
-  if (count > 1)
+  if (count > 1 && CanShowProfileManager()) {
     aProfileSvc->GetStartWithLastProfile(&useDefault);
+  }
 
   if (useDefault) {
     nsCOMPtr<nsIToolkitProfile> profile;
@@ -2347,6 +2373,10 @@ SelectProfile(nsIProfileLock* *aResult, nsIToolkitProfileService* aProfileSvc, n
 
       return ProfileLockedDialog(profile, unlocker, aNative, aResult);
     }
+  }
+
+  if (!CanShowProfileManager()) {
+    return NS_ERROR_FAILURE;
   }
 
   return ShowProfileManager(aProfileSvc, aNative);
@@ -4057,12 +4087,6 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
     // We have an application restart don't do any shutdown checks here
     // In particular we don't want to poison IO for checking late-writes.
     gShutdownChecks = SCM_NOTHING;
-
-    #if defined(MOZ_METRO) && defined(XP_WIN)
-    if (rv == NS_SUCCESS_RESTART_METRO_APP) {
-      LaunchDefaultMetroBrowser();
-    }
-    #endif
   }
 
   if (!mShuttingDown) {
@@ -4099,7 +4123,15 @@ XREMain::XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
     MOZ_gdk_display_close(mGdkDisplay);
 #endif
 
-    rv = LaunchChild(mNativeApp, true);
+#if defined(MOZ_METRO) && defined(XP_WIN)
+    if (rv == NS_SUCCESS_RESTART_METRO_APP) {
+      LaunchDefaultMetroBrowser();
+      rv = NS_OK;
+    } else
+#endif
+    {
+      rv = LaunchChild(mNativeApp, true);
+    }
 
 #ifdef MOZ_CRASHREPORTER
     if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER)
@@ -4190,6 +4222,36 @@ public:
   HRESULT mResult;
 };
 
+#ifndef AHE_TYPE
+enum AHE_TYPE {
+  AHE_DESKTOP = 0,
+  AHE_IMMERSIVE = 1
+};
+#endif
+
+/*
+ * The Windows launcher uses this value to decide what front end ui
+ * to launch. We always launch the same ui unless the user
+ * specifically asks to switch. Update the value on every startup
+ * based on the environment requested.
+ */
+void
+SetLastWinRunType(AHE_TYPE aType)
+{
+  HKEY key;
+  LONG result = RegOpenKeyExW(HKEY_CURRENT_USER,
+                              L"SOFTWARE\\Mozilla\\Firefox",
+                              0, KEY_WRITE, &key);
+  if (result != ERROR_SUCCESS) {
+    return;
+  }
+  DWORD value = (DWORD)aType;
+  result = RegSetValueEx(key, L"MetroLastAHE", 0, REG_DWORD,
+                         reinterpret_cast<LPBYTE>(&value),
+                         sizeof(DWORD));
+  RegCloseKey(key);
+}
+
 int
 XRE_mainMetro(int argc, char* argv[], const nsXREAppData* aAppData)
 {
@@ -4257,6 +4319,9 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData, uint32_t aFlags)
 #else
   if (aFlags == XRE_MAIN_FLAG_USE_METRO) {
     SetWindowsEnvironment(WindowsEnvironmentType_Metro);
+    SetLastWinRunType(AHE_IMMERSIVE);
+  } else {
+    SetLastWinRunType(AHE_DESKTOP);
   }
 
   // Desktop

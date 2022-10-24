@@ -341,7 +341,6 @@ public:
   virtual JSObject *GetGlobalJSObject();
 
   // nsIScriptGlobalObject
-  virtual nsIScriptContext *GetContext();
   JSObject *FastGetGlobalJSObject() const
   {
     return mJSObject;
@@ -528,11 +527,6 @@ public:
   bool ShouldPromptToBlockDialogs();
   // Inner windows only.
   bool DialogsAreBeingAbused();
-
-  // Ask the user if further dialogs should be blocked, if dialogs are currently
-  // being abused. This is used in the cases where we have no modifiable UI to
-  // show, in that case we show a separate dialog to ask this question.
-  bool ConfirmDialogIfNeeded();
 
   // These functions are used for controlling and determining whether dialogs
   // (alert, prompt, confirm) are currently allowed in this window.
@@ -978,7 +972,7 @@ protected:
 
   // Object Management
   virtual ~nsGlobalWindow();
-  void ClearDelayedEventsAndDropDocument();
+  void DropOuterWindowDocs();
   void CleanUp();
   void ClearControllers();
   nsresult FinalClose();
@@ -1273,9 +1267,6 @@ protected:
   nsresult CloneStorageEvent(const nsAString& aType,
                              nsCOMPtr<nsIDOMStorageEvent>& aEvent);
 
-  // Implements Get{Real,Scriptable}Top.
-  nsresult GetTopImpl(nsIDOMWindow **aWindow, bool aScriptable);
-
   // Outer windows only.
   nsDOMWindowList* GetWindowList();
 
@@ -1313,6 +1304,11 @@ protected:
 
   already_AddRefed<nsIDOMWindow>
     GetContentInternal(mozilla::ErrorResult& aError);
+
+  // Ask the user if further dialogs should be blocked, if dialogs are currently
+  // being abused. This is used in the cases where we have no modifiable UI to
+  // show, in that case we show a separate dialog to ask this question.
+  bool ConfirmDialogIfNeeded();
 
   // When adding new member variables, be careful not to create cycles
   // through JavaScript.  If there is any chance that a member variable
@@ -1471,6 +1467,12 @@ protected:
 
   nsAutoPtr<nsJSThingHashtable<nsPtrHashKey<nsXBLPrototypeHandler>, JSObject*> > mCachedXBLPrototypeHandlers;
 
+  // mSuspendedDoc is only set on outer windows. It's useful when we get matched
+  // EnterModalState/LeaveModalState calls, in which case the outer window is
+  // responsible for unsuspending events on the document. If we don't (for
+  // example, if the outer window is closed before the LeaveModalState call),
+  // then the inner window whose mDoc is our mSuspendedDoc is responsible for
+  // unsuspending it.
   nsCOMPtr<nsIDocument> mSuspendedDoc;
 
   nsRefPtr<mozilla::dom::indexedDB::IDBFactory> mIndexedDB;

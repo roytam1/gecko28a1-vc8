@@ -567,6 +567,24 @@ public:
     }
   }
 
+  virtual void HandleLongTapUp(const CSSIntPoint& aPoint,
+                             int32_t aModifiers) MOZ_OVERRIDE
+  {
+    if (MessageLoop::current() != mUILoop) {
+      // We have to send this message from the "UI thread" (main
+      // thread).
+      mUILoop->PostTask(
+        FROM_HERE,
+        NewRunnableMethod(this, &RemoteContentController::HandleLongTapUp,
+                          aPoint, aModifiers));
+      return;
+    }
+    if (mRenderFrame) {
+      TabParent* browser = static_cast<TabParent*>(mRenderFrame->Manager());
+      browser->HandleLongTapUp(aPoint, aModifiers);
+    }
+  }
+
   void ClearRenderFrame() { mRenderFrame = nullptr; }
 
   virtual void SendAsyncScrollDOMEvent(bool aIsRoot,
@@ -887,15 +905,6 @@ RenderFrameParent::NotifyInputEvent(const WidgetInputEvent& aEvent,
 {
   if (GetApzcTreeManager()) {
     GetApzcTreeManager()->ReceiveInputEvent(aEvent, aOutTargetGuid, aOutEvent);
-  }
-}
-
-void
-RenderFrameParent::NotifyDimensionsChanged(ScreenIntSize size)
-{
-  if (GetApzcTreeManager()) {
-    GetApzcTreeManager()->UpdateRootCompositionBounds(
-      mLayersId, ScreenIntRect(ScreenIntPoint(), size));
   }
 }
 

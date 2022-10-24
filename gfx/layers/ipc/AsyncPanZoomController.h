@@ -105,15 +105,6 @@ public:
   nsEventStatus ReceiveInputEvent(const InputData& aEvent);
 
   /**
-   * Updates the composition bounds, i.e. the dimensions of the final size of
-   * the frame this is tied to during composition onto, in device pixels. In
-   * general, this will just be:
-   * { x = 0, y = 0, width = surface.width, height = surface.height }, however
-   * there is no hard requirement for this.
-   */
-  void UpdateCompositionBounds(const ScreenIntRect& aCompositionBounds);
-
-  /**
    * Kicks an animation to zoom to a rect. This may be either a zoom out or zoom
    * in. The actual animation is done on the compositor thread after being set
    * up.
@@ -350,30 +341,23 @@ protected:
   nsEventStatus OnScaleEnd(const PinchGestureInput& aEvent);
 
   /**
-   * Helper method for long press gestures.
-   *
-   * XXX: Implement this.
+   * Helper methods for long press gestures.
    */
   nsEventStatus OnLongPress(const TapGestureInput& aEvent);
+  nsEventStatus OnLongPressUp(const TapGestureInput& aEvent);
 
   /**
    * Helper method for single tap gestures.
-   *
-   * XXX: Implement this.
    */
   nsEventStatus OnSingleTapUp(const TapGestureInput& aEvent);
 
   /**
    * Helper method for a single tap confirmed.
-   *
-   * XXX: Implement this.
    */
   nsEventStatus OnSingleTapConfirmed(const TapGestureInput& aEvent);
 
   /**
    * Helper method for double taps.
-   *
-   * XXX: Implement this.
    */
   nsEventStatus OnDoubleTap(const TapGestureInput& aEvent);
 
