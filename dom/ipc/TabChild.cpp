@@ -1152,11 +1152,12 @@ TabChild::ArraysToParams(const InfallibleTArray<int>& aIntParams,
 #ifdef DEBUG
 PContentPermissionRequestChild*
 TabChild:: SendPContentPermissionRequestConstructor(PContentPermissionRequestChild* aActor,
-                                                    const InfallibleTArray<PermissionRequest>& aRequests,
+                                                    const nsCString& aType,
+                                                    const nsCString& aAccess,
                                                     const IPC::Principal& aPrincipal)
 {
   PCOMContentPermissionRequestChild* child = static_cast<PCOMContentPermissionRequestChild*>(aActor);
-  PContentPermissionRequestChild* request = PBrowserChild::SendPContentPermissionRequestConstructor(aActor, aRequests, aPrincipal);
+  PContentPermissionRequestChild* request = PBrowserChild::SendPContentPermissionRequestConstructor(aActor, aType, aAccess, aPrincipal);
   child->mIPCOpen = true;
   return request;
 }
@@ -1655,6 +1656,32 @@ TabChild::RecvHandleLongTap(const CSSIntPoint& aPoint)
 }
 
 bool
+TabChild::RecvNotifyTransformBegin(const ViewID& aViewId)
+{
+  nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aViewId);
+  if (sf) {
+    nsIScrollbarOwner* scrollbarOwner = do_QueryFrame(sf);
+    if (scrollbarOwner) {
+      scrollbarOwner->ScrollbarActivityStarted();
+    }
+  }
+  return true;
+}
+
+bool
+TabChild::RecvNotifyTransformEnd(const ViewID& aViewId)
+{
+  nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aViewId);
+  if (sf) {
+    nsIScrollbarOwner* scrollbarOwner = do_QueryFrame(sf);
+    if (scrollbarOwner) {
+      scrollbarOwner->ScrollbarActivityStopped();
+    }
+  }
+  return true;
+}
+
+bool
 TabChild::RecvActivate()
 {
   nsCOMPtr<nsIWebBrowserFocus> browser = do_QueryInterface(mWebNav);
@@ -2008,8 +2035,7 @@ TabChild::DeallocPContentDialogChild(PContentDialogChild* aDialog)
 }
 
 PContentPermissionRequestChild*
-TabChild::AllocPContentPermissionRequestChild(const InfallibleTArray<PermissionRequest>& aRequests,
-                                              const IPC::Principal& aPrincipal)
+TabChild::AllocPContentPermissionRequestChild(const nsCString& aType, const nsCString& aAccess, const IPC::Principal&)
 {
   NS_RUNTIMEABORT("unused");
   return nullptr;
