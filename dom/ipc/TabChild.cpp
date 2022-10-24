@@ -1152,12 +1152,11 @@ TabChild::ArraysToParams(const InfallibleTArray<int>& aIntParams,
 #ifdef DEBUG
 PContentPermissionRequestChild*
 TabChild:: SendPContentPermissionRequestConstructor(PContentPermissionRequestChild* aActor,
-                                                    const nsCString& aType,
-                                                    const nsCString& aAccess,
+                                                    const InfallibleTArray<PermissionRequest>& aRequests,
                                                     const IPC::Principal& aPrincipal)
 {
   PCOMContentPermissionRequestChild* child = static_cast<PCOMContentPermissionRequestChild*>(aActor);
-  PContentPermissionRequestChild* request = PBrowserChild::SendPContentPermissionRequestConstructor(aActor, aType, aAccess, aPrincipal);
+  PContentPermissionRequestChild* request = PBrowserChild::SendPContentPermissionRequestConstructor(aActor, aRequests, aPrincipal);
   child->mIPCOpen = true;
   return request;
 }
@@ -2009,7 +2008,8 @@ TabChild::DeallocPContentDialogChild(PContentDialogChild* aDialog)
 }
 
 PContentPermissionRequestChild*
-TabChild::AllocPContentPermissionRequestChild(const nsCString& aType, const nsCString& aAccess, const IPC::Principal&)
+TabChild::AllocPContentPermissionRequestChild(const InfallibleTArray<PermissionRequest>& aRequests,
+                                              const IPC::Principal& aPrincipal)
 {
   NS_RUNTIMEABORT("unused");
   return nullptr;
@@ -2487,7 +2487,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(TabChildGlobal)
   NS_INTERFACE_MAP_ENTRY(nsISyncMessageSender)
   NS_INTERFACE_MAP_ENTRY(nsIContentFrameMessageManager)
   NS_INTERFACE_MAP_ENTRY(nsIScriptObjectPrincipal)
-  NS_INTERFACE_MAP_ENTRY(nsIGlobalObject)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(ContentFrameMessageManager)
 NS_INTERFACE_MAP_END_INHERITING(nsDOMEventTargetHelper)
 
@@ -2552,20 +2551,10 @@ TabChildGlobal::GetJSContextForEventHandlers()
   return nsContentUtils::GetSafeJSContext();
 }
 
-nsIPrincipal*
+nsIPrincipal* 
 TabChildGlobal::GetPrincipal()
 {
   if (!mTabChild)
     return nullptr;
   return mTabChild->GetPrincipal();
 }
-
-JSObject*
-TabChildGlobal::GetGlobalJSObject()
-{
-  NS_ENSURE_TRUE(mTabChild, nullptr);
-  nsCOMPtr<nsIXPConnectJSObjectHolder> ref = mTabChild->GetGlobal();
-  NS_ENSURE_TRUE(ref, nullptr);
-  return ref->GetJSObject();
-}
-

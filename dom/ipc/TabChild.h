@@ -54,8 +54,7 @@ class ClonedMessageData;
 
 class TabChildGlobal : public nsDOMEventTargetHelper,
                        public nsIContentFrameMessageManager,
-                       public nsIScriptObjectPrincipal,
-                       public nsIGlobalObject
+                       public nsIScriptObjectPrincipal
 {
 public:
   TabChildGlobal(TabChild* aTabChild);
@@ -131,7 +130,6 @@ public:
 
   virtual JSContext* GetJSContextForEventHandlers() MOZ_OVERRIDE;
   virtual nsIPrincipal* GetPrincipal() MOZ_OVERRIDE;
-  virtual JSObject* GetGlobalJSObject() MOZ_OVERRIDE;
 
   nsCOMPtr<nsIContentFrameMessageManager> mMessageManager;
   TabChild* mTabChild;
@@ -283,13 +281,11 @@ public:
 #ifdef DEBUG
     virtual PContentPermissionRequestChild*
     SendPContentPermissionRequestConstructor(PContentPermissionRequestChild* aActor,
-                                             const nsCString& aType,
-                                             const nsCString& aAccess,
+                                             const InfallibleTArray<PermissionRequest>& aRequests,
                                              const IPC::Principal& aPrincipal);
 #endif /* DEBUG */
 
-    virtual PContentPermissionRequestChild* AllocPContentPermissionRequestChild(const nsCString& aType,
-                                                                                const nsCString& aAccess,
+    virtual PContentPermissionRequestChild* AllocPContentPermissionRequestChild(const InfallibleTArray<PermissionRequest>& aRequests,
                                                                                 const IPC::Principal& aPrincipal);
     virtual bool DeallocPContentPermissionRequestChild(PContentPermissionRequestChild* actor);
 
