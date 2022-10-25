@@ -502,7 +502,6 @@ GLContext::InitWithPrefix(const char *prefix, bool trygl)
                 { (PRFuncPtr*) &mSymbols.fUnmapBuffer, { "UnmapBuffer", nullptr } },
                 { (PRFuncPtr*) &mSymbols.fPointParameterf, { "PointParameterf", nullptr } },
                 { (PRFuncPtr*) &mSymbols.fDrawBuffer, { "DrawBuffer", nullptr } },
-                { (PRFuncPtr*) &mSymbols.fDrawBuffers, { "DrawBuffers", nullptr } },
                 { nullptr, { nullptr } },
             };
 
@@ -984,6 +983,20 @@ GLContext::InitWithPrefix(const char *prefix, bool trygl)
 
                 MarkUnsupported(GLFeature::get_query_object_iv);
                 mSymbols.fGetQueryObjectiv = nullptr;
+            }
+        }
+
+        if (IsSupported(GLFeature::draw_buffers)) {
+            SymLoadStruct drawBuffersSymbols[] = {
+                { (PRFuncPtr*) &mSymbols.fDrawBuffers, { "DrawBuffers", nullptr } },
+                { nullptr, { nullptr } },
+            };
+
+            if (!LoadSymbols(drawBuffersSymbols, trygl, prefix)) {
+                NS_ERROR("GL supports draw_buffers without supplying its functions.");
+
+                MarkUnsupported(GLFeature::draw_buffers);
+                mSymbols.fDrawBuffers = nullptr;
             }
         }
 
