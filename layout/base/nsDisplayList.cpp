@@ -630,6 +630,13 @@ static void RecordFrameMetrics(nsIFrame* aForFrame,
     metrics.mScrollableRect = CSSRect::FromAppUnits(contentBounds);
     nsPoint scrollPosition = scrollableFrame->GetScrollPosition();
     metrics.mScrollOffset = CSSPoint::FromAppUnits(scrollPosition);
+
+    // If the frame was scrolled since the last layers update, and by
+    // something other than the APZ code, we want to tell the APZ to update
+    // its scroll offset.
+    nsIAtom* originOfLastScroll = scrollableFrame->OriginOfLastScroll();
+    metrics.mUpdateScrollOffset = (originOfLastScroll && originOfLastScroll != nsGkAtoms::apz);
+    scrollableFrame->ResetOriginOfLastScroll();
   }
   else {
     nsRect contentBounds = aForFrame->GetRect();
@@ -706,7 +713,7 @@ static void RecordFrameMetrics(nsIFrame* aForFrame,
       ScreenIntRect screenBounds = ScreenIntRect::FromUnknownRect(mozilla::gfx::IntRect(
           bounds.x, bounds.y, bounds.width, bounds.height));
       AdjustForScrollBars(screenBounds, scrollableFrame);
-      metrics.mCompositionBounds = screenBounds.ClampRect(metrics.mCompositionBounds);
+      metrics.mCompositionBounds = metrics.mCompositionBounds.ForceInside(screenBounds);
       useWidgetBounds = true;
     }
   }

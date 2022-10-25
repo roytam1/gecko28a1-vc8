@@ -20,6 +20,7 @@ include "gfxipc/ShadowLayerUtils.h";
 include "mozilla/GfxMessageUtils.h";
 include "ImageLayers.h";
 include "mozilla/layers/CompositorTypes.h";
+include "gfxipc/FenceUtils.h";
 
 using gfxPoint3D;
 using nscoord;
@@ -36,6 +37,7 @@ using mozilla::LayerPoint;
 using mozilla::LayerRect;
 using mozilla::layers::ScaleMode;
 using mozilla::layers::DiagnosticTypes;
+using mozilla::layers::FenceHandle;
 
 namespace mozilla {
 namespace layers {
@@ -403,6 +405,12 @@ struct ReplyTextureRemoved {
   uint64_t textureId;
 };
 
+struct ReturnReleaseFence {
+  PCompositable compositable;
+  uint64_t textureId;
+  FenceHandle fence;
+};
+
 // Unit of a "changeset reply".  This is a weird abstraction, probably
 // only to be used for buffer swapping.
 union EditReply {
@@ -410,6 +418,7 @@ union EditReply {
   OpTextureSwap;
 
   ReplyTextureRemoved;
+  ReturnReleaseFence;
 };
 
 } // namespace

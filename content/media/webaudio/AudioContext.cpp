@@ -533,7 +533,12 @@ AudioContext::Shutdown()
 {
   mIsShutDown = true;
 
-  Suspend();
+  // We mute rather than suspending, because the delay between the ::Shutdown
+  // call and the CC would make us overbuffer in the MediaStreamGraph.
+  // See bug 936784 for details.
+  if (!mIsOffline) {
+    Mute();
+  }
 
   mDecoder.Shutdown();
 
@@ -600,14 +605,18 @@ void
 AudioContext::Mute() const
 {
   MOZ_ASSERT(!mIsOffline);
-  mDestination->Mute();
+  if (mDestination) {
+    mDestination->Mute();
+  }
 }
 
 void
 AudioContext::Unmute() const
 {
   MOZ_ASSERT(!mIsOffline);
-  mDestination->Unmute();
+  if (mDestination) {
+    mDestination->Unmute();
+  }
 }
 
 AudioChannel

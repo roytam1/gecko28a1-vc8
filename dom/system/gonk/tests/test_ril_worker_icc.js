@@ -2435,3 +2435,150 @@ add_test(function test_fetch_icc_recodes() {
 
   run_next_test();
 });
+
+// Test ICC_COMMAND_GET_RESPONSE with FCP template format.
+/**
+ * Verify transparent structure with FCP template format.
+ */
+add_test(function test_fcp_template_for_transparent_structure() {
+  let worker = newUint8Worker();
+  let pduHelper = worker.GsmPDUHelper;
+  let berHelper = worker.BerTlvHelper;
+
+  let tag_test = [
+    0x62,
+    0x22,
+    0x82, 0x02, 0x41, 0x21,
+    0x83, 0x02, 0x2F, 0xE2,
+    0xA5, 0x09, 0xC1, 0x04, 0x40, 0x0F, 0xF5, 0x55, 0x92, 0x01, 0x00,
+    0x8A, 0x01, 0x05,
+    0x8B, 0x03, 0x2F, 0x06, 0x0B,
+    0x80, 0x02, 0x00, 0x0A,
+    0x88, 0x01, 0x10];
+
+  for (let i = 0; i < tag_test.length; i++) {
+    pduHelper.writeHexOctet(tag_test[i]);
+  }
+
+  let berTlv = berHelper.decode(tag_test.length);
+  let iter = Iterator(berTlv.value);
+  let tlv = berHelper.searchForNextTag(BER_FCP_FILE_DESCRIPTOR_TAG, iter);
+  do_check_eq(tlv.value.fileStructure, UICC_EF_STRUCTURE[EF_TYPE_TRANSPARENT]);
+
+  tlv = berHelper.searchForNextTag(BER_FCP_FILE_IDENTIFIER_TAG, iter);
+  do_check_eq(tlv.value.fileId, 0x2FE2);
+
+  tlv = berHelper.searchForNextTag(BER_FCP_FILE_SIZE_DATA_TAG, iter);
+  do_check_eq(tlv.value.fileSizeData, 0x0A);
+
+  run_next_test();
+});
+
+/**
+ * Verify linear fixed structure with FCP template format.
+ */
+add_test(function test_fcp_template_for_linear_fixed_structure() {
+  let worker = newUint8Worker();
+  let pduHelper = worker.GsmPDUHelper;
+  let berHelper = worker.BerTlvHelper;
+
+  let tag_test = [
+    0x62,
+    0x1E,
+    0x82, 0x05, 0x42, 0x21, 0x00, 0x1A, 0x01,
+    0x83, 0x02, 0x6F, 0x40,
+    0xA5, 0x03, 0x92, 0x01, 0x00,
+    0x8A, 0x01, 0x07,
+    0x8B, 0x03, 0x6F, 0x06, 0x02,
+    0x80, 0x02, 0x00, 0x1A,
+    0x88, 0x00];
+
+  for (let i = 0; i < tag_test.length; i++) {
+    pduHelper.writeHexOctet(tag_test[i]);
+  }
+
+  let berTlv = berHelper.decode(tag_test.length);
+  let iter = Iterator(berTlv.value);
+  let tlv = berHelper.searchForNextTag(BER_FCP_FILE_DESCRIPTOR_TAG, iter);
+  do_check_eq(tlv.value.fileStructure, UICC_EF_STRUCTURE[EF_TYPE_LINEAR_FIXED]);
+  do_check_eq(tlv.value.recordLength, 0x1A);
+  do_check_eq(tlv.value.numOfRecords, 0x01);
+
+  tlv = berHelper.searchForNextTag(BER_FCP_FILE_IDENTIFIER_TAG, iter);
+  do_check_eq(tlv.value.fileId, 0x6F40);
+
+  tlv = berHelper.searchForNextTag(BER_FCP_FILE_SIZE_DATA_TAG, iter);
+  do_check_eq(tlv.value.fileSizeData, 0x1A);
+
+  run_next_test();
+});
+
+add_test(function test_icc_io_get_response_for_transparent_structure() {
+  let worker = newUint8Worker();
+  let buf = worker.Buf;
+  let iccioHelper = worker.ICCIOHelper;
+  let pduHelper = worker.GsmPDUHelper;
+
+  let responseArray = [
+    // SIM response.
+    [0x00, 0x00, 0x00, 0x0A, 0x2F, 0xE2, 0x04, 0x00, 0x0A, 0xA0, 0xAA, 0x00,
+     0x02, 0x00, 0x00],
+    // USIM response.
+    [0x62, 0x22, 0x82, 0x02, 0x41, 0x21, 0x83, 0x02, 0x2F, 0xE2, 0xA5, 0x09,
+     0xC1, 0x04, 0x40, 0x0F, 0xF5, 0x55, 0x92, 0x01, 0x00, 0x8A, 0x01, 0x05,
+     0x8B, 0x03, 0x2F, 0x06, 0x0B, 0x80, 0x02, 0x00, 0x0A, 0x88, 0x01, 0x10]
+  ];
+
+  for (let i = 0; i < responseArray.length; i++) {
+    let strLen = responseArray[i].length * 2;
+    buf.writeInt32(strLen);
+    for (let j = 0; j < responseArray[i].length; j++) {
+      pduHelper.writeHexOctet(responseArray[i][j]);
+    }
+    buf.writeStringDelimiter(strLen);
+
+    let options = {fileId: ICC_EF_ICCID,
+                   type: EF_TYPE_TRANSPARENT};
+    iccioHelper.processICCIOGetResponse(options);
+
+    do_check_eq(options.fileSize, 0x0A);
+  }
+
+  run_next_test();
+});
+
+add_test(function test_icc_io_get_response_for_linear_fixed_structure() {
+  let worker = newUint8Worker();
+  let buf = worker.Buf;
+  let iccioHelper = worker.ICCIOHelper;
+  let pduHelper = worker.GsmPDUHelper;
+
+  let responseArray = [
+    // SIM response.
+    [0x00, 0x00, 0x00, 0x1A, 0x6F, 0x40, 0x04, 0x00, 0x11, 0xA0, 0xAA, 0x00,
+     0x02, 0x01, 0x1A],
+    // USIM response.
+    [0x62, 0x1E, 0x82, 0x05, 0x42, 0x21, 0x00, 0x1A, 0x01, 0x83, 0x02, 0x6F,
+     0x40, 0xA5, 0x03, 0x92, 0x01, 0x00, 0x8A, 0x01, 0x07, 0x8B, 0x03, 0x6F,
+     0x06, 0x02, 0x80, 0x02, 0x00, 0x1A, 0x88, 0x00]
+  ];
+
+  for (let i = 0; i < responseArray.length; i++) {
+    let strLen = responseArray[i].length * 2;
+    buf.writeInt32(strLen);
+    for (let j = 0; j < responseArray[i].length; j++) {
+      pduHelper.writeHexOctet(responseArray[i][j]);
+    }
+    buf.writeStringDelimiter(strLen);
+
+    let options = {fileId: ICC_EF_MSISDN,
+                   type: EF_TYPE_LINEAR_FIXED};
+    iccioHelper.processICCIOGetResponse(options);
+
+    do_check_eq(options.fileSize, 0x1A);
+    do_check_eq(options.recordSize, 0x1A);
+    do_check_eq(options.totalRecords, 0x01);
+  }
+
+  run_next_test();
+});
