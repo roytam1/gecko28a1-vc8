@@ -9,6 +9,7 @@
 #define mozilla_RollingMean_h_
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Move.h"
 #include "mozilla/TypeTraits.h"
 #include "mozilla/Vector.h"
 
@@ -49,17 +50,15 @@ class RollingMean
       MOZ_ASSERT(aMaxValues > 0);
     }
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-    RollingMean& operator=(RollingMean&& aOther) {
+    RollingMean& operator=(MoveRef<RollingMean> aOther) {
       MOZ_ASSERT(this != &aOther, "self-assignment is forbidden");
       this->~RollingMean();
-      new(this) RollingMean(aOther.mMaxValues);
-      mInsertIndex = aOther.mInsertIndex;
-      mTotal = aOther.mTotal;
-      mValues.swap(aOther.mValues);
+      new(this) RollingMean(aOther->mMaxValues);
+      mInsertIndex = aOther->mInsertIndex;
+      mTotal = aOther->mTotal;
+      mValues.swap(aOther->mValues);
       return *this;
     }
-#endif
 
     /**
      * Insert a value into the rolling mean.
