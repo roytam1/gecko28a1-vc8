@@ -673,7 +673,7 @@ nsEventStatus AsyncPanZoomController::OnTouchCancel(const MultiTouchInput& aEven
 
 nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEvent) {
   APZC_LOG("%p got a scale-begin in state %d\n", this, mState);
-  if (!mZoomConstraints.mAllowZoom) {
+  if (!AllowZoom()) {
     return nsEventStatus_eConsumeNoDefault;
   }
 
@@ -838,7 +838,7 @@ nsEventStatus AsyncPanZoomController::OnSingleTapUp(const TapGestureInput& aEven
   nsRefPtr<GeckoContentController> controller = GetGeckoContentController();
   // If mZoomConstraints.mAllowZoom is true we wait for a call to OnSingleTapConfirmed before
   // sending event to content
-  if (controller && !mZoomConstraints.mAllowZoom) {
+  if (controller && !AllowZoom()) {
     int32_t modifiers = WidgetModifiersToDOMModifiers(aEvent.modifiers);
     CSSIntPoint geckoScreenPoint;
     if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
@@ -867,7 +867,7 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(const TapGestureInput& aEvent)
   APZC_LOG("%p got a double-tap in state %d\n", this, mState);
   nsRefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    if (mZoomConstraints.mAllowZoom) {
+    if (AllowZoom()) {
       int32_t modifiers = WidgetModifiersToDOMModifiers(aEvent.modifiers);
       CSSIntPoint geckoScreenPoint;
       if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
@@ -923,20 +923,20 @@ nsEventStatus AsyncPanZoomController::StartPanning(const MultiTouchInput& aEvent
   if (!gCrossSlideEnabled && (!mX.Scrollable() || !mY.Scrollable())) {
     SetState(PANNING);
   } else if (IsCloseToHorizontal(angle, AXIS_LOCK_ANGLE)) {
-    mY.SetScrollingDisabled(true);
+    mY.SetAxisLocked(true);
     if (mX.Scrollable()) {
       SetState(PANNING_LOCKED_X);
     } else {
       SetState(CROSS_SLIDING_X);
-      mX.SetScrollingDisabled(true);
+      mX.SetAxisLocked(true);
     }
   } else if (IsCloseToVertical(angle, AXIS_LOCK_ANGLE)) {
-    mX.SetScrollingDisabled(true);
+    mX.SetAxisLocked(true);
     if (mY.Scrollable()) {
       SetState(PANNING_LOCKED_Y);
     } else {
       SetState(CROSS_SLIDING_Y);
-      mY.SetScrollingDisabled(true);
+      mY.SetAxisLocked(true);
     }
   } else {
     SetState(PANNING);
@@ -963,6 +963,7 @@ void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(const MultiTouchInput&
 void AsyncPanZoomController::AttemptScroll(const ScreenPoint& aStartPoint,
                                            const ScreenPoint& aEndPoint,
                                            uint32_t aOverscrollHandoffChainIndex) {
+
   // "start - end" rather than "end - start" because e.g. moving your finger
   // down (*positive* direction along y axis) causes the vertical scroll offset
   // to *decrease* as the page follows your finger.
@@ -979,8 +980,12 @@ void AsyncPanZoomController::AttemptScroll(const ScreenPoint& aStartPoint,
     CSSPoint cssDisplacement = displacement / zoom;
 
     CSSPoint cssOverscroll;
-    gfx::Point scrollOffset(mX.AdjustDisplacement(cssDisplacement.x, cssOverscroll.x),
-                            mY.AdjustDisplacement(cssDisplacement.y, cssOverscroll.y));
+    gfx::Point scrollOffset(mX.AdjustDisplacement(cssDisplacement.x,
+                                                  cssOverscroll.x,
+                                                  mFrameMetrics.GetDisableScrollingX()),
+                            mY.AdjustDisplacement(cssDisplacement.y,
+                                                  cssOverscroll.y,
+                                                  mFrameMetrics.GetDisableScrollingY()));
     overscroll = cssOverscroll * zoom;
 
     if (fabs(scrollOffset.x) > EPSILON || fabs(scrollOffset.y) > EPSILON) {
@@ -1037,12 +1042,12 @@ void AsyncPanZoomController::TrackTouch(const MultiTouchInput& aEvent) {
     if (fabs(dx) > breakThreshold || fabs(dy) > breakThreshold) {
       if (mState == PANNING_LOCKED_X || mState == CROSS_SLIDING_X) {
         if (!IsCloseToHorizontal(angle, AXIS_BREAKOUT_ANGLE)) {
-          mY.SetScrollingDisabled(false);
+          mY.SetAxisLocked(false);
           SetState(PANNING);
         }
       } else if (mState == PANNING_LOCKED_Y || mState == CROSS_SLIDING_Y) {
         if (!IsCloseToVertical(angle, AXIS_BREAKOUT_ANGLE)) {
-          mX.SetScrollingDisabled(false);
+          mX.SetAxisLocked(false);
           SetState(PANNING);
         }
       }
@@ -1075,8 +1080,10 @@ bool FlingAnimation::Sample(FrameMetrics& aFrameMetrics,
   // a larger swipe should move you a shorter distance).
   CSSPoint cssOffset = offset / aFrameMetrics.mZoom;
   aFrameMetrics.mScrollOffset += CSSPoint::FromUnknownPoint(gfx::Point(
-    mX.AdjustDisplacement(cssOffset.x, overscroll.x),
-    mY.AdjustDisplacement(cssOffset.y, overscroll.y)
+    mX.AdjustDisplacement(cssOffset.x, overscroll.x,
+                          aFrameMetrics.GetDisableScrollingX()),
+    mY.AdjustDisplacement(cssOffset.y, overscroll.y,
+                          aFrameMetrics.GetDisableScrollingX())
   ));
 
   return true;
@@ -1419,6 +1426,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
     mFrameMetrics.mZoom.scale *= parentResolutionChange;
     mFrameMetrics.mResolution = aLayerMetrics.mResolution;
     mFrameMetrics.mCumulativeResolution = aLayerMetrics.mCumulativeResolution;
+    mFrameMetrics.SetDisableScrollingX(aLayerMetrics.GetDisableScrollingX());
+    mFrameMetrics.SetDisableScrollingY(aLayerMetrics.GetDisableScrollingY());
 
     // If the layers update was not triggered by our own repaint request, then
     // we want to take the new scroll offset.
@@ -1603,6 +1612,14 @@ bool AsyncPanZoomController::IsTransformingState(PanZoomState aState) {
 
 bool AsyncPanZoomController::IsPanningState(PanZoomState aState) {
   return (aState == PANNING || aState == PANNING_LOCKED_X || aState == PANNING_LOCKED_Y);
+}
+
+bool AsyncPanZoomController::AllowZoom() {
+  // In addition to looking at the zoom constraints, which comes from the meta
+  // viewport tag, disallow zooming if we are overflow:hidden in either direction.
+  ReentrantMonitorAutoEnter lock(mMonitor);
+  return mZoomConstraints.mAllowZoom
+      && !(mFrameMetrics.GetDisableScrollingX() || mFrameMetrics.GetDisableScrollingY());
 }
 
 void AsyncPanZoomController::TimeoutTouchListeners() {
