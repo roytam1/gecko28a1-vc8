@@ -213,11 +213,22 @@ function hideContextUI()
 
 function showNavBar()
 {
-  let promise = waitForEvent(Elements.navbar, "transitionend");
   if (!ContextUI.navbarVisible) {
+    let promise = waitForEvent(Elements.navbar, "transitionend");
     ContextUI.displayNavbar();
     return promise;
   }
+  return Promise.resolve(null);
+}
+
+function hideNavBar()
+{
+  if (ContextUI.navbarVisible) {
+    let promise = waitForEvent(Elements.navbar, "transitionend");
+    ContextUI.dismissNavbar();
+    return promise;
+  }
+  return Promise.resolve(null);
 }
 
 function fireAppBarDisplayEvent()
@@ -508,7 +519,7 @@ function waitForImageLoad(aWindow, aImageId) {
  * @param aTimeoutMs the number of miliseconds to wait before giving up
  * @returns a Promise that resolves to true, or to an Error
  */
-function waitForObserver(aObsEvent, aTimeoutMs) {
+function waitForObserver(aObsEvent, aTimeoutMs, aObsData) {
   try {
 
   let deferred = Promise.defer();
@@ -529,7 +540,8 @@ function waitForObserver(aObsEvent, aTimeoutMs) {
     },
 
     observe: function (aSubject, aTopic, aData) {
-      if (aTopic == aObsEvent) {
+      if (aTopic == aObsEvent &&
+        (!aObsData || (aObsData == aData))) {
         this.onEvent();
       }
     },
@@ -842,6 +854,14 @@ TouchDragAndHold.prototype = {
 
   set useNativeEvents(aValue) {
     this._native = aValue;
+  },
+
+  set stepTimeout(aValue) {
+    this._timeoutStep = aValue;
+  },
+
+  set numSteps(aValue) {
+    this._numSteps = aValue;
   },
 
   set nativePointerId(aValue) {

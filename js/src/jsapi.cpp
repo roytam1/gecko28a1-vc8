@@ -4413,8 +4413,26 @@ JS::Compile(JSContext *cx, HandleObject obj, CompileOptions options, const char 
 }
 
 JS_PUBLIC_API(bool)
-JS::CanCompileOffThread(JSContext *cx, const CompileOptions &options)
+JS::CanCompileOffThread(JSContext *cx, const CompileOptions &options, size_t length)
 {
+    static const unsigned TINY_LENGTH = 1000;
+    static const unsigned HUGE_LENGTH = 100*1000;
+
+    // These are heuristics which the caller may choose to ignore (e.g., for
+    // testing purposes).
+    if (!options.forceAsync) {
+        // Compiling off the main thread inolves creating a new Zone and other
+        // significant overheads.  Don't bother if the script is tiny.
+        if (length < TINY_LENGTH)
+            return false;
+
+        // If the parsing task would have to wait for GC to complete, it'll probably
+        // be faster to just start it synchronously on the main thread unless the
+        // script is huge.
+        if (OffThreadParsingMustWaitForGC(cx->runtime()) && length < HUGE_LENGTH)
+            return false;
+    }
+
     return cx->runtime()->canUseParallelParsing();
 }
 
@@ -4423,7 +4441,7 @@ JS::CompileOffThread(JSContext *cx, Handle<JSObject*> obj, CompileOptions option
                      const jschar *chars, size_t length,
                      OffThreadCompileCallback callback, void *callbackData)
 {
-    JS_ASSERT(CanCompileOffThread(cx, options));
+    JS_ASSERT(CanCompileOffThread(cx, options, length));
     return StartOffThreadParseScript(cx, options, chars, length, obj, callback, callbackData);
 }
 

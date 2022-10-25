@@ -3384,6 +3384,7 @@ class JS_PUBLIC_API(CompileOptions)
     bool extraWarningsOption;
     bool werrorOption;
     bool asmJSOption;
+    bool forceAsync;
     enum SourcePolicy {
         NO_SOURCE,
         LAZY_SOURCE,
@@ -3424,7 +3425,7 @@ extern JS_PUBLIC_API(JSScript *)
 Compile(JSContext *cx, JS::Handle<JSObject*> obj, CompileOptions options, const char *filename);
 
 extern JS_PUBLIC_API(bool)
-CanCompileOffThread(JSContext *cx, const CompileOptions &options);
+CanCompileOffThread(JSContext *cx, const CompileOptions &options, size_t length);
 
 /*
  * Off thread compilation control flow.

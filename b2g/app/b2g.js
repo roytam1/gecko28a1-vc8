@@ -567,6 +567,7 @@ pref("dom.sysmsg.enabled", true);
 pref("media.plugins.enabled", false);
 pref("media.omx.enabled", true);
 pref("media.rtsp.enabled", true);
+pref("media.rtsp.video.enabled", false);
 
 // Disable printing (particularly, window.print())
 pref("dom.disable_window_print", true);
@@ -868,3 +869,7 @@ pref("apz.asyncscroll.throttle", 40);
 // Using a software canvas can save memory when JS calls getImageData()
 // on the canvas frequently. See bug 884226.
 pref("gfx.canvas.willReadFrequently.enable", true);
+
+// Disable autofocus until we can have it not bring up the keyboard.
+// https://bugzilla.mozilla.org/show_bug.cgi?id=965763
+pref("browser.autofocus", false);
