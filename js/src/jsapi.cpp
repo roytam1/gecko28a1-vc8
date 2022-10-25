@@ -4437,7 +4437,7 @@ JS::CompileOffThread(JSContext *cx, Handle<JSObject*> obj, CompileOptions option
 JS_PUBLIC_API(JSScript *)
 JS::FinishOffThreadScript(JSContext *maybecx, JSRuntime *rt, void *token)
 {
-#ifdef JS_WORKER_THREADS
+#ifdef JS_THREADSAFE
     JS_ASSERT(CurrentThreadCanAccessRuntime(rt));
 
     Maybe<AutoLastFrameCheck> lfc;

@@ -526,8 +526,7 @@ nsEventListenerManager::ListenerCanHandle(nsListenerStruct* aLs,
     }
     return aLs->mTypeString.Equals(aEvent->typeString);
   }
-  MOZ_ASSERT_IF(aEvent->eventStructType != NS_SCRIPT_ERROR_EVENT,
-                mIsMainThreadELM);
+  MOZ_ASSERT(mIsMainThreadELM);
   return aLs->mEventType == aEvent->message;
 }
 
@@ -596,11 +595,6 @@ nsEventListenerManager::SetEventHandlerInternal(JS::Handle<JSObject*> aScopeObje
     nsCOMPtr<nsIJSEventListener> scriptListener;
     NS_NewJSEventListener(aScopeObject, mTarget, aName,
                           aHandler, getter_AddRefs(scriptListener));
-
-    if (!aName && aTypeString.EqualsLiteral("error")) {
-      eventType = NS_LOAD_ERROR;
-    }
-
     EventListenerHolder holder(scriptListener);
     AddEventListenerInternal(holder, eventType, aName, aTypeString, flags,
                              true);
@@ -726,6 +720,8 @@ nsEventListenerManager::SetEventHandler(nsIAtom *aName,
 
   nsIScriptContext* context = global->GetScriptContext();
   NS_ENSURE_TRUE(context, NS_ERROR_FAILURE);
+
+  NS_ENSURE_STATE(global->GetGlobalJSObject());
 
   JSAutoRequest ar(context->GetNativeContext());
   JS::Rooted<JSObject*> scope(context->GetNativeContext(),
