@@ -32,6 +32,7 @@ using gfxSize;
 using CSSRect;
 using mozilla::layers::FrameMetrics;
 using mozilla::layers::ScrollableLayerGuid;
+using mozilla::layers::ZoomConstraints;
 using FrameMetrics::ViewID;
 using mozilla::layout::ScrollingBehavior;
 using mozilla::void_t;
@@ -308,7 +309,7 @@ parent:
      * have up-to-date zoom constraints.
      */
     UpdateZoomConstraints(uint32_t aPresShellId, ViewID aViewId, bool aIsRoot,
-                          bool aAllowZoom, CSSToScreenScale aMinZoom, CSSToScreenScale aMaxZoom);
+                          ZoomConstraints aConstraints);
 
     __delete__();
 

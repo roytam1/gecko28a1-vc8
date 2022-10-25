@@ -128,7 +128,7 @@ namespace layers {
  * accidentally processing taps as touch moves, and from very short/accidental
  * touches moving the screen.
  */
-static float gTouchStartTolerance = 1.0f/16.0f;
+static float gTouchStartTolerance = 1.0f/2.0f;
 
 /**
  * Angle from axis within which we stay axis-locked
@@ -235,11 +235,6 @@ static int gAsyncScrollThrottleTime = 100;
  * Default is 300ms if there is no "apz.asyncscroll.timeout" in preference.
  */
 static int gAsyncScrollTimeout = 300;
-
-/**
- * Temporary pref for disabling zoom in metrofx on aurora.
- */
-static bool gAsyncZoomDisabled = false;
 
 /**
  * Pref that enables integration with the Metro "cross-slide" gesture.
@@ -361,7 +356,6 @@ AsyncPanZoomController::InitializeGlobalState()
   Preferences::AddFloatVarCache(&gYStationarySizeMultiplier, "apz.y_stationary_size_multiplier", gYStationarySizeMultiplier);
   Preferences::AddIntVarCache(&gAsyncScrollThrottleTime, "apz.asyncscroll.throttle", gAsyncScrollThrottleTime);
   Preferences::AddIntVarCache(&gAsyncScrollTimeout, "apz.asyncscroll.timeout", gAsyncScrollTimeout);
-  Preferences::AddBoolVarCache(&gAsyncZoomDisabled, "apz.asynczoom.disabled", gAsyncZoomDisabled);
   Preferences::AddBoolVarCache(&gCrossSlideEnabled, "apz.cross_slide.enabled", gCrossSlideEnabled);
   Preferences::AddIntVarCache(&gAxisLockMode, "apz.axis_lock_mode", gAxisLockMode);
 
@@ -383,9 +377,7 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mTouchListenerTimeoutTask(nullptr),
      mX(MOZ_THIS_IN_INITIALIZER_LIST()),
      mY(MOZ_THIS_IN_INITIALIZER_LIST()),
-     mAllowZoom(true),
-     mMinZoom(MIN_ZOOM),
-     mMaxZoom(MAX_ZOOM),
+     mZoomConstraints(false, MIN_ZOOM, MAX_ZOOM),
      mLastSampleTime(GetFrameTime()),
      mState(NOTHING),
      mLastAsyncScrollTime(GetFrameTime()),
@@ -399,9 +391,6 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
 
   if (aGestures == USE_GESTURE_DETECTOR) {
     mGestureEventListener = new GestureEventListener(this);
-  }
-  if (gAsyncZoomDisabled) {
-    mAllowZoom = false;
   }
 }
 
@@ -684,7 +673,7 @@ nsEventStatus AsyncPanZoomController::OnTouchCancel(const MultiTouchInput& aEven
 
 nsEventStatus AsyncPanZoomController::OnScaleBegin(const PinchGestureInput& aEvent) {
   APZC_LOG("%p got a scale-begin in state %d\n", this, mState);
-  if (!mAllowZoom) {
+  if (!mZoomConstraints.mAllowZoom) {
     return nsEventStatus_eConsumeNoDefault;
   }
 
@@ -731,8 +720,8 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
     // either axis such that we don't overscroll the boundaries when zooming.
     CSSPoint neededDisplacement;
 
-    CSSToScreenScale realMinZoom = mMinZoom;
-    CSSToScreenScale realMaxZoom = mMaxZoom;
+    CSSToScreenScale realMinZoom = mZoomConstraints.mMinZoom;
+    CSSToScreenScale realMaxZoom = mZoomConstraints.mMaxZoom;
     realMinZoom.scale = std::max(realMinZoom.scale,
                                  mFrameMetrics.mCompositionBounds.width / mFrameMetrics.mScrollableRect.width);
     realMinZoom.scale = std::max(realMinZoom.scale,
@@ -847,9 +836,9 @@ nsEventStatus AsyncPanZoomController::OnLongPressUp(const TapGestureInput& aEven
 nsEventStatus AsyncPanZoomController::OnSingleTapUp(const TapGestureInput& aEvent) {
   APZC_LOG("%p got a single-tap-up in state %d\n", this, mState);
   nsRefPtr<GeckoContentController> controller = GetGeckoContentController();
-  // If mAllowZoom is true we wait for a call to OnSingleTapConfirmed before
+  // If mZoomConstraints.mAllowZoom is true we wait for a call to OnSingleTapConfirmed before
   // sending event to content
-  if (controller && !mAllowZoom) {
+  if (controller && !mZoomConstraints.mAllowZoom) {
     int32_t modifiers = WidgetModifiersToDOMModifiers(aEvent.modifiers);
     CSSIntPoint geckoScreenPoint;
     if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
@@ -878,7 +867,7 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(const TapGestureInput& aEvent)
   APZC_LOG("%p got a double-tap in state %d\n", this, mState);
   nsRefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    if (mAllowZoom) {
+    if (mZoomConstraints.mAllowZoom) {
       int32_t modifiers = WidgetModifiersToDOMModifiers(aEvent.modifiers);
       CSSIntPoint geckoScreenPoint;
       if (ConvertToGecko(aEvent.mPoint, &geckoScreenPoint)) {
@@ -1439,6 +1428,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(const FrameMetrics& aLayerMetri
         aLayerMetrics.mScrollOffset.x, aLayerMetrics.mScrollOffset.y);
 
       mFrameMetrics.mScrollOffset = aLayerMetrics.mScrollOffset;
+
+      // It is possible that when we receive this mUpdateScrollOffset flag, we have
+      // just sent a content repaint request, and it is pending inflight. That repaint
+      // request would have our old scroll offset, and will get processed on the content
+      // thread as we're processing this mUpdateScrollOffset flag. This would leave
+      // things in a state where content has the old APZC scroll offset and the APZC
+      // has the new content-specified scroll offset. In such a case we want to trigger
+      // another repaint request to bring things back in sync. In most cases this repaint
+      // request will be a no-op and get filtered out in RequestContentRepaint, so it
+      // shouldn't have bad performance implications.
+      needContentRepaint = true;
     }
   }
 
@@ -1469,10 +1469,10 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
     // then the CSS content rect, in layers pixels, will be smaller than the
     // composition bounds. If this happens, we can't fill the target composited
     // area with this frame.
-    CSSToScreenScale localMinZoom(std::max(mMinZoom.scale,
+    CSSToScreenScale localMinZoom(std::max(mZoomConstraints.mMinZoom.scale,
                                   std::max(compositionBounds.width / cssPageRect.width,
                                            compositionBounds.height / cssPageRect.height)));
-    CSSToScreenScale localMaxZoom = mMaxZoom;
+    CSSToScreenScale localMaxZoom = mZoomConstraints.mMaxZoom;
 
     if (!aRect.IsEmpty()) {
       // Intersect the zoom-to-rect to the CSS rect to make sure it fits.
@@ -1481,7 +1481,7 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect) {
                                              compositionBounds.height / aRect.height));
     }
     // 1. If the rect is empty, request received from browserElementScrolling.js
-    // 2. currentZoom is equal to mMaxZoom and user still double-tapping it
+    // 2. currentZoom is equal to mZoomConstraints.mMaxZoom and user still double-tapping it
     // 3. currentZoom is equal to localMinZoom and user still double-tapping it
     // Treat these three cases as a request to zoom out as much as possible.
     if (aRect.IsEmpty() ||
@@ -1610,25 +1610,18 @@ void AsyncPanZoomController::TimeoutTouchListeners() {
   ContentReceivedTouch(false);
 }
 
-void AsyncPanZoomController::UpdateZoomConstraints(bool aAllowZoom,
-                                                   const CSSToScreenScale& aMinZoom,
-                                                   const CSSToScreenScale& aMaxZoom) {
-  if (gAsyncZoomDisabled) {
-    return;
-  }
-  mAllowZoom = aAllowZoom;
-  mMinZoom = (MIN_ZOOM > aMinZoom ? MIN_ZOOM : aMinZoom);
-  mMaxZoom = (MAX_ZOOM > aMaxZoom ? aMaxZoom : MAX_ZOOM);
+void AsyncPanZoomController::UpdateZoomConstraints(const ZoomConstraints& aConstraints) {
+  APZC_LOG("%p updating zoom constraints to %d %f %f\n", this, aConstraints.mAllowZoom,
+    aConstraints.mMinZoom.scale, aConstraints.mMaxZoom.scale);
+  mZoomConstraints.mAllowZoom = aConstraints.mAllowZoom;
+  mZoomConstraints.mMinZoom = (MIN_ZOOM > aConstraints.mMinZoom ? MIN_ZOOM : aConstraints.mMinZoom);
+  mZoomConstraints.mMaxZoom = (MAX_ZOOM > aConstraints.mMaxZoom ? aConstraints.mMaxZoom : MAX_ZOOM);
 }
 
-void
-AsyncPanZoomController::GetZoomConstraints(bool* aAllowZoom,
-                                           CSSToScreenScale* aMinZoom,
-                                           CSSToScreenScale* aMaxZoom)
+ZoomConstraints
+AsyncPanZoomController::GetZoomConstraints() const
 {
-  *aAllowZoom = mAllowZoom;
-  *aMinZoom = mMinZoom;
-  *aMaxZoom = mMaxZoom;
+  return mZoomConstraints;
 }
 
 
