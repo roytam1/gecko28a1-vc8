@@ -2,6 +2,8 @@
 /* vim:set softtabstop=8 shiftwidth=8: */
 /*-
  * Copyright (C) 2006-2008 Jason Evans <jasone@FreeBSD.org>.
+ * Portions Copyright (C) Mozilla contributors.
+ * Portions Copyright (C) 2015-2016 M.C. Straver BASc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +57,8 @@ typedef struct {
 	 * Run-time configuration settings.
 	 */
 	jemalloc_bool	opt_abort;	/* abort(3) on error? */
-	jemalloc_bool	opt_junk;	/* Fill allocated/free memory with 0xa5/0x5a? */
+	jemalloc_bool	opt_junk;	/* Fill allocated memory with 0xe4? */
+	jemalloc_bool	opt_poison;	/* Fill free memory with 0xe5? */
 	jemalloc_bool	opt_utrace;	/* Trace all allocation events? */
 	jemalloc_bool	opt_sysv;	/* SysV semantics? */
 	jemalloc_bool	opt_xmalloc;	/* abort(3) on OOM? */
@@ -73,13 +76,14 @@ typedef struct {
 	 */
 	size_t	mapped;		/* Bytes mapped (not necessarily committed). */
 	size_t	allocated;	/* Bytes allocated (committed, in use by application). */
-        size_t  waste;          /* Bytes committed, not in use by the
-                                   application, and not intentionally left
-                                   unused (i.e., not dirty). */
-        size_t	page_cache;	/* Committed, unused pages kept around as a
-                                   cache.  (jemalloc calls these "dirty".) */
-        size_t  bookkeeping;    /* Committed bytes used internally by the
-                                   allocator. */
+	size_t	waste;		/* Bytes committed, not in use by the
+								application, and not intentionally left
+								unused (i.e., not dirty). */
+	size_t	page_cache;	/* Committed, unused pages kept around as a
+								cache.  (jemalloc calls these "dirty".) */
+	size_t	bookkeeping;/* Committed bytes used internally by the
+								allocator. */
+	size_t	bin_unused;	/* Bytes committed to a bin but currently unused. */
 } jemalloc_stats_t;
 
 #ifdef __cplusplus
