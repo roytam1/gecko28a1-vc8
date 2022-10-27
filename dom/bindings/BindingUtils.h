@@ -22,7 +22,6 @@
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/workers/Workers.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsCycleCollector.h"
@@ -428,7 +427,7 @@ bool
 DefineWebIDLBindingPropertiesOnXPCObject(JSContext* cx,
                                          JS::Handle<JSObject*> obj,
                                          const NativeProperties* properties,
-                                         bool defineUnforgeableAttributes);
+                                         bool defineOnlyUnforgeableAttributes);
 
 #ifdef _MSC_VER
 #define HAS_MEMBER_CHECK(_name)                                           \
@@ -2350,7 +2349,9 @@ CreateGlobal(JSContext* aCx, T* aObject, nsWrapperCache* aCache,
     return nullptr;
   }
 
-  mozilla::HoldJSObjects(aObject);
+  MOZ_ALWAYS_TRUE(TryPreserveWrapper(global));
+
+  MOZ_ASSERT(UnwrapDOMObjectToISupports(global));
 
   return global;
 }

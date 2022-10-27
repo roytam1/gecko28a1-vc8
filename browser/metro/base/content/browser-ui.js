@@ -48,6 +48,7 @@ let Elements = {};
   ["contentViewport",    "content-viewport"],
   ["progress",           "progress-control"],
   ["progressContainer",  "progress-container"],
+  ["feedbackLabel",  "feedback-label"],
 ].forEach(function (aElementGlobal) {
   let [name, id] = aElementGlobal;
   XPCOMUtils.defineLazyGetter(Elements, name, function() {
@@ -234,7 +235,6 @@ var BrowserUI = {
   },
 
   showContent: function showContent(aURI) {
-    this.updateStartURIAttributes(aURI);
     ContextUI.dismissTabs();
     ContextUI.dismissContextAppbar();
     FlyoutPanelsUI.hide();
