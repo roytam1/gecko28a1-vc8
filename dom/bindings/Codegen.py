@@ -3413,7 +3413,10 @@ for (uint32_t i = 0; i < length; ++i) {
             else:
                 declType = CGGeneric("OwningNonNull<%s>" % name)
             conversion = (
-                "${declName} = new %s(&${val}.toObject());\n" % name)
+                "{ // Scope for tempRoot\n"
+                "  JS::Rooted<JSObject*> tempRoot(cx, &${val}.toObject());\n"
+                "  ${declName} = new %s(tempRoot, mozilla::dom::GetIncumbentGlobal());\n"
+                "}" % name)
 
             template = wrapObjectTemplate(conversion, type,
                                           "${declName} = nullptr",
@@ -3748,7 +3751,10 @@ for (uint32_t i = 0; i < length; ++i) {
         else:
             declType = CGGeneric("OwningNonNull<%s>" % name)
         conversion = (
-            "  ${declName} = new %s(&${val}.toObject());\n" % name)
+            "{ // Scope for tempRoot\n"
+            "  JS::Rooted<JSObject*> tempRoot(cx, &${val}.toObject());\n"
+            "  ${declName} = new %s(tempRoot, mozilla::dom::GetIncumbentGlobal());\n"
+            "}\n" % name)
 
         if allowTreatNonCallableAsNull and type.treatNonCallableAsNull():
             haveCallable = "JS_ObjectIsCallable(cx, &${val}.toObject())"
@@ -10595,7 +10601,7 @@ class CGJSImplClass(CGBindingImplClass):
             decorators = "MOZ_FINAL"
             destructor = None
 
-        baseConstructors=["mImpl(new %s(aJSImplObject))" % jsImplName(descriptor.name),
+        baseConstructors=["mImpl(new %s(aJSImplObject, /* aIncumbentGlobal = */ nullptr))" % jsImplName(descriptor.name),
                           "mParent(aParent)"]
         parentInterface = descriptor.interface.parent
         while parentInterface:
@@ -10730,12 +10736,12 @@ class CGCallback(CGClass):
             # CallbackObject does that already.
             body = ""
         return [ClassConstructor(
-            [Argument("JSObject*", "aCallback")],
+            [Argument("JS::Handle<JSObject*>", "aCallback"), Argument("nsIGlobalObject*", "aIncumbentGlobal")],
             bodyInHeader=True,
             visibility="public",
             explicit=True,
             baseConstructors=[
-                "%s(aCallback)" % self.baseName
+                "%s(aCallback, aIncumbentGlobal)" % self.baseName,
                 ],
             body=body)]
 
@@ -10761,7 +10767,7 @@ class CGCallback(CGClass):
         argsWithoutThis = list(args)
         args.insert(0, Argument("const T&",  "thisObj"))
 
-        setupCall = ("CallSetup s(CallbackPreserveColor(), aRv, aExceptionHandling);\n"
+        setupCall = ("CallSetup s(this, aRv, aExceptionHandling);\n"
                      "if (!s.GetContext()) {\n"
                      "  aRv.Throw(NS_ERROR_UNEXPECTED);\n"
                      "  return${errorReturn};\n"
@@ -11052,7 +11058,7 @@ class CallbackMember(CGNativeMember):
         if self.needThisHandling:
             # It's been done for us already
             return ""
-        callSetup = "CallSetup s(CallbackPreserveColor(), aRv"
+        callSetup = "CallSetup s(this, aRv"
         if self.rethrowContentException:
             # getArgs doesn't add the aExceptionHandling argument but does add
             # aCompartment for us.

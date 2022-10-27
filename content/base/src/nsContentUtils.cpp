@@ -5279,6 +5279,17 @@ nsContentUtils::GetDefaultJSContextForThread()
 }
 
 /* static */
+JSContext *
+nsContentUtils::GetCurrentJSContextForThread()
+{
+  if (MOZ_LIKELY(NS_IsMainThread())) {
+    return GetCurrentJSContext();
+  } else {
+    return workers::GetCurrentThreadJSContext();
+  }
+}
+
+/* static */
 nsresult
 nsContentUtils::ASCIIToLower(nsAString& aStr)
 {
