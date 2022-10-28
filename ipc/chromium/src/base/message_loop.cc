@@ -384,7 +384,12 @@ void MessageLoop::ReloadWorkQueue() {
     AutoLock lock(incoming_queue_lock_);
     if (incoming_queue_.empty())
       return;
-    std::swap(incoming_queue_, work_queue_);
+    //std::swap(incoming_queue_, work_queue_);
+    do {
+      PendingTask pending_task = incoming_queue_.front();
+      incoming_queue_.pop();
+      work_queue_.push(pending_task);
+    } while (!incoming_queue_.empty());
     DCHECK(incoming_queue_.empty());
   }
 }
