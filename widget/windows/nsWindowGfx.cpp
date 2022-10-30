@@ -36,6 +36,7 @@ using mozilla::plugins::PluginInstanceParent;
 #include "WinUtils.h"
 #include "nsIWidgetListener.h"
 #include "mozilla/unused.h"
+#include "mozilla/WindowsVersion.h"
 
 #ifdef MOZ_ENABLE_D3D9_LAYER
 #include "LayerManagerD3D9.h"
@@ -759,7 +760,7 @@ bool nsWindowGfx::IsCursorTranslucencySupported()
   if (!didCheck) {
     didCheck = true;
     // Cursor translucency is supported on Windows XP and newer
-    isSupported = WinUtils::GetWindowsVersion() >= WinUtils::WINXP_VERSION;
+    isSupported = IsWindowsVersionOrLater(0x05010000ul);
   }
 
   return isSupported;
