@@ -10,7 +10,7 @@
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x0310
+#define FREEBL_VERSION 0x0312
 
 struct FREEBLVectorStr {
 
@@ -229,7 +229,7 @@ struct FREEBLVectorStr {
                               unsigned char *output,
                               const unsigned char *input);
 
-  SECStatus (* p_RSA_PrivateKeyCheck)(RSAPrivateKey *key);
+  SECStatus (* p_RSA_PrivateKeyCheck)(const RSAPrivateKey *key);
 
   void (* p_BL_Cleanup)(void);
 
@@ -697,6 +697,42 @@ struct FREEBLVectorStr {
                                       unsigned int sigLen);
 
   /* Version 3.016 came to here */
+
+ SECStatus (* p_EC_FillParams)(PLArenaPool *arena,
+                               const SECItem *encodedParams, ECParams *params);
+ SECStatus (* p_EC_DecodeParams)(const SECItem *encodedParams,
+                               ECParams **ecparams);
+ SECStatus (* p_EC_CopyParams)(PLArenaPool *arena, ECParams *dstParams,
+                               const ECParams *srcParams);
+
+  /* Version 3.017 came to here */
+
+ SECStatus (* p_ChaCha20Poly1305_InitContext)(ChaCha20Poly1305Context *ctx,
+                                              const unsigned char *key,
+                                              unsigned int keyLen,
+                                              unsigned int tagLen);
+
+ ChaCha20Poly1305Context *(* p_ChaCha20Poly1305_CreateContext)(
+     const unsigned char *key, unsigned int keyLen, unsigned int tagLen);
+
+ void (* p_ChaCha20Poly1305_DestroyContext)(ChaCha20Poly1305Context *ctx,
+                                            PRBool freeit);
+
+ SECStatus (* p_ChaCha20Poly1305_Seal)(
+     const ChaCha20Poly1305Context *ctx, unsigned char *output,
+     unsigned int *outputLen, unsigned int maxOutputLen,
+     const unsigned char *input, unsigned int inputLen,
+     const unsigned char *nonce, unsigned int nonceLen,
+     const unsigned char *ad, unsigned int adLen);
+
+ SECStatus (* p_ChaCha20Poly1305_Open)(
+     const ChaCha20Poly1305Context *ctx, unsigned char *output,
+     unsigned int *outputLen, unsigned int maxOutputLen,
+     const unsigned char *input, unsigned int inputLen,
+     const unsigned char *nonce, unsigned int nonceLen,
+     const unsigned char *ad, unsigned int adLen);
+
+  /* Version 3.018 came to here */
 
   /* Add new function pointers at the end of this struct and bump
    * FREEBL_VERSION at the beginning of this file. */

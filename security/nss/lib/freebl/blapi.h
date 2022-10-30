@@ -1,5 +1,5 @@
 /*
- * crypto.h - public data structures and prototypes for the crypto library
+ * blapi.h - public prototypes for the freebl library
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -62,7 +62,7 @@ extern SECStatus RSA_PrivateKeyOpDoubleChecked(RSAPrivateKey *  key,
 /*
 ** Perform a check of private key parameters for consistency.
 */
-extern SECStatus RSA_PrivateKeyCheck(RSAPrivateKey *key);
+extern SECStatus RSA_PrivateKeyCheck(const RSAPrivateKey *key);
 
 /*
 ** Given only minimal private key parameters, fill in the rest of the
@@ -986,6 +986,35 @@ Camellia_Decrypt(CamelliaContext *cx, unsigned char *output,
 		 unsigned int *outputLen, unsigned int maxOutputLen,
 		 const unsigned char *input, unsigned int inputLen);
 
+/******************************************/
+/*
+** ChaCha20+Poly1305 AEAD
+*/
+
+extern SECStatus ChaCha20Poly1305_InitContext(ChaCha20Poly1305Context *ctx,
+                                              const unsigned char *key,
+                                              unsigned int keyLen,
+                                              unsigned int tagLen);
+
+extern ChaCha20Poly1305Context *ChaCha20Poly1305_CreateContext(
+    const unsigned char *key, unsigned int keyLen, unsigned int tagLen);
+
+extern void ChaCha20Poly1305_DestroyContext(ChaCha20Poly1305Context *ctx,
+                                            PRBool freeit);
+
+extern SECStatus ChaCha20Poly1305_Seal(
+    const ChaCha20Poly1305Context *ctx, unsigned char *output,
+    unsigned int *outputLen, unsigned int maxOutputLen,
+    const unsigned char *input, unsigned int inputLen,
+    const unsigned char *nonce, unsigned int nonceLen,
+    const unsigned char *ad, unsigned int adLen);
+
+extern SECStatus ChaCha20Poly1305_Open(
+    const ChaCha20Poly1305Context *ctx, unsigned char *output,
+    unsigned int *outputLen, unsigned int maxOutputLen,
+    const unsigned char *input, unsigned int inputLen,
+    const unsigned char *nonce, unsigned int nonceLen,
+    const unsigned char *ad, unsigned int adLen);
 
 /******************************************/
 /*
@@ -1444,6 +1473,12 @@ FIPS186Change_ReduceModQForDSA(const unsigned char *w,
                                const unsigned char *q,
                                unsigned char *xj);
 
+/* To allow NIST KAT tests */
+extern SECStatus
+PRNGTEST_Instantiate_Kat(const PRUint8 *entropy, unsigned int entropy_len,
+                         const PRUint8 *nonce, unsigned int nonce_len,
+                         const PRUint8 *personal_string, unsigned int ps_len);
+
 /*
  * The following functions are for FIPS poweron self test and FIPS algorithm
  * testing.
@@ -1575,6 +1610,18 @@ PRBool BLAPI_VerifySelf(const char *name);
 extern const SECHashObject * HASH_GetRawHashObject(HASH_HashType hashType);
 
 extern void BL_SetForkState(PRBool forked);
+
+#ifndef NSS_DISABLE_ECC
+/*
+** pepare an ECParam structure from DEREncoded params
+ */
+extern SECStatus EC_FillParams(PLArenaPool *arena,
+                               const SECItem *encodedParams, ECParams *params);
+extern SECStatus EC_DecodeParams(const SECItem *encodedParams,
+                                 ECParams **ecparams);
+extern SECStatus EC_CopyParams(PLArenaPool *arena, ECParams *dstParams,
+                               const ECParams *srcParams);
+#endif
 
 SEC_END_PROTOS
 
