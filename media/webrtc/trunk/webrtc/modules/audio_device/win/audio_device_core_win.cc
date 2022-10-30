@@ -2442,6 +2442,13 @@ Exit:
     return -1;
 }
 
+typedef DWORD (WINAPI *MoInitMediaTypeFunc)(DMO_MEDIA_TYPE *, DWORD);
+typedef DWORD (WINAPI *MoFreeMediaTypeFunc)(DMO_MEDIA_TYPE *);
+static MoInitMediaTypeFunc sMoInitMediaType;
+static MoFreeMediaTypeFunc sMoFreeMediaType;
+static HMODULE sMSDMO;
+static bool sMSDMOInited;
+
 // Capture initialization when the built-in AEC DirectX Media Object (DMO) is
 // used. Called from InitRecording(), most of which is skipped over. The DMO
 // handles device initialization itself.
@@ -2456,11 +2463,25 @@ int32_t AudioDeviceWindowsCore::InitRecordingDMO()
         return -1;
     }
 
+    if (!sMSDMOInited) {
+        sMSDMO = LoadLibraryW(L"msdmo.dll");
+        if (sMSDMO) {
+            sMoInitMediaType = (MoInitMediaTypeFunc)
+                GetProcAddress(sMSDMO, "MoInitMediaType");
+            sMoFreeMediaType = (MoFreeMediaTypeFunc)
+                GetProcAddress(sMSDMO, "MoFreeMediaType");
+        }
+        sMSDMOInited = true;
+        if (!sMoInitMediaType || !sMoFreeMediaType) {
+            return -1;
+        }
+    }
+
     DMO_MEDIA_TYPE mt = {0};
-    HRESULT hr = MoInitMediaType(&mt, sizeof(WAVEFORMATEX));
+    HRESULT hr = sMoInitMediaType(&mt, sizeof(WAVEFORMATEX));
     if (FAILED(hr))
     {
-        MoFreeMediaType(&mt);
+        sMoFreeMediaType(&mt);
         _TraceCOMError(hr);
         return -1;
     }
@@ -2490,7 +2511,7 @@ int32_t AudioDeviceWindowsCore::InitRecordingDMO()
 
     // Set the DMO output format parameters.
     hr = _dmo->SetOutputType(kAecCaptureStreamIndex, &mt, 0);
-    MoFreeMediaType(&mt);
+    sMoFreeMediaType(&mt);
     if (FAILED(hr))
     {
         _TraceCOMError(hr);
