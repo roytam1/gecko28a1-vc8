@@ -69,7 +69,6 @@
 #include <process.h>
 #include <commctrl.h>
 #include <unknwn.h>
-#include <psapi.h>
 
 #include "prlog.h"
 #include "prtime.h"
@@ -1250,7 +1249,7 @@ void nsWindow::SetThemeRegion()
     RECT rect = {0,0,mBounds.width,mBounds.height};
     
     HDC dc = ::GetDC(mWnd);
-    GetThemeBackgroundRegion(nsUXThemeData::GetTheme(eUXTooltip), dc, TTP_STANDARD, TS_NORMAL, &rect, &hRgn);
+    nsUXThemeData::getThemeBackgroundRegion(nsUXThemeData::GetTheme(eUXTooltip), dc, TTP_STANDARD, TS_NORMAL, &rect, &hRgn);
     if (hRgn) {
       if (!SetWindowRgn(mWnd, hRgn, false)) // do not delete or alter hRgn if accepted.
         DeleteObject(hRgn);

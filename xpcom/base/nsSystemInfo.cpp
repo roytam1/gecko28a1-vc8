@@ -14,6 +14,7 @@
 
 #ifdef XP_WIN
 #include <windows.h>
+typedef BOOL (WINAPI *IsWow64ProcessP) (HANDLE, PBOOL);
 #include <winioctl.h>
 #include "base/scoped_handle_win.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -208,7 +209,12 @@ nsSystemInfo::Init()
 
 #ifdef XP_WIN
     BOOL isWow64;
-    BOOL gotWow64Value = IsWow64Process(GetCurrentProcess(), &isWow64);
+    BOOL gotWow64Value = FALSE;
+    IsWow64ProcessP fnIsWow64Process = (IsWow64ProcessP)
+        GetProcAddress(GetModuleHandleW(L"kernel32"), "IsWow64Process");
+    if (fnIsWow64Process) {
+        gotWow64Value = fnIsWow64Process(GetCurrentProcess(), &isWow64);
+    }
     NS_WARN_IF_FALSE(gotWow64Value, "IsWow64Process failed");
     if (gotWow64Value) {
       rv = SetPropertyAsBool(NS_LITERAL_STRING("isWow64"), !!isWow64);

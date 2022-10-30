@@ -48,6 +48,9 @@ nsAutodial::nsAutodial()
     mAutodialServiceDialingLocation(-1),
     mNumRASConnectionEntries(0)
 {
+    mOSVerInfo.dwOSVersionInfoSize = sizeof(mOSVerInfo);
+    GetVersionEx(&mOSVerInfo);
+
     // Initializations that can be made again since RAS OS settings can 
     // change.
     Init();
@@ -398,35 +401,60 @@ nsresult nsAutodial::GetDefaultEntryName(wchar_t* entryName, int bufferSize)
     //
     // For Windows XP: HKCU/Software/Microsoft/RAS Autodial/Default/DefaultInternet.
     //              or HKLM/Software/Microsoft/RAS Autodial/Default/DefaultInternet.
+    // For Windows 2K: HKCU/RemoteAccess/InternetProfile.
 
-    const wchar_t* key = L"Software\\Microsoft\\RAS Autodial\\Default";
-    const wchar_t* val = L"DefaultInternet";
+    const wchar_t* key = nullptr;
+    const wchar_t* val = nullptr;
 
     HKEY hKey = 0;
     LONG result = 0;
 
     
-    // Try HKCU first.
-    result = ::RegOpenKeyExW(
-                HKEY_CURRENT_USER, 
-                key, 
-                0, 
-                KEY_READ, 
-                &hKey);
-
-    if (result != ERROR_SUCCESS)
+    // Windows 2000
+    if ((mOSVerInfo.dwMajorVersion == 5) && (mOSVerInfo.dwMinorVersion == 0)) // Windows 2000
     {
-        // If not present, try HKLM.
+        key = L"RemoteAccess";
+        val = L"InternetProfile";
+
         result = ::RegOpenKeyExW(
-                    HKEY_LOCAL_MACHINE, 
-                    key, 
-                    0, 
-                    KEY_READ, 
+                    HKEY_CURRENT_USER,
+                    key,
+                    0,
+                    KEY_READ,
                     &hKey);
 
         if (result != ERROR_SUCCESS)
         {
             return NS_ERROR_FAILURE;
+        }
+    }
+    else  // Windows XP
+    {
+        key = L"Software\\Microsoft\\RAS Autodial\\Default";
+        val = L"DefaultInternet";
+
+        // Try HKCU first.
+        result = ::RegOpenKeyExW(
+                    HKEY_CURRENT_USER,
+                    key,
+                    0,
+                    KEY_READ,
+                    &hKey);
+
+        if (result != ERROR_SUCCESS)
+        {
+            // If not present, try HKLM.
+            result = ::RegOpenKeyExW(
+                        HKEY_LOCAL_MACHINE,
+                        key,
+                        0,
+                        KEY_READ,
+                        &hKey);
+
+            if (result != ERROR_SUCCESS)
+            {
+                return NS_ERROR_FAILURE;
+            }
         }
     }
 
