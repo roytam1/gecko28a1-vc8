@@ -338,6 +338,12 @@ sctp_is_vmware_interface(struct ifnet *ifn)
 #undef FREE
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
 #endif
+typedef DWORD (WINAPI *GetAdaptersAddressesFunc)(ULONG, DWORD, PVOID,
+                                                 PIP_ADAPTER_ADDRESSES,
+                                                 PULONG);
+static GetAdaptersAddressesFunc sGetAdaptersAddresses;
+static HMODULE sIPHelper;
+
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -347,10 +353,21 @@ sctp_init_ifns_for_vrf(int vrfid)
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapterAddrs6, pAdapt;
 	PIP_ADAPTER_UNICAST_ADDRESS pUnicast;
 
+	if(!sIPHelper) {
+		sIPHelper = LoadLibraryW(L"iphlpapi.dll");
+		if (sIPHelper) {
+			sGetAdaptersAddresses = (GetAdaptersAddressesFunc)
+			     GetProcAddress(sIPHelper, "GetAdaptersAddresses");
+		}
+	}
+	if(!sGetAdaptersAddresses) {
+		return;
+	}
+
 #ifdef INET
 	AdapterAddrsSize = 0;
 
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+	if ((Err = sGetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 			SCTP_PRINTF("GetAdaptersV4Addresses() sizing failed with error code %d\n", Err);
 			SCTP_PRINTF("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
@@ -364,7 +381,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		return;
 	}
 	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = sGetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV4Addresses() failed with error code %d\n", Err);
 		return;
 	}
@@ -399,7 +416,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 #ifdef INET6
 	AdapterAddrsSize = 0;
 
-	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+	if ((Err = sGetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 			SCTP_PRINTF("GetAdaptersV6Addresses() sizing failed with error code %d\n", Err);
 			SCTP_PRINTF("err = %d; AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
@@ -412,7 +429,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 		return;
 	}
 	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs6, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = sGetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs6, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV6Addresses() failed with error code %d\n", Err);
 		return;
 	}

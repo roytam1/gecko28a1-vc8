@@ -476,6 +476,12 @@ stun_get_win32_addrs(nr_local_addr addrs[], int maxaddrs, int *count)
 }
 
 #ifdef GET_WIN32_ADDRS_NO_WIN2K
+typedef DWORD (WINAPI *GetAdaptersAddressesFunc)(ULONG, DWORD, PVOID,
+                                                 PIP_ADAPTER_ADDRESSES,
+                                                 PULONG);
+static GetAdaptersAddressesFunc sGetAdaptersAddresses;
+static HMODULE sIPHelper;
+
    /* Here's a nice way to get adapter addresses and names, but it
     * isn't supported on Win2000.
     */
@@ -494,10 +500,20 @@ stun_get_win32_addrs(nr_local_addr addrs[], int maxaddrs, int *count)
       ABORT(R_INTERNAL);
 
     /* Call GetAdaptersAddresses() twice.  First, just to get the buf length */
+    if(!sIPHelper) {
+        sIPHelper = LoadLibraryW(L"iphlpapi.dll");
+        if (sIPHelper) {
+            sGetAdaptersAddresses = (GetAdaptersAddressesFunc)
+                GetProcAddress(sIPHelper, "GetAdaptersAddresses");
+        }
+    }
+    if(!sGetAdaptersAddresses) {
+      ABORT(R_INTERNAL);
+    }
 
     buflen = 0;
 
-    r = GetAdaptersAddresses(AF_INET, 0, NULL, AdapterAddresses, &buflen);
+    r = sGetAdaptersAddresses(AF_INET, 0, NULL, AdapterAddresses, &buflen);
     if (r != ERROR_BUFFER_OVERFLOW) {
       r_log(NR_LOG_STUN, LOG_ERR, "Error getting buf len from GetAdaptersAddresses()");
       ABORT(R_INTERNAL);
@@ -511,7 +527,7 @@ stun_get_win32_addrs(nr_local_addr addrs[], int maxaddrs, int *count)
 
     /* for real, this time */
 
-    r = GetAdaptersAddresses(AF_INET, 0, NULL, AdapterAddresses, &buflen);
+    r = sGetAdaptersAddresses(AF_INET, 0, NULL, AdapterAddresses, &buflen);
     if (r != NO_ERROR) {
       r_log(NR_LOG_STUN, LOG_ERR, "Error getting addresses from GetAdaptersAddresses()");
       ABORT(R_INTERNAL);

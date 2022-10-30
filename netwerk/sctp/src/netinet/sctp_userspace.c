@@ -56,14 +56,31 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 #endif
 
 #ifdef _WIN32
+typedef DWORD (WINAPI *GetAdaptersAddressesFunc)(ULONG, DWORD, PVOID,
+                                                 PIP_ADAPTER_ADDRESSES,
+                                                 PULONG);
+static GetAdaptersAddressesFunc sGetAdaptersAddresses;
+static HMODULE sIPHelper;
+
 int
 sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 {
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
 	DWORD AdapterAddrsSize, Err;
 
+	if(!sIPHelper) {
+		sIPHelper = LoadLibraryW(L"iphlpapi.dll");
+		if (sIPHelper) {
+			sGetAdaptersAddresses = (GetAdaptersAddressesFunc)
+			     GetProcAddress(sIPHelper, "GetAdaptersAddresses");
+		}
+	}
+	if(!sGetAdaptersAddresses) {
+		return (-1);
+	}
+
 	AdapterAddrsSize = 0;
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+	if ((Err = sGetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() sizing failed with error code %d, AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return (-1);
@@ -73,7 +90,7 @@ sctp_userspace_get_mtu_from_ifn(uint32_t if_index, int af)
 		SCTPDBG(SCTP_DEBUG_USR, "Memory allocation error!\n");
 		return (-1);
 	}
-	if ((Err = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = sGetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersAddresses() failed with error code %d\n", Err);
 		return (-1);
 	}
@@ -108,9 +125,21 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 	struct sockaddr_in6 *addr6;
 #endif
 	count = 0;
+
+	if(!sIPHelper) {
+		sIPHelper = LoadLibraryW(L"iphlpapi.dll");
+		if (sIPHelper) {
+			sGetAdaptersAddresses = (GetAdaptersAddressesFunc)
+			     GetProcAddress(sIPHelper, "GetAdaptersAddresses");
+		}
+	}
+	if(!sGetAdaptersAddresses) {
+		return (-1);
+	}
+
 #if defined(INET)
 	AdapterAddrsSize = 0;
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+	if ((Err = sGetAdaptersAddresses(AF_INET, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 		if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() sizing failed with error code %d and AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 			return (-1);
@@ -122,7 +151,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 		return (-1);
 	}
 	/* Get actual adapter information */
-	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+	if ((Err = sGetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV4Addresses() failed with error code %d\n", Err);
 		return (-1);
 	}
@@ -144,7 +173,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 #if defined(INET6)
 	if (SCTP_BASE_VAR(userspace_rawsctp6) != -1) {
 		AdapterAddrsSize = 0;
-		if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
+		if ((Err = sGetAdaptersAddresses(AF_INET6, 0, NULL, NULL, &AdapterAddrsSize)) != 0) {
 			if ((Err != ERROR_BUFFER_OVERFLOW) && (Err != ERROR_INSUFFICIENT_BUFFER)) {
 				SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV6Addresses() sizing failed with error code %d AdapterAddrsSize = %d\n", Err, AdapterAddrsSize);
 				return (-1);
@@ -156,7 +185,7 @@ Win_getifaddrs(struct ifaddrs** interfaces)
 			return (-1);
 		}
 		/* Get actual adapter information */
-		if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
+		if ((Err = sGetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 			SCTPDBG(SCTP_DEBUG_USR, "GetAdaptersV6Addresses() failed with error code %d\n", Err);
 			return (-1);
 		}
@@ -190,13 +219,24 @@ win_if_nametoindex(const char *ifname)
 		return 0;
 	}
 
+	if(!sIPHelper) {
+		sIPHelper = LoadLibraryW(L"iphlpapi.dll");
+		if (sIPHelper) {
+			sGetAdaptersAddresses = (GetAdaptersAddressesFunc)
+			     GetProcAddress(sIPHelper, "GetAdaptersAddresses");
+		}
+	}
+	if(!sGetAdaptersAddresses) {
+		return 0;
+	}
+
 	size = 0;
-	status = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &size);
+	status = sGetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &size);
 	if (status != ERROR_BUFFER_OVERFLOW) {
 		return 0;
 	}
 	addresses = malloc(size);
-	status = GetAdaptersAddresses(AF_UNSPEC, 0, NULL, addresses, &size);
+	status = sGetAdaptersAddresses(AF_UNSPEC, 0, NULL, addresses, &size);
 	if (status == ERROR_SUCCESS) {
 		for (addr = addresses; addr; addr = addr->Next) {
 			if (addr->AdapterName && !strcmp(ifname, addr->AdapterName)) {
