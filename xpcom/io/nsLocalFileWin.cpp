@@ -1911,7 +1911,7 @@ nsLocalFile::CopySingleFile(nsIFile *sourceFile, nsIFile *destParent,
     // Copying a 1KB file without COPY_FILE_NO_BUFFERING takes < 1ms.
     // So we only use COPY_FILE_NO_BUFFERING when we have a remote drive.
     int copyOK;
-    DWORD dwCopyFlags = COPY_FILE_ALLOW_DECRYPTED_DESTINATION;
+    DWORD dwCopyFlags = 0;
     if (IsVistaOrLater()) {
         bool path1Remote, path2Remote;
         if (!IsRemoteFilePath(filePath.get(), path1Remote) || 
@@ -1926,19 +1926,33 @@ nsLocalFile::CopySingleFile(nsIFile *sourceFile, nsIFile *destParent,
         copyOK = ::CopyFileExW(filePath.get(), destPath.get(), nullptr,
                                nullptr, nullptr, dwCopyFlags);
     }
-    else
-    {
-        copyOK = ::MoveFileExW(filePath.get(), destPath.get(), MOVEFILE_REPLACE_EXISTING);
-
-        // Check if copying the source file to a different volume,
-        // as this could be an SMBV2 mapped drive.
-        if (!copyOK && GetLastError() == ERROR_NOT_SAME_DEVICE)
+    else {
+        DWORD status;
+        if (FileEncryptionStatusW(filePath.get(), &status)
+            && status == FILE_IS_ENCRYPTED)
         {
+            dwCopyFlags |= COPY_FILE_ALLOW_DECRYPTED_DESTINATION;
             copyOK = CopyFileExW(filePath.get(), destPath.get(), nullptr,
                                  nullptr, nullptr, dwCopyFlags);
 
             if (copyOK)
                 DeleteFileW(filePath.get());
+        }
+        else
+        {
+            copyOK = ::MoveFileExW(filePath.get(), destPath.get(),
+                                   MOVEFILE_REPLACE_EXISTING |
+                                   MOVEFILE_WRITE_THROUGH);
+            
+            // Check if copying the source file to a different volume,
+            // as this could be an SMBV2 mapped drive.
+            if (!copyOK && GetLastError() == ERROR_NOT_SAME_DEVICE)
+            {
+                copyOK = CopyFileExW(filePath.get(), destPath.get(), NULL, NULL, NULL, dwCopyFlags);
+            
+                if (copyOK)
+                    DeleteFile(filePath.get());
+            }
         }
     }
 
