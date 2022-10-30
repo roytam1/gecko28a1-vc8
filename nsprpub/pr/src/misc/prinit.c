@@ -642,7 +642,10 @@ PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
     while (1) {
         if ((ptr[len] == ':') && (strncmp(ptr, name, len) == 0)) {
             ptr += len + 1;
-            PR_sscanf(ptr, "%d:0x%" PR_SCNxOSFD, &fileType, &osfd);
+            if (PR_sscanf(ptr, "%d:0x%" PR_SCNxOSFD, &fileType, &osfd) != 2) {
+                PR_SetError(PR_UNKNOWN_ERROR, 0);
+                return NULL;
+            }
             switch ((PRDescType)fileType) {
                 case PR_DESC_FILE:
                     fd = PR_ImportFile(osfd);
@@ -768,12 +771,20 @@ PR_IMPLEMENT(PRStatus) PR_CallOnce(
     PRCallOnceType *once,
     PRCallOnceFN    func)
 {
+    PRIntn initialized;
+    PRStatus status;
+
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
-    if (!once->initialized) {
+    PR_Lock(mod_init.ml);
+    initialized = once->initialized;
+    status = once->status;
+    PR_Unlock(mod_init.ml);
+    if (!initialized) {
 	if (PR_ATOMIC_SET(&once->inProgress, 1) == 0) {
-	    once->status = (*func)();
+	    status = (*func)();
 	    PR_Lock(mod_init.ml);
+	    once->status = status;
 	    once->initialized = 1;
 	    PR_NotifyAllCondVar(mod_init.cv);
 	    PR_Unlock(mod_init.ml);
@@ -782,14 +793,18 @@ PR_IMPLEMENT(PRStatus) PR_CallOnce(
 	    while (!once->initialized) {
 		PR_WaitCondVar(mod_init.cv, PR_INTERVAL_NO_TIMEOUT);
             }
+            status = once->status;
 	    PR_Unlock(mod_init.ml);
+            if (PR_SUCCESS != status) {
+                PR_SetError(PR_CALL_ONCE_ERROR, 0);
+            }
 	}
-    } else {
-        if (PR_SUCCESS != once->status) {
-            PR_SetError(PR_CALL_ONCE_ERROR, 0);
-        }
+        return status;
     }
-    return once->status;
+    if (PR_SUCCESS != status) {
+        PR_SetError(PR_CALL_ONCE_ERROR, 0);
+    }
+    return status;
 }
 
 PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
@@ -797,12 +812,20 @@ PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
     PRCallOnceWithArgFN  func,
     void                *arg)
 {
+    PRIntn initialized;
+    PRStatus status;
+
     if (!_pr_initialized) _PR_ImplicitInitialization();
 
-    if (!once->initialized) {
+    PR_Lock(mod_init.ml);
+    initialized = once->initialized;
+    status = once->status;
+    PR_Unlock(mod_init.ml);
+    if (!initialized) {
 	if (PR_ATOMIC_SET(&once->inProgress, 1) == 0) {
-	    once->status = (*func)(arg);
+	    status = (*func)(arg);
 	    PR_Lock(mod_init.ml);
+	    once->status = status;
 	    once->initialized = 1;
 	    PR_NotifyAllCondVar(mod_init.cv);
 	    PR_Unlock(mod_init.ml);
@@ -811,14 +834,18 @@ PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
 	    while (!once->initialized) {
 		PR_WaitCondVar(mod_init.cv, PR_INTERVAL_NO_TIMEOUT);
             }
+            status = once->status;
 	    PR_Unlock(mod_init.ml);
+            if (PR_SUCCESS != status) {
+                PR_SetError(PR_CALL_ONCE_ERROR, 0);
+            }
 	}
-    } else {
-        if (PR_SUCCESS != once->status) {
-            PR_SetError(PR_CALL_ONCE_ERROR, 0);
-        }
+        return status;
     }
-    return once->status;
+    if (PR_SUCCESS != status) {
+        PR_SetError(PR_CALL_ONCE_ERROR, 0);
+    }
+    return status;
 }
 
 PRBool _PR_Obsolete(const char *obsolete, const char *preferred)

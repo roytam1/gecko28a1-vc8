@@ -1958,6 +1958,14 @@ pr_GetAddrInfoByNameFB(const char  *hostname,
 {
     PRStatus rv;
     PRAddrInfoFB *ai;
+
+#ifdef _PR_INET6
+    if (af == PR_AF_INET6) {
+        PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
+        return NULL;
+    }
+#endif
+
     /* fallback on PR_GetHostByName */
     ai = PR_NEW(PRAddrInfoFB);
     if (!ai) {
@@ -1980,7 +1988,11 @@ PR_IMPLEMENT(PRAddrInfo *) PR_GetAddrInfoByName(const char  *hostname,
                                                 PRIntn       flags)
 {
     /* restrict input to supported values */
-    if ((af != PR_AF_INET && af != PR_AF_UNSPEC) ||
+    if ((af != PR_AF_INET &&
+#ifdef _PR_INET6
+         af != PR_AF_INET6 &&
+#endif
+         af != PR_AF_UNSPEC) ||
         (flags & ~ PR_AI_NOCANONNAME) != PR_AI_ADDRCONFIG) {
         PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
         return NULL;
@@ -2033,7 +2045,11 @@ PR_IMPLEMENT(PRAddrInfo *) PR_GetAddrInfoByName(const char  *hostname,
             hints.ai_flags |= AI_ADDRCONFIG;
         }
 #endif
-        hints.ai_family = (af == PR_AF_INET) ? AF_INET : AF_UNSPEC;
+        hints.ai_family = (af == PR_AF_INET) ? AF_INET
+#ifdef _PR_INET6
+                        : (af == PR_AF_INET6) ? AF_INET6
+#endif
+                        : AF_UNSPEC;
 
         /*
          * it is important to select a socket type in the hints, otherwise we
@@ -2228,10 +2244,6 @@ PR_IMPLEMENT(PRStatus) PR_StringToNetAddr(const char *string, PRNetAddr *addr)
 #if !defined(_PR_HAVE_GETADDRINFO)
     return pr_StringToNetAddrFB(string, addr);
 #else
-#if defined(_PR_INET6_PROBE)
-    if (!_pr_ipv6_is_present())
-        return pr_StringToNetAddrFB(string, addr);
-#endif
     /*
      * getaddrinfo with AI_NUMERICHOST is much slower than pr_inet_aton on some
      * platforms, such as Mac OS X (bug 404399), Linux glibc 2.10 (bug 344809),
@@ -2240,6 +2252,11 @@ PR_IMPLEMENT(PRStatus) PR_StringToNetAddr(const char *string, PRNetAddr *addr)
      */
     if (!strchr(string, '%'))
         return pr_StringToNetAddrFB(string, addr);
+
+#if defined(_PR_INET6_PROBE)
+    if (!_pr_ipv6_is_present())
+        return pr_StringToNetAddrFB(string, addr);
+#endif
 
     return pr_StringToNetAddrGAI(string, addr);
 #endif

@@ -18,6 +18,10 @@
 #include "prlog.h"
 #include "prmem.h"
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
 /*
 ** WARNING: This code may *NOT* call PR_LOG (because PR_LOG calls it)
 */
@@ -62,7 +66,11 @@ struct NumArg {
 
 #define NAS_DEFAULT_NUM 20  /* default number of NumberedArgument array */
 
-
+/*
+** For numeric types, the signed versions must have even values,
+** and their corresponding unsigned versions must have the subsequent
+** odd value.
+*/
 #define TYPE_INT16	0
 #define TYPE_UINT16	1
 #define TYPE_INTN	2
@@ -304,7 +312,7 @@ static int cvt_ll(SprintfState *ss, PRInt64 num, int width, int prec, int radix,
 ** Convert a double precision floating point number into its printable
 ** form.
 **
-** XXX stop using sprintf to convert floating point
+** XXX stop using snprintf to convert floating point
 */
 static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
 {
@@ -312,15 +320,14 @@ static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
     char fout[300];
     int amount = fmt1 - fmt0;
 
-    PR_ASSERT((amount > 0) && (amount < sizeof(fin)));
-    if (amount >= sizeof(fin)) {
-	/* Totally bogus % command to sprintf. Just ignore it */
+    if (amount <= 0 || amount >= sizeof(fin)) {
+	/* Totally bogus % command to snprintf. Just ignore it */
 	return 0;
     }
     memcpy(fin, fmt0, amount);
     fin[amount] = 0;
 
-    /* Convert floating point using the native sprintf code */
+    /* Convert floating point using the native snprintf code */
 #ifdef DEBUG
     {
         const char *p = fin;
@@ -330,14 +337,11 @@ static int cvt_f(SprintfState *ss, double d, const char *fmt0, const char *fmt1)
         }
     }
 #endif
-    sprintf(fout, fin, d);
-
-    /*
-    ** This assert will catch overflow's of fout, when building with
-    ** debugging on. At least this way we can track down the evil piece
-    ** of calling code and fix it!
-    */
-    PR_ASSERT(strlen(fout) < sizeof(fout));
+    memset(fout, 0, sizeof(fout));
+    snprintf(fout, sizeof(fout), fin, d);
+    /* Explicitly null-terminate fout because on Windows snprintf doesn't
+     * append a null-terminator if the buffer is too small. */
+    fout[sizeof(fout) - 1] = '\0';
 
     return (*ss->stuff)(ss, fout, strlen(fout));
 }
@@ -376,8 +380,8 @@ static int cvt_s(SprintfState *ss, const char *str, int width, int prec,
 
 /*
 ** BuildArgArray stands for Numbered Argument list Sprintf
-** for example,  
-**	fmp = "%4$i, %2$d, %3s, %1d";
+** for example,
+**	fmt = "%4$i, %2$d, %3s, %1d";
 ** the number must start from 1, and no gap among them
 */
 
@@ -515,6 +519,15 @@ static struct NumArg* BuildArgArray( const char *fmt, va_list ap, int* rv, struc
 	        nas[cn].type = TYPE_INT64;
 	        c = *p++;
 	    }
+	} else if (c == 'z') {
+	    if (sizeof(size_t) == sizeof(PRInt32)) {
+	        nas[ cn ].type = TYPE_INT32;
+	    } else if (sizeof(size_t) == sizeof(PRInt64)) {
+	        nas[ cn ].type = TYPE_INT64;
+	    } else {
+		nas[ cn ].type = TYPE_UNKNOWN;
+	    }
+	    c = *p++;
 	}
 
 	/* format */
@@ -809,6 +822,13 @@ static int dosprintf(SprintfState *ss, const char *fmt, va_list ap)
 		type = TYPE_INT64;
 		c = *fmt++;
 	    }
+	} else if (c == 'z') {
+	    if (sizeof(size_t) == sizeof(PRInt32)) {
+	    	type = TYPE_INT32;
+	    } else if (sizeof(size_t) == sizeof(PRInt64)) {
+	    	type = TYPE_INT64;
+	    }
+	    c = *fmt++;
 	}
 
 	/* format */
