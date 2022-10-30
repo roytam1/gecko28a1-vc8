@@ -21,6 +21,32 @@
 
 #include "webrtc/system_wrappers/interface/scoped_ptr.h"
 
+#if _WIN32
+#include <windows.h>
+#else
+#include <stdint.h>
+#endif
+/* Portable implementation From MSPS */
+
+typedef struct _MSPS_SLIST_ENTRY {
+    // Want a volatile pointer to non-volatile data so place after all type info
+    struct _MSPS_SLIST_ENTRY * volatile Next;
+} MSPS_SLIST_ENTRY, *MSPS_PSLIST_ENTRY;
+
+typedef union _MSPS_SLIST_HEADER {
+    // Provides 8 byte alignment for 32-bit builds.  Technically, not needed for
+    // current implementation below but leaving for future use.
+    ULONGLONG Alignment;
+    struct {
+        // Want a volatile pointer to non-volatile data so place after all type info
+        MSPS_PSLIST_ENTRY volatile Head;
+        volatile LONG Depth;
+        volatile LONG Mutex;
+    } List;
+} MSPS_SLIST_HEADER, *MSPS_PSLIST_HEADER;
+
+/* Portable implementation From MSPS */
+
 namespace webrtc {
 
 // Returns a pointer to the first boundry of |alignment| bytes following the
@@ -35,6 +61,12 @@ void* GetRightAlign(const void* ptr, size_t alignment);
 void* AlignedMalloc(size_t size, size_t alignment);
 // De-allocates memory created using the AlignedMalloc() API.
 void AlignedFree(void* mem_block);
+
+void InitializeSListHead_kex(MSPS_PSLIST_HEADER ListHeader);
+MSPS_PSLIST_ENTRY InterlockedPopEntrySList_kex(MSPS_PSLIST_HEADER ListHeader);
+MSPS_PSLIST_ENTRY InterlockedPushEntrySList_kex(MSPS_PSLIST_HEADER ListHeader, MSPS_PSLIST_ENTRY ListEntry);
+MSPS_PSLIST_ENTRY InterlockedFlushSList_kex(MSPS_PSLIST_HEADER ListHeader);
+
 
 // Templated versions to facilitate usage of aligned malloc without casting
 // to and from void*.

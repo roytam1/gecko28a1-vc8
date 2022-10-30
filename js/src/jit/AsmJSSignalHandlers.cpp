@@ -956,7 +956,7 @@ js::EnsureAsmJSSignalHandlersInstalled(JSRuntime *rt)
         return true;
 
 # if defined(XP_WIN)
-    if (!AddVectoredExceptionHandler(/* FirstHandler = */true, AsmJSExceptionHandler))
+    if (!SetUnhandledExceptionFilter(AsmJSExceptionHandler))
         return false;
 # else
     // Assume Unix. SA_NODEFER allows us to reenter the signal handler if we

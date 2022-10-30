@@ -97,4 +97,95 @@ void AlignedFree(void* mem_block) {
   free(memory_start);
 }
 
+/* Portable implementation From MSPS */
+
+void InitializeSListHead_kex(MSPS_PSLIST_HEADER ListHeader)
+{
+    //ARRSET_TRUE( ListHeader != NULL );
+    if ( ListHeader == NULL ) {
+        return;
+    }
+
+    ListHeader->List.Head = NULL;
+    ListHeader->List.Depth = 0;
+    ListHeader->List.Mutex = 0;
+}
+
+MSPS_PSLIST_ENTRY InterlockedPopEntrySList_kex(MSPS_PSLIST_HEADER ListHeader)
+{
+    MSPS_PSLIST_ENTRY oldHead = ListHeader->List.Head;
+    if ( oldHead == NULL ) {
+        return NULL;
+    }
+
+    while ( ListHeader->List.Mutex != 0 || InterlockedCompareExchange( &ListHeader->List.Mutex, 1, 0 ) != 0 ) {
+        // Spin until 'mutex' is free
+    }
+
+    // We have the 'mutex' so proceed with update
+    oldHead = ListHeader->List.Head;
+    if ( oldHead != NULL ) {
+        ListHeader->List.Head = oldHead->Next;
+        --(ListHeader->List.Depth);
+        //ARRSET_TRUE( ListHeader->List.Depth <= 0 );
+        if ( !(ListHeader->List.Depth <= 0) ) {
+            return NULL;
+        }
+    }
+
+    // Free the 'mutex'
+    ListHeader->List.Mutex = 0;
+
+    return oldHead;
+}
+
+MSPS_PSLIST_ENTRY InterlockedPushEntrySList_kex(MSPS_PSLIST_HEADER ListHeader, MSPS_PSLIST_ENTRY ListEntry)
+{
+    MSPS_PSLIST_ENTRY oldHead;
+    //ARRSET_TRUE( ListHeader != NULL );
+    if ( ListHeader == NULL ) {
+        return NULL;
+    }
+
+    while ( ListHeader->List.Mutex != 0 || InterlockedCompareExchange( &ListHeader->List.Mutex, 1, 0 ) != 0 ) {
+        // Spin until 'mutex' is free
+    }
+
+    // We have the 'mutex' so proceed with update
+    oldHead = ListHeader->List.Head;
+    ListEntry->Next = oldHead;
+    ListHeader->List.Head = ListEntry;
+    ++(ListHeader->List.Depth);
+
+    // Free the 'mutex'
+    ListHeader->List.Mutex = 0;
+
+    return oldHead;
+}
+
+MSPS_PSLIST_ENTRY InterlockedFlushSList_kex(MSPS_PSLIST_HEADER ListHeader)
+{
+    MSPS_PSLIST_ENTRY oldHead;
+    //ARRSET_TRUE( ListHeader != NULL );
+    if ( ListHeader == NULL ) {
+        return NULL;
+    }
+
+    while ( ListHeader->List.Mutex != 0 || InterlockedCompareExchange( &ListHeader->List.Mutex, 1, 0 ) != 0 ) {
+        // Spin until 'mutex' is free
+    }
+
+    // We have the 'mutex' so proceed with update
+    oldHead = ListHeader->List.Head;
+    ListHeader->List.Head = NULL;
+    ListHeader->List.Depth = 0;
+
+    // Free the 'mutex'
+    ListHeader->List.Mutex = 0;
+
+    return oldHead;
+}
+
+/* Portable implementation From MSPS */
+
 }  // namespace webrtc
