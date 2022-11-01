@@ -143,6 +143,9 @@ user_pref("media.webaudio.legacy.BiquadFilterNode", true);
 user_pref("media.webaudio.legacy.PannerNode", true);
 user_pref("media.webaudio.legacy.OscillatorNode", true);
 
+// We want to collect telemetry, but we don't want to send in the results.
+user_pref('toolkit.telemetry.server', 'https://%(server)s/telemetry-dummy/');
+
 // Always use network provider for geolocation tests
 // so we bypass the OSX dialog raised by the corelocation provider
 user_pref("geo.provider.testing", true);
