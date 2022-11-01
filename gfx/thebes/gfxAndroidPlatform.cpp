@@ -67,7 +67,7 @@ public:
         void *pnew = realloc(p, new_size);
         if (pnew) {
             sAmount += MallocSizeOfOnAlloc(pnew);
-        } else {
+        } else if (new_size != 0) {
             // realloc failed;  undo the decrement from above
             sAmount += MallocSizeOfOnAlloc(p);
         }

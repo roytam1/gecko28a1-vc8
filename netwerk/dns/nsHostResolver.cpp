@@ -605,13 +605,17 @@ nsHostResolver::ResolveHost(const char            *host,
                 // For entries that are in the grace period with a failed connect,
                 // or all cached negative entries, use the cache but start a new
                 // lookup in the background
-                ConditionallyRefreshRecord(he->rec, host);
+                {
+                    MutexAutoLock lock(he->rec->addr_info_lock);
+
+                    ConditionallyRefreshRecord(he->rec, host);
                 
-                if (he->rec->negative) {
-                    LOG(("  Negative cache entry for[%s].\n", host));
-                    Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
-                                          METHOD_NEGATIVE_HIT);
-                    status = NS_ERROR_UNKNOWN_HOST;
+                    if (he->rec->negative) {
+                        LOG(("  Negative cache entry for[%s].\n", host));
+                        Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
+                                              METHOD_NEGATIVE_HIT);
+                        status = NS_ERROR_UNKNOWN_HOST;
+                    }
                 }
             }
             // if the host name is an IP address literal and has been parsed,

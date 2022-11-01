@@ -2365,6 +2365,8 @@ InvalidateActivation(FreeOp *fop, uint8_t *ionTop, bool invalidateAll)
         // triggered.
         ionScript->destroyBackedges(fop->runtime());
 
+        ionScript->detachDependentAsmJSModules(fop);
+
         // This frame needs to be invalidated. We do the following:
         //
         // 1. Increment the reference counter to keep the ionScript alive
