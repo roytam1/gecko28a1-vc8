@@ -1,10 +1,17 @@
 <?xml version="1.0" ?><manifest>
+  <!--original fetch url was https://android.googlesource.com/-->
   <remote fetch="https://git.mozilla.org/external/aosp" name="aosp"/>
+  <!--original fetch url was git://codeaurora.org/-->
   <remote fetch="https://git.mozilla.org/external/caf" name="caf"/>
+  <!--original fetch url was https://git.mozilla.org/b2g-->
   <remote fetch="https://git.mozilla.org/b2g" name="b2gmozilla"/>
+  <!--original fetch url was git://github.com/mozilla-b2g/-->
   <remote fetch="https://git.mozilla.org/b2g" name="b2g"/>
+  <!--original fetch url was git://github.com/mozilla/-->
   <remote fetch="https://git.mozilla.org/b2g" name="mozilla"/>
+  <!--original fetch url was https://git.mozilla.org/releases-->
   <remote fetch="https://git.mozilla.org/releases" name="mozillaorg"/>
+  <!--original fetch url was git://github.com/apitrace/-->
   <remote fetch="https://git.mozilla.org/external/apitrace" name="apitrace"/>
   <default remote="caf" revision="refs/tags/android-4.0.4_r2.1" sync-j="4"/>
   <!-- Gonk specific things and forks -->
@@ -12,13 +19,13 @@
     <copyfile dest="Makefile" src="core/root.mk"/>
   </project>
   <project name="fake-dalvik" path="dalvik" remote="b2g" revision="ca1f327d5acc198bb4be62fa51db2c039032c9ce"/>
-  <project name="gaia.git" path="gaia" remote="mozillaorg" revision="e631e7707a25af6310674f325131569cda61de6e"/>
+  <project name="gaia.git" path="gaia" remote="mozillaorg" revision="d51d2e0963d9b761d5ea96243dfb13d9a220d521"/>
   <project name="gonk-misc" path="gonk-misc" remote="b2g" revision="7e006b3f770f7ca77d4b007e568ccd050bd1a89e"/>
   <project name="rilproxy" path="rilproxy" remote="b2g" revision="827214fcf38d6569aeb5c6d6f31cb296d1f09272"/>
   <project name="platform_hardware_ril" path="hardware/ril" remote="b2g" revision="eda08beb3ba9a159843c70ffde0f9660ec351eb9"/>
   <project name="platform_external_qemu" path="external/qemu" remote="b2g" revision="87aa8679560ce09f6445621d6f370d9de722cdba"/>
   <project name="moztt" path="external/moztt" remote="b2g" revision="685f70050cb340e33811efe962b24d324c8f6f2f"/>
-  <project name="apitrace" path="external/apitrace" remote="apitrace" revision="a314508e397c8f1814228d36259ea8708034444e"/>
+  <project name="apitrace" path="external/apitrace" remote="apitrace" revision="b2f773d8320d30648b89767dfe5b25ef94bc7e62"/>
   <!-- Stock Android things -->
   <project name="platform/abi/cpp" path="abi/cpp" revision="dd924f92906085b831bf1cbbc7484d3c043d613c"/>
   <project name="platform/bionic" path="bionic" revision="c72b8f6359de7ed17c11ddc9dfdde3f615d188a9"/>
