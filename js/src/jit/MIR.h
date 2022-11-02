@@ -2599,6 +2599,9 @@ class MCreateThisWithProto
     AliasSet getAliasSet() const {
         return AliasSet::None();
     }
+    bool congruentTo(MDefinition *ins) const {
+        return false;
+    }
     TypePolicy *typePolicy() {
         return this;
     }
