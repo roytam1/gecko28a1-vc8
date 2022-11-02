@@ -443,9 +443,18 @@ this.NetworkStatsService = {
       return;
     }
 
-    this._db.clearInterfaceStats(network, function onDBCleared(aError, aResult) {
+    let self = this;
+    this.updateStats(netId, function onUpdate(aResult, aMessage) {
+      if (!aResult) {
+        mm.sendAsyncMessage("NetworkStats:Clear:Return",
+                            { id: msg.id, error: aMessage, result: null });
+        return;
+      }
+
+      self._db.clearInterfaceStats(network, function onDBCleared(aError, aResult) {
         mm.sendAsyncMessage("NetworkStats:Clear:Return",
                             { id: msg.id, error: aError, result: aResult });
+      });
     });
   },
 
@@ -462,6 +471,19 @@ this.NetworkStatsService = {
       self._db.clearStats(networks, function onDBCleared(aError, aResult) {
         mm.sendAsyncMessage("NetworkStats:ClearAll:Return",
                             { id: msg.id, error: aError, result: aResult });
+      });
+
+      self.updateAllStats(function onUpdate(aResult, aMessage){
+        if (!aResult) {
+          mm.sendAsyncMessage("NetworkStats:ClearAll:Return",
+                              { id: msg.id, error: aMessage, result: null });
+          return;
+        }
+
+        self._db.clearStats(networks, function onDBCleared(aError, aResult) {
+          mm.sendAsyncMessage("NetworkStats:ClearAll:Return",
+                              { id: msg.id, error: aError, result: aResult });
+        });
       });
     });
   },
