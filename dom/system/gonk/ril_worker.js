@@ -3668,8 +3668,8 @@ let RIL = {
 
   _sendCallError: function _sendCallError(callIndex, errorMsg) {
     this.sendChromeMessage({rilMessageType: "callError",
-                           callIndex: callIndex,
-                           errorMsg: errorMsg});
+                            callIndex: callIndex,
+                            errorMsg: errorMsg});
   },
 
   _sendDataCallError: function _sendDataCallError(message, errorCode) {
@@ -4988,8 +4988,7 @@ RIL[REQUEST_DIAL] = function REQUEST_DIAL(length, options) {
   if (options.rilRequestError) {
     // The connection is not established yet.
     options.callIndex = -1;
-    this._sendCallError(options.callIndex,
-                        RIL_ERROR_TO_GECKO_ERROR[options.rilRequestError]);
+    this.getFailCauseCode(options);
   }
 };
 RIL[REQUEST_GET_IMSI] = function REQUEST_GET_IMSI(length, options) {
