@@ -12,7 +12,6 @@ Cu.import('resource://gre/modules/ActivitiesService.jsm');
 Cu.import('resource://gre/modules/PermissionPromptHelper.jsm');
 Cu.import('resource://gre/modules/ObjectWrapper.jsm');
 Cu.import('resource://gre/modules/NotificationDB.jsm');
-Cu.import('resource://gre/modules/accessibility/AccessFu.jsm');
 Cu.import('resource://gre/modules/Payment.jsm');
 Cu.import("resource://gre/modules/AppsUtils.jsm");
 Cu.import('resource://gre/modules/UserAgentOverrides.jsm');
@@ -308,7 +307,6 @@ var shell = {
 
     CustomEventManager.init();
     WebappsHelper.init();
-    AccessFu.attach(window);
     UserAgentOverrides.init();
     IndexedDBPromptHelper.init();
     CaptivePortalLoginHelper.init();
@@ -679,6 +677,10 @@ Services.obs.addObserver(function onBluetoothVolumeChange(subject, topic, data) 
     value: data
   });
 }, 'bluetooth-volume-change', false);
+
+Services.obs.addObserver(function(subject, topic, data) {
+  shell.sendCustomEvent('mozmemorypressure');
+}, 'memory-pressure', false);
 
 var CustomEventManager = {
   init: function custevt_init() {
