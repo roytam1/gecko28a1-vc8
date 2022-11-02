@@ -626,7 +626,7 @@ TabChild::HandlePossibleViewportChange()
 
   // Force a repaint with these metrics. This, among other things, sets the
   // displayport, so we start with async painting.
-  ProcessUpdateFrame(metrics);
+  mLastRootMetrics = ProcessUpdateFrame(metrics);
 }
 
 nsresult
@@ -1489,7 +1489,9 @@ TabChild::RecvUpdateFrame(const FrameMetrics& aFrameMetrics)
   if (aFrameMetrics.mIsRoot) {
     nsCOMPtr<nsIDOMWindowUtils> utils(GetDOMWindowUtils());
     if (APZCCallbackHelper::HasValidPresShellId(utils, aFrameMetrics)) {
-      return ProcessUpdateFrame(aFrameMetrics);
+      mLastRootMetrics = ProcessUpdateFrame(aFrameMetrics);
+      APZCCallbackHelper::UpdateCallbackTransform(aFrameMetrics, mLastRootMetrics);
+      return true;
     }
   } else {
     // aFrameMetrics.mIsRoot is false, so we are trying to update a subframe.
@@ -1499,6 +1501,7 @@ TabChild::RecvUpdateFrame(const FrameMetrics& aFrameMetrics)
     if (content) {
       FrameMetrics newSubFrameMetrics(aFrameMetrics);
       APZCCallbackHelper::UpdateSubFrame(content, newSubFrameMetrics);
+      APZCCallbackHelper::UpdateCallbackTransform(aFrameMetrics, newSubFrameMetrics);
       return true;
     }
   }
@@ -1506,7 +1509,8 @@ TabChild::RecvUpdateFrame(const FrameMetrics& aFrameMetrics)
   // We've recieved a message that is out of date and we want to ignore.
   // However we can't reply without painting so we reply by painting the
   // exact same thing as we did before.
-  return ProcessUpdateFrame(mLastRootMetrics);
+  mLastRootMetrics = ProcessUpdateFrame(mLastRootMetrics);
+  return true;
 }
 
 bool
@@ -1517,11 +1521,11 @@ TabChild::RecvAcknowledgeScrollUpdate(const ViewID& aScrollId,
   return true;
 }
 
-bool
+FrameMetrics
 TabChild::ProcessUpdateFrame(const FrameMetrics& aFrameMetrics)
   {
     if (!mGlobal || !mTabChildGlobal) {
-        return true;
+        return aFrameMetrics;
     }
 
     nsCOMPtr<nsIDOMWindowUtils> utils(GetDOMWindowUtils());
@@ -1577,22 +1581,20 @@ TabChild::ProcessUpdateFrame(const FrameMetrics& aFrameMetrics)
     data.AppendLiteral(" }");
 
     DispatchMessageManagerMessage(NS_LITERAL_STRING("Viewport:Change"), data);
-
-    mLastRootMetrics = newMetrics;
-
-    return true;
+    return newMetrics;
 }
 
 bool
-TabChild::RecvHandleDoubleTap(const CSSIntPoint& aPoint, const ScrollableLayerGuid& aGuid)
+TabChild::RecvHandleDoubleTap(const CSSPoint& aPoint, const ScrollableLayerGuid& aGuid)
 {
     if (!mGlobal || !mTabChildGlobal) {
         return true;
     }
 
+    CSSPoint point = APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid);
     nsCString data;
-    data += nsPrintfCString("{ \"x\" : %d", aPoint.x);
-    data += nsPrintfCString(", \"y\" : %d", aPoint.y);
+    data += nsPrintfCString("{ \"x\" : %f", point.x);
+    data += nsPrintfCString(", \"y\" : %f", point.y);
     data += nsPrintfCString(" }");
 
     DispatchMessageManagerMessage(NS_LITERAL_STRING("Gesture:DoubleTap"), data);
@@ -1601,13 +1603,13 @@ TabChild::RecvHandleDoubleTap(const CSSIntPoint& aPoint, const ScrollableLayerGu
 }
 
 bool
-TabChild::RecvHandleSingleTap(const CSSIntPoint& aPoint, const ScrollableLayerGuid& aGuid)
+TabChild::RecvHandleSingleTap(const CSSPoint& aPoint, const ScrollableLayerGuid& aGuid)
 {
   if (!mGlobal || !mTabChildGlobal) {
     return true;
   }
 
-  LayoutDevicePoint currentPoint = CSSPoint(aPoint) * mWidget->GetDefaultScale();;
+  LayoutDevicePoint currentPoint = APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid) * mWidget->GetDefaultScale();;
 
   int time = 0;
   DispatchSynthesizedMouseEvent(NS_MOUSE_MOVE, time, currentPoint);
@@ -1618,14 +1620,16 @@ TabChild::RecvHandleSingleTap(const CSSIntPoint& aPoint, const ScrollableLayerGu
 }
 
 bool
-TabChild::RecvHandleLongTap(const CSSIntPoint& aPoint, const ScrollableLayerGuid& aGuid)
+TabChild::RecvHandleLongTap(const CSSPoint& aPoint, const ScrollableLayerGuid& aGuid)
 {
   if (!mGlobal || !mTabChildGlobal) {
     return true;
   }
 
   mContextMenuHandled =
-      DispatchMouseEvent(NS_LITERAL_STRING("contextmenu"), aPoint, 2, 1, 0, false,
+      DispatchMouseEvent(NS_LITERAL_STRING("contextmenu"),
+                         APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid),
+                         2, 1, 0, false,
                          nsIDOMMouseEvent::MOZ_SOURCE_TOUCH);
 
   SendContentReceivedTouch(aGuid, mContextMenuHandled);
@@ -1634,7 +1638,7 @@ TabChild::RecvHandleLongTap(const CSSIntPoint& aPoint, const ScrollableLayerGuid
 }
 
 bool
-TabChild::RecvHandleLongTapUp(const CSSIntPoint& aPoint, const ScrollableLayerGuid& aGuid)
+TabChild::RecvHandleLongTapUp(const CSSPoint& aPoint, const ScrollableLayerGuid& aGuid)
 {
   if (mContextMenuHandled) {
     mContextMenuHandled = false;
@@ -1877,6 +1881,10 @@ TabChild::RecvRealTouchEvent(const WidgetTouchEvent& aEvent,
                              const ScrollableLayerGuid& aGuid)
 {
   WidgetTouchEvent localEvent(aEvent);
+  for (size_t i = 0; i < localEvent.touches.Length(); i++) {
+    aEvent.touches[i]->mRefPoint = APZCCallbackHelper::ApplyCallbackTransform(aEvent.touches[i]->mRefPoint, aGuid, mWidget->GetDefaultScale());
+  }
+
   nsEventStatus status = DispatchWidgetEvent(localEvent);
 
   if (!IsAsyncPanZoomEnabled()) {
