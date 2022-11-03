@@ -3,6 +3,8 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+const QUEUE_TYPE_UPDATE_STATS = 0;
+
 var wifiId = '00';
 
 function getNetworks(callback) {
@@ -72,11 +74,11 @@ add_test(function test_update() {
 });
 
 add_test(function test_updateQueueIndex() {
-  NetworkStatsService.updateQueue = [{netId: 0, callbacks: null},
-                                     {netId: 1, callbacks: null},
-                                     {netId: 2, callbacks: null},
-                                     {netId: 3, callbacks: null},
-                                     {netId: 4, callbacks: null}];
+  NetworkStatsService.updateQueue = [{netId: 0, callbacks: null, queueType: QUEUE_TYPE_UPDATE_STATS},
+                                     {netId: 1, callbacks: null, queueType: QUEUE_TYPE_UPDATE_STATS},
+                                     {netId: 2, callbacks: null, queueType: QUEUE_TYPE_UPDATE_STATS},
+                                     {netId: 3, callbacks: null, queueType: QUEUE_TYPE_UPDATE_STATS},
+                                     {netId: 4, callbacks: null, queueType: QUEUE_TYPE_UPDATE_STATS}];
   var index = NetworkStatsService.updateQueueIndex(3);
   do_check_eq(index, 3);
   index = NetworkStatsService.updateQueueIndex(10);

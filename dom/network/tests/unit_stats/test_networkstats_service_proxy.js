@@ -36,7 +36,6 @@ function mokConvertNetworkInterface() {
 add_test(function test_saveAppStats() {
   var cachedStats = NetworkStatsService.cachedStats;
   var timestamp = NetworkStatsService.cachedStatsDate.getTime();
-  var samples = 5;
 
   // Create to fake nsINetworkInterfaces. As nsINetworkInterface can not
   // be instantiated, these two vars will emulate it by filling the properties
@@ -49,34 +48,34 @@ add_test(function test_saveAppStats() {
 
   do_check_eq(Object.keys(cachedStats).length, 0);
 
-  for (var i = 0; i < samples; i++) {
-    nssProxy.saveAppStats(1, wifi, timestamp, 10, 20, false);
+  nssProxy.saveAppStats(1, wifi, timestamp, 10, 20,
+                        function (success, message) {
+    do_check_eq(success, true);
+    nssProxy.saveAppStats(1, mobile, timestamp, 10, 20,
+                          function (success, message) {
+      do_check_eq(success, true);
+      var key1 = 1 + NetworkStatsService.getNetworkId(wifi.id, wifi.type);
+      var key2 = 1 + mobileNetId;
 
-    nssProxy.saveAppStats(1, mobile, timestamp, 10, 20, false);
-  }
+      do_check_eq(Object.keys(cachedStats).length, 2);
+      do_check_eq(cachedStats[key1].appId, 1);
+      do_check_eq(cachedStats[key1].networkId, wifi.id);
+      do_check_eq(cachedStats[key1].networkType, wifi.type);
+      do_check_eq(new Date(cachedStats[key1].date).getTime() / 1000,
+                  Math.floor(timestamp / 1000));
+      do_check_eq(cachedStats[key1].rxBytes, 10);
+      do_check_eq(cachedStats[key1].txBytes, 20);
+      do_check_eq(cachedStats[key2].appId, 1);
+      do_check_eq(cachedStats[key2].networkId, mobile.id);
+      do_check_eq(cachedStats[key2].networkType, mobile.type);
+      do_check_eq(new Date(cachedStats[key2].date).getTime() / 1000,
+                  Math.floor(timestamp / 1000));
+      do_check_eq(cachedStats[key2].rxBytes, 10);
+      do_check_eq(cachedStats[key2].txBytes, 20);
 
-  var key1 = 1 + "" + NetworkStatsService.getNetworkId(wifi.id, wifi.type);
-  var key2 = 1 + "" + mobileNetId + "";
-
-  do_check_eq(Object.keys(cachedStats).length, 2);
-  do_check_eq(cachedStats[key1].appId, 1);
-  do_check_eq(cachedStats[key1].serviceType.length, 0);
-  do_check_eq(cachedStats[key1].networkId, wifi.id);
-  do_check_eq(cachedStats[key1].networkType, wifi.type);
-  do_check_eq(new Date(cachedStats[key1].date).getTime() / 1000,
-              Math.floor(timestamp / 1000));
-  do_check_eq(cachedStats[key1].rxBytes, 50);
-  do_check_eq(cachedStats[key1].txBytes, 100);
-  do_check_eq(cachedStats[key2].appId, 1);
-  do_check_eq(cachedStats[key1].serviceType.length, 0);
-  do_check_eq(cachedStats[key2].networkId, mobile.id);
-  do_check_eq(cachedStats[key2].networkType, mobile.type);
-  do_check_eq(new Date(cachedStats[key2].date).getTime() / 1000,
-              Math.floor(timestamp / 1000));
-  do_check_eq(cachedStats[key2].rxBytes, 50);
-  do_check_eq(cachedStats[key2].txBytes, 100);
-
-  run_next_test();
+      run_next_test();
+    });
+  });
 });
 
 add_test(function test_saveServiceStats() {
@@ -137,45 +136,34 @@ add_test(function test_saveStatsWithDifferentDates() {
   var today = NetworkStatsService.cachedStatsDate;
   var tomorrow = new Date(today.getTime() + (24 * 60 * 60 * 1000));
 
-  var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
   var mobile = {type: Ci.nsINetworkInterface.NETWORK_TYPE_MOBILE, id: "1234"};
 
-  var key = 1 + "" + NetworkStatsService.getNetworkId(wifi.id, wifi.type);
+  NetworkStatsService.updateCachedStats(function (success, message) {
+    do_check_eq(success, true);
 
-  NetworkStatsService.updateCachedStats(
-    function (success, msg) {
+    do_check_eq(Object.keys(NetworkStatsService.cachedStats).length, 0);
+    nssProxy.saveAppStats(1, mobile, today.getTime(), 10, 20,
+                         function (success, message) {
       do_check_eq(success, true);
+      nssProxy.saveAppStats(2, mobile, tomorrow.getTime(), 30, 40,
+                            function (success, message) {
+        do_check_eq(success, true);
 
-      do_check_eq(Object.keys(NetworkStatsService.cachedStats).length, 0);
+        var cachedStats = NetworkStatsService.cachedStats;
+        var key = 2 + NetworkStatsService.getNetworkId(mobile.id, mobile.type);
+        do_check_eq(Object.keys(cachedStats).length, 1);
+        do_check_eq(cachedStats[key].appId, 2);
+        do_check_eq(cachedStats[key].networkId, mobile.id);
+        do_check_eq(cachedStats[key].networkType, mobile.type);
+        do_check_eq(new Date(cachedStats[key].date).getTime() / 1000,
+                    Math.floor(tomorrow.getTime() / 1000));
+        do_check_eq(cachedStats[key].rxBytes, 30);
+        do_check_eq(cachedStats[key].txBytes, 40);
 
-      nssProxy.saveAppStats(1, wifi, today.getTime(), 10, 20, false);
-
-      nssProxy.saveAppStats(1, mobile, today.getTime(), 10, 20, false);
-
-      var saveStatsCb = {
-        notify: function notify(success, message) {
-          do_check_eq(success, true);
-
-          var cachedStats = NetworkStatsService.cachedStats;
-          var key = 2 + "" +
-                    NetworkStatsService.getNetworkId(mobile.id, mobile.type);
-          do_check_eq(Object.keys(cachedStats).length, 1);
-          do_check_eq(cachedStats[key].appId, 2);
-          do_check_eq(cachedStats[key].networkId, mobile.id);
-          do_check_eq(cachedStats[key].networkType, mobile.type);
-          do_check_eq(new Date(cachedStats[key].date).getTime() / 1000,
-                      Math.floor(tomorrow.getTime() / 1000));
-          do_check_eq(cachedStats[key].rxBytes, 30);
-          do_check_eq(cachedStats[key].txBytes, 40);
-
-          run_next_test();
-        }
-      };
-
-      nssProxy.saveAppStats(2, mobile, tomorrow.getTime(), 30, 40, false,
-                            saveStatsCb);
-    }
-  );
+        run_next_test();
+      });
+    });
+  });
 });
 
 add_test(function test_saveStatsWithMaxCachedTraffic() {
@@ -183,22 +171,21 @@ add_test(function test_saveStatsWithMaxCachedTraffic() {
   var maxtraffic = NetworkStatsService.maxCachedTraffic;
   var wifi = {type: Ci.nsINetworkInterface.NETWORK_TYPE_WIFI, id: "0"};
 
-  NetworkStatsService.updateCachedStats(
-    function (success, msg) {
+  NetworkStatsService.updateCachedStats(function (success, message) {
+    do_check_eq(success, true);
+
+    var cachedStats = NetworkStatsService.cachedStats;
+    do_check_eq(Object.keys(cachedStats).length, 0);
+    nssProxy.saveAppStats(1, wifi, timestamp, 10, 20,
+                          function (success, message) {
       do_check_eq(success, true);
-
-      var cachedStats = NetworkStatsService.cachedStats;
-      do_check_eq(Object.keys(cachedStats).length, 0);
-
-      nssProxy.saveAppStats(1, wifi, timestamp, 10, 20, false);
-
       do_check_eq(Object.keys(cachedStats).length, 1);
-
-      nssProxy.saveAppStats(1, wifi, timestamp, maxtraffic, 20, false);
-
-      do_check_eq(Object.keys(cachedStats).length, 0);
-
-      run_next_test();
+      nssProxy.saveAppStats(1, wifi, timestamp, maxtraffic, 20,
+                            function (success, message) {
+        do_check_eq(Object.keys(cachedStats).length, 0);
+        run_next_test();
+      });
+    });
     }
   );
 });
