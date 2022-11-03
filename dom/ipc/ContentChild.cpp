@@ -155,6 +155,25 @@ static bool sNuwaForking = false;
 #define STACK_SENTINEL_VALUE 0xdeadbeef
 #endif
 
+namespace {
+
+class EnableGCTimerCallback: public nsITimerCallback
+{
+public:
+    NS_DECL_ISUPPORTS
+    virtual ~EnableGCTimerCallback() {}
+
+private:
+    virtual NS_IMETHODIMP Notify(nsITimer*) {
+        nsJSContext::EnableGC();
+        return NS_OK;
+    }
+};
+
+NS_IMPL_ISUPPORTS1(EnableGCTimerCallback, nsITimerCallback);
+
+} // anonymous namespace
+
 namespace mozilla {
 namespace dom {
 
@@ -244,6 +263,16 @@ ConsoleListener::Observe(nsIConsoleMessage* aMessage)
         NS_ENSURE_SUCCESS(rv, rv);
         rv = scriptError->GetSourceLine(sourceLine);
         NS_ENSURE_SUCCESS(rv, rv);
+
+        // Before we send the error to the parent process (which
+        // involves copying the memory), truncate any long lines.  CSS
+        // errors in particular share the memory for long lines with
+        // repeated errors, but the IPC communication we're about to do
+        // will break that sharing, so we better truncate now.
+        if (sourceLine.Length() > 1000) {
+            sourceLine.Truncate(1000);
+        }
+
         rv = scriptError->GetCategory(getter_Copies(category));
         NS_ENSURE_SUCCESS(rv, rv);
         rv = scriptError->GetLineNumber(&lineNum);
@@ -313,6 +342,7 @@ ContentChild::ContentChild()
 #ifdef ANDROID
    ,mScreenSize(0, 0)
 #endif
+   , mCanOverrideProcessName(true)
 {
     // This process is a content process, so it's clearly running in
     // multiprocess mode!
@@ -357,28 +387,41 @@ ContentChild::Init(MessageLoop* aIOLoop,
                                   XRE_GetProcessType());
 #endif
 
-    SendGetProcessAttributes(&mID, &mIsForApp, &mIsForBrowser);
-
     GetCPOWManager();
 
-#ifdef MOZ_NUWA_PROCESS
-    if (IsNuwaProcess()) {
-        SetProcessName(NS_LITERAL_STRING("(Nuwa)"));
-        return true;
-    }
-#endif
-    if (mIsForApp && !mIsForBrowser) {
-        SetProcessName(NS_LITERAL_STRING("(Preallocated app)"));
-    } else {
-        SetProcessName(NS_LITERAL_STRING("Browser"));
-    }
+    InitProcessAttributes();
 
     return true;
 }
 
 void
-ContentChild::SetProcessName(const nsAString& aName)
+ContentChild::InitProcessAttributes()
 {
+
+    SendGetProcessAttributes(&mID, &mIsForApp, &mIsForBrowser);
+
+#ifdef MOZ_NUWA_PROCESS
+    if (IsNuwaProcess()) {
+        SetProcessName(NS_LITERAL_STRING("(Nuwa)"), false);
+        return;
+    }
+#endif
+    if (mIsForApp && !mIsForBrowser) {
+        SetProcessName(NS_LITERAL_STRING("(Preallocated app)"), false);
+    } else {
+        SetProcessName(NS_LITERAL_STRING("Browser"), false);
+    }
+
+    return;
+}
+
+void
+ContentChild::SetProcessName(const nsAString& aName, bool aDontOverride)
+{
+    if (!mCanOverrideProcessName) {
+        return;
+    }
+
     char* name;
     if ((name = PR_GetEnv("MOZ_DEBUG_APP_PROCESS")) &&
         aName.EqualsASCII(name)) {
@@ -396,6 +439,10 @@ ContentChild::SetProcessName(const nsAString& aName)
 
     mProcessName = aName;
     mozilla::ipc::SetThisProcessName(NS_LossyConvertUTF16toASCII(aName).get());
+
+    if (aDontOverride) {
+        mCanOverrideProcessName = false;
+    }
 }
 
 void
@@ -694,6 +741,10 @@ ContentChild::RecvPBrowserConstructor(PBrowserChild* actor,
         MOZ_ASSERT(!sFirstIdleTask);
         sFirstIdleTask = NewRunnableFunction(FirstIdle);
         MessageLoop::current()->PostIdleTask(FROM_HERE, sFirstIdleTask);
+
+        // Redo InitProcessAttributes() when the app or browser is really
+        // launching so the attributes will be correct.
+        InitProcessAttributes();
     }
 
     return true;
@@ -1104,6 +1155,20 @@ ContentChild::RecvSetOffline(const bool& offline)
   io->SetOffline(offline);
 
   return true;
+}
+
+bool
+ContentChild::RecvSuppressCollect(const int& delay)
+{
+    nsJSContext::DisableGC();
+    if (mEnableGCTimer) {
+        mEnableGCTimer->Cancel();
+        mEnableGCTimer = nullptr;
+    }
+    mEnableGCTimer = do_CreateInstance("@mozilla.org/timer;1");
+    mEnableGCTimer->InitWithCallback(new EnableGCTimerCallback(),
+                                     delay, nsITimer::TYPE_ONE_SHOT);
+    return true;
 }
 
 void
@@ -1567,7 +1632,7 @@ public:
 
         // In the new process.
         ContentChild* child = ContentChild::GetSingleton();
-        child->SetProcessName(NS_LITERAL_STRING("(Preallocated app)"));
+        child->SetProcessName(NS_LITERAL_STRING("(Preallocated app)"), false);
         mozilla::ipc::Transport* transport = child->GetTransport();
         int fd = transport->GetFileDescriptor();
         transport->ResetFileDescriptor(fd);

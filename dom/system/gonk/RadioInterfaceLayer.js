@@ -23,8 +23,11 @@ Cu.import("resource://gre/modules/Sntp.jsm");
 Cu.import("resource://gre/modules/systemlibs.js");
 Cu.import("resource://gre/modules/Promise.jsm");
 
-var RIL = {};
-Cu.import("resource://gre/modules/ril_consts.js", RIL);
+XPCOMUtils.defineLazyGetter(this, "RIL", function () {
+  let obj = {};
+  Cu.import("resource://gre/modules/ril_consts.js", obj);
+  return obj;
+});
 
 // set to true in ril_consts.js to see debug messages
 var DEBUG = RIL.DEBUG_RIL;
@@ -86,7 +89,6 @@ const kSettingsTimezoneAutoUpdateAvailable = "time.timezone.automatic-update.ava
 const NS_PREFBRANCH_PREFCHANGE_TOPIC_ID = "nsPref:changed";
 
 const kPrefCellBroadcastDisabled = "ril.cellbroadcast.disabled";
-const kPrefClirModePreference = "ril.clirMode";
 const kPrefRilNumRadioInterfaces = "ril.numRadioInterfaces";
 
 const DOM_MOBILE_MESSAGE_DELIVERY_RECEIVED = "received";
@@ -780,47 +782,14 @@ function RadioInterfaceLayer() {
   gMessageManager.init(this);
   gRadioEnabledController.init(this);
 
-  let options = {
-    debug: debugPref,
-    cellBroadcastDisabled: false,
-    clirMode: RIL.CLIR_DEFAULT,
-    quirks: {
-      callstateExtraUint32:
-        libcutils.property_get("ro.moz.ril.callstate_extra_int", "false") === "true",
-      v5Legacy:
-        libcutils.property_get("ro.moz.ril.v5_legacy", "true") === "true",
-      requestUseDialEmergencyCall:
-        libcutils.property_get("ro.moz.ril.dial_emergency_call", "false") === "true",
-      simAppStateExtraFields:
-        libcutils.property_get("ro.moz.ril.simstate_extra_field", "false") === "true",
-      extraUint2ndCall:
-        libcutils.property_get("ro.moz.ril.extra_int_2nd_call", "false") == "true",
-      haveQueryIccLockRetryCount:
-        libcutils.property_get("ro.moz.ril.query_icc_count", "false") == "true",
-      sendStkProfileDownload:
-        libcutils.property_get("ro.moz.ril.send_stk_profile_dl", "false") == "true",
-      dataRegistrationOnDemand:
-        libcutils.property_get("ro.moz.ril.data_reg_on_demand", "false") == "true"
-    },
-    rilEmergencyNumbers: libcutils.property_get("ril.ecclist") ||
-                         libcutils.property_get("ro.ril.ecclist")
-  };
-
-  try {
-    options.cellBroadcastDisabled =
-      Services.prefs.getBoolPref(kPrefCellBroadcastDisabled);
-  } catch(e) {}
-
-  try {
-    options.clirMode = Services.prefs.getIntPref(kPrefClirModePreference);
-  } catch(e) {}
+  let workerMessenger = new WorkerMessenger();
+  workerMessenger.init();
 
   let numIfaces = this.numRadioInterfaces;
   debug(numIfaces + " interfaces");
   this.radioInterfaces = [];
   for (let clientId = 0; clientId < numIfaces; clientId++) {
-    options.clientId = clientId;
-    this.radioInterfaces.push(new RadioInterface(options));
+    this.radioInterfaces.push(new RadioInterface(clientId, workerMessenger));
   }
 
   // TODO: Move 'ril.data.*' settings handler to DataConnectionManager,
@@ -1027,7 +996,8 @@ RadioInterfaceLayer.prototype = {
 
     for (let clientId = 0; clientId < this.numRadioInterfaces; clientId++) {
       let radioInterface = this.radioInterfaces[clientId];
-      if (radioInterface.rilContext.iccInfo.iccid == iccId) {
+      if (radioInterface.rilContext.iccInfo &&
+          radioInterface.rilContext.iccInfo.iccid == iccId) {
         return clientId;
       }
     }
@@ -1052,25 +1022,17 @@ XPCOMUtils.defineLazyGetter(RadioInterfaceLayer.prototype,
   return 1;
 });
 
-function WorkerMessenger(radioInterface, options) {
+function WorkerMessenger() {
   // Initial owning attributes.
-  this.radioInterface = radioInterface;
+  this.radioInterfaces = [];
   this.tokenCallbackMap = {};
 
-  // Add a convenient alias to |radioInterface.debug()|.
-  this.debug = radioInterface.debug.bind(radioInterface);
-
-  if (DEBUG) this.debug("Starting RIL Worker[" + options.clientId + "]");
   this.worker = new ChromeWorker("resource://gre/modules/ril_worker.js");
   this.worker.onerror = this.onerror.bind(this);
   this.worker.onmessage = this.onmessage.bind(this);
-
-  this.send("setInitialOptions", options);
-
-  gSystemWorkerManager.registerRilWorker(options.clientId, this.worker);
 }
 WorkerMessenger.prototype = {
-  radioInterface: null,
+  radioInterfaces: null,
   worker: null,
 
   // This gets incremented each time we send out a message.
@@ -1079,9 +1041,48 @@ WorkerMessenger.prototype = {
   // Maps tokens we send out with messages to the message callback.
   tokenCallbackMap: null,
 
+  init: function init() {
+    let options = {
+      debug: DEBUG,
+      cellBroadcastDisabled: false,
+      quirks: {
+        callstateExtraUint32:
+          libcutils.property_get("ro.moz.ril.callstate_extra_int", "false") === "true",
+        v5Legacy:
+          libcutils.property_get("ro.moz.ril.v5_legacy", "true") === "true",
+        requestUseDialEmergencyCall:
+          libcutils.property_get("ro.moz.ril.dial_emergency_call", "false") === "true",
+        simAppStateExtraFields:
+          libcutils.property_get("ro.moz.ril.simstate_extra_field", "false") === "true",
+        extraUint2ndCall:
+          libcutils.property_get("ro.moz.ril.extra_int_2nd_call", "false") == "true",
+        haveQueryIccLockRetryCount:
+          libcutils.property_get("ro.moz.ril.query_icc_count", "false") == "true",
+        sendStkProfileDownload:
+          libcutils.property_get("ro.moz.ril.send_stk_profile_dl", "false") == "true",
+        dataRegistrationOnDemand:
+          libcutils.property_get("ro.moz.ril.data_reg_on_demand", "false") == "true"
+      },
+      rilEmergencyNumbers: libcutils.property_get("ril.ecclist") ||
+                           libcutils.property_get("ro.ril.ecclist")
+    };
+
+    try {
+      options.cellBroadcastDisabled =
+        Services.prefs.getBoolPref(kPrefCellBroadcastDisabled);
+    } catch(e) {}
+
+    this.send(null, "setInitialOptions", options);
+  },
+
+  debug: function debug(aClientId, aMessage) {
+    // We use the same debug subject with RadioInterface's here.
+    dump("-*- RadioInterface[" + aClientId + "]: " + aMessage + "\n");
+  },
+
   onerror: function onerror(event) {
     if (DEBUG) {
-      this.debug("Got an error: " + event.filename + ":" +
+      this.debug("X", "Got an error: " + event.filename + ":" +
                  event.lineno + ": " + event.message + "\n");
     }
     event.preventDefault();
@@ -1092,20 +1093,26 @@ WorkerMessenger.prototype = {
    */
   onmessage: function onmessage(event) {
     let message = event.data;
+    let clientId = message.rilMessageClientId;
+    if (clientId === null) {
+      return;
+    }
+
     if (DEBUG) {
-      this.debug("Received message from worker: " + JSON.stringify(message));
+      this.debug(clientId, "Received message from worker: " + JSON.stringify(message));
     }
 
     let token = message.rilMessageToken;
     if (token == null) {
       // That's an unsolicited message.  Pass to RadioInterface directly.
-      this.radioInterface.handleUnsolicitedWorkerMessage(message);
+      let radioInterface = this.radioInterfaces[clientId];
+      radioInterface.handleUnsolicitedWorkerMessage(message);
       return;
     }
 
     let callback = this.tokenCallbackMap[message.rilMessageToken];
     if (!callback) {
-      if (DEBUG) this.debug("Ignore orphan token: " + message.rilMessageToken);
+      if (DEBUG) this.debug(clientId, "Ignore orphan token: " + message.rilMessageToken);
       return;
     }
 
@@ -1113,12 +1120,22 @@ WorkerMessenger.prototype = {
     try {
       keep = callback(message);
     } catch(e) {
-      if (DEBUG) this.debug("callback throws an exception: " + e);
+      if (DEBUG) this.debug(clientId, "callback throws an exception: " + e);
     }
 
     if (!keep) {
       delete this.tokenCallbackMap[message.rilMessageToken];
     }
+  },
+
+  registerClient: function registerClient(aClientId, aRadioInterface) {
+    if (DEBUG) this.debug(aClientId, "Starting RIL Worker");
+
+    // Keep a reference so that we can dispatch unsolicited messages to it.
+    this.radioInterfaces[aClientId] = aRadioInterface;
+
+    this.send(null, "registerClient", { clientId: aClientId });
+    gSystemWorkerManager.registerRilWorker(aClientId, this.worker);
   },
 
   /**
@@ -1136,9 +1153,10 @@ WorkerMessenger.prototype = {
    *        value true to keep current token-callback mapping and wait for
    *        another worker reply, or false to remove the mapping.
    */
-  send: function send(rilMessageType, message, callback) {
+  send: function send(clientId, rilMessageType, message, callback) {
     message = message || {};
 
+    message.rilMessageClientId = clientId;
     message.rilMessageToken = this.token;
     this.token++;
 
@@ -1169,11 +1187,11 @@ WorkerMessenger.prototype = {
    *
    * @TODO: Bug 815526 - deprecate RILContentHelper.
    */
-  sendWithIPCMessage: function sendWithIPCMessage(msg, rilMessageType, ipcType) {
-    this.send(rilMessageType, msg.json.data, (function(reply) {
+  sendWithIPCMessage: function sendWithIPCMessage(clientId, msg, rilMessageType, ipcType) {
+    this.send(clientId, rilMessageType, msg.json.data, (function(reply) {
       ipcType = ipcType || msg.name;
       msg.target.sendAsyncMessage(ipcType, {
-        clientId: this.radioInterface.clientId,
+        clientId: clientId,
         data: reply
       });
       return false;
@@ -1181,9 +1199,14 @@ WorkerMessenger.prototype = {
   }
 };
 
-function RadioInterface(options) {
-  this.clientId = options.clientId;
-  this.workerMessenger = new WorkerMessenger(this, options);
+function RadioInterface(aClientId, aWorkerMessenger) {
+  this.clientId = aClientId;
+  this.workerMessenger = {
+    send: aWorkerMessenger.send.bind(aWorkerMessenger, aClientId),
+    sendWithIPCMessage:
+      aWorkerMessenger.sendWithIPCMessage.bind(aWorkerMessenger, aClientId),
+  };
+  aWorkerMessenger.registerClient(aClientId, this);
 
   this.dataCallSettings = {
     oldEnabled: false,
@@ -1242,9 +1265,6 @@ function RadioInterface(options) {
 
   let lock = gSettingsService.createLock();
 
-  // Read preferred network type from the setting DB.
-  lock.get("ril.radio.preferredNetworkType", this);
-
   // Read the APN data from the settings DB.
   lock.get("ril.data.roaming_enabled", this);
   lock.get("ril.data.apnSettings", this);
@@ -1297,7 +1317,7 @@ RadioInterface.prototype = {
                                          Ci.nsIObserver,
                                          Ci.nsISettingsServiceCallback]),
 
-  // A private WorkerMessenger instance.
+  // A private wrapped WorkerMessenger instance.
   workerMessenger: null,
 
   debug: function debug(s) {
@@ -1602,8 +1622,7 @@ RadioInterface.prototype = {
       case "iccmbdn":
         this.handleIccMbdn(message);
         break;
-      case "USSDReceived":
-        if (DEBUG) this.debug("USSDReceived " + JSON.stringify(message));
+      case "ussdreceived":
         this.handleUSSDReceived(message);
         break;
       case "stkcommand":
@@ -1750,9 +1769,6 @@ RadioInterface.prototype = {
     let voice = this.rilContext.voice;
     let data = this.rilContext.data;
 
-    this.checkRoamingBetweenOperators(voice);
-    this.checkRoamingBetweenOperators(data);
-
     if (voiceMessage || operatorMessage || signalMessage) {
       gMessageManager.sendMobileConnectionMessage("RIL:VoiceInfoChanged",
                                                   this.clientId, voice);
@@ -1765,35 +1781,6 @@ RadioInterface.prototype = {
     if (selectionMessage) {
       this.updateNetworkSelectionMode(selectionMessage);
     }
-  },
-
-  /**
-    * Fix the roaming. RIL can report roaming in some case it is not
-    * really the case. See bug 787967
-    *
-    * @param registration  The voiceMessage or dataMessage from which the
-    *                      roaming state will be changed (maybe, if needed).
-    */
-  checkRoamingBetweenOperators: function checkRoamingBetweenOperators(registration) {
-    let iccInfo = this.rilContext.iccInfo;
-    let operator = registration.network;
-    let state = registration.state;
-
-    if (!iccInfo || !operator ||
-        state != RIL.GECKO_MOBILE_CONNECTION_STATE_REGISTERED) {
-      return;
-    }
-
-    let spn = iccInfo.spn && iccInfo.spn.toLowerCase();
-    let longName = operator.longName && operator.longName.toLowerCase();
-    let shortName = operator.shortName && operator.shortName.toLowerCase();
-
-    let equalsLongName = longName && (spn == longName);
-    let equalsShortName = shortName && (spn == shortName);
-    let equalsMcc = iccInfo.mcc == operator.mcc;
-
-    registration.roaming = registration.roaming &&
-                           !(equalsMcc && (equalsLongName || equalsShortName));
   },
 
   /**
@@ -1887,16 +1874,10 @@ RadioInterface.prototype = {
     this._deliverDataCallCallback("dataCallError", [message]);
   },
 
-  _preferredNetworkType: null,
   getPreferredNetworkType: function getPreferredNetworkType(target, message) {
     this.workerMessenger.send("getPreferredNetworkType", message, (function(response) {
       if (response.success) {
-        this._preferredNetworkType = response.networkType;
-        response.type = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType];
-        if (DEBUG) {
-          this.debug("_preferredNetworkType is now " +
-                     RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]);
-        }
+        response.type = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[response.networkType];
       }
 
       target.sendAsyncMessage("RIL:GetPreferredNetworkType", {
@@ -1908,7 +1889,6 @@ RadioInterface.prototype = {
   },
 
   setPreferredNetworkType: function setPreferredNetworkType(target, message) {
-    if (DEBUG) this.debug("setPreferredNetworkType: " + JSON.stringify(message));
     let networkType = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO.indexOf(message.type);
     if (networkType < 0) {
       message.errorMsg = RIL.GECKO_ERROR_INVALID_PARAMETER;
@@ -1921,55 +1901,10 @@ RadioInterface.prototype = {
     message.networkType = networkType;
 
     this.workerMessenger.send("setPreferredNetworkType", message, (function(response) {
-      if (response.success) {
-        this._preferredNetworkType = response.networkType;
-        if (DEBUG) {
-          this.debug("_preferredNetworkType is now " +
-                      RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]);
-        }
-      }
-
       target.sendAsyncMessage("RIL:SetPreferredNetworkType", {
         clientId: this.clientId,
         data: response
       });
-      return false;
-    }).bind(this));
-  },
-
-  // TODO: Bug 946589 - B2G RIL: follow-up to bug 944225 - remove
-  // 'ril.radio.preferredNetworkType' setting handler
-  setPreferredNetworkTypeBySetting: function setPreferredNetworkTypeBySetting(value) {
-    let networkType = RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO.indexOf(value);
-    if (networkType < 0) {
-      networkType = (this._preferredNetworkType != null)
-                    ? RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]
-                    : RIL.GECKO_PREFERRED_NETWORK_TYPE_DEFAULT;
-      gSettingsService.createLock().set("ril.radio.preferredNetworkType",
-                                        networkType, null);
-      return;
-    }
-
-    if (networkType == this._preferredNetworkType) {
-      return;
-    }
-
-    this.workerMessenger.send("setPreferredNetworkType",
-                              { networkType: networkType },
-                              (function(response) {
-      if ((this._preferredNetworkType != null) && !response.success) {
-        gSettingsService.createLock().set("ril.radio.preferredNetworkType",
-                                          this._preferredNetworkType,
-                                          null);
-        return false;
-      }
-
-      this._preferredNetworkType = response.networkType;
-      if (DEBUG) {
-        this.debug("_preferredNetworkType is now " +
-                   RIL.RIL_PREFERRED_NETWORK_TYPE_TO_GECKO[this._preferredNetworkType]);
-      }
-
       return false;
     }).bind(this));
   },
@@ -2788,8 +2723,6 @@ RadioInterface.prototype = {
       let data = this.rilContext.data;
       let voiceRoaming = voice.roaming;
       let dataRoaming = data.roaming;
-      this.checkRoamingBetweenOperators(voice);
-      this.checkRoamingBetweenOperators(data);
       if (voiceRoaming != voice.roaming) {
         gMessageManager.sendMobileConnectionMessage("RIL:VoiceInfoChanged",
                                                     this.clientId, voice);
@@ -2802,8 +2735,10 @@ RadioInterface.prototype = {
   },
 
   handleUSSDReceived: function handleUSSDReceived(ussd) {
-    if (DEBUG) this.debug("handleUSSDReceived " + JSON.stringify(ussd));
-    gSystemMessenger.broadcastMessage("ussd-received", ussd);
+    gSystemMessenger.broadcastMessage("ussd-received",
+                                      {message: ussd.message,
+                                       sessionEnded: ussd.sessionEnded,
+                                       serviceId: this.clientId});
     gMessageManager.sendMobileConnectionMessage("RIL:USSDReceived",
                                                 this.clientId, ussd);
   },
@@ -2950,12 +2885,6 @@ RadioInterface.prototype = {
   // nsISettingsServiceCallback
   handle: function handle(aName, aResult) {
     switch(aName) {
-      // TODO: Bug 946589 - B2G RIL: follow-up to bug 944225 - remove
-      // 'ril.radio.preferredNetworkType' setting handler
-      case "ril.radio.preferredNetworkType":
-        if (DEBUG) this.debug("'ril.radio.preferredNetworkType' is now " + aResult);
-        this.setPreferredNetworkTypeBySetting(aResult);
-        break;
       case "ril.data.roaming_enabled":
         if (DEBUG) this.debug("'ril.data.roaming_enabled' is now " + aResult);
         this.dataCallSettings.roamingEnabled = aResult;
@@ -3031,15 +2960,9 @@ RadioInterface.prototype = {
                                                 this.clientId, message);
   },
 
-  _updateCallingLineIdRestrictionPref:
-    function _updateCallingLineIdRestrictionPref(mode) {
-    try {
-      Services.prefs.setIntPref(kPrefClirModePreference, mode);
-      Services.prefs.savePrefFile(null);
-      if (DEBUG) {
-        this.debug(kPrefClirModePreference + " pref is now " + mode);
-      }
-    } catch (e) {}
+  _sendClirModeChanged: function(message) {
+    gMessageManager.sendMobileConnectionMessage("RIL:ClirModeChanged",
+                                                this.clientId, message);
   },
 
   sendMMI: function sendMMI(target, message) {
@@ -3048,7 +2971,7 @@ RadioInterface.prototype = {
       if (response.isSetCallForward) {
         this._sendCfStateChanged(response);
       } else if (response.isSetCLIR && response.success) {
-        this._updateCallingLineIdRestrictionPref(response.clirMode);
+        this._sendClirModeChanged(response.clirMode);
       }
 
       target.sendAsyncMessage("RIL:SendMMI", {
@@ -3079,7 +3002,7 @@ RadioInterface.prototype = {
     }
     this.workerMessenger.send("setCLIR", message, (function(response) {
       if (response.success) {
-        this._updateCallingLineIdRestrictionPref(response.clirMode);
+        this._sendClirModeChanged(response.clirMode);
       }
       target.sendAsyncMessage("RIL:SetCallingLineIdRestriction", {
         clientId: this.clientId,

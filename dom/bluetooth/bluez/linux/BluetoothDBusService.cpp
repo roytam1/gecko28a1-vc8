@@ -473,8 +473,7 @@ public:
 
     BluetoothA2dpManager* a2dp = BluetoothA2dpManager::Get();
     NS_ENSURE_TRUE(a2dp, NS_ERROR_FAILURE);
-    a2dp->ResetA2dp();
-    a2dp->ResetAvrcp();
+    a2dp->Reset();
 
     return NS_OK;
   }
@@ -1158,7 +1157,24 @@ AgentEventFilter(DBusConnection *conn, DBusMessage *msg, void *data)
     dbus_connection_send(conn, reply, nullptr);
     dbus_message_unref(reply);
 
-    // Do not send an notification to upper layer, too annoying.
+    // Do not send a notification to upper layer, too annoying.
+    return DBUS_HANDLER_RESULT_HANDLED;
+  } else if (dbus_message_is_method_call(msg, DBUS_AGENT_IFACE, "RequestPairingConsent")) {
+    // Directly reply RequestPairingConsent here
+    DBusMessage *reply;
+    reply = dbus_message_new_method_return(msg);
+
+    if (!reply) {
+      BT_WARNING("%s: Memory can't be allocated for the message.", __FUNCTION__);
+      dbus_message_unref(msg);
+      errorStr.AssignLiteral("Memory can't be allocated for the message.");
+
+      goto handle_error;
+    }
+
+    dbus_connection_send(conn, reply, nullptr);
+    dbus_message_unref(reply);
+    // Do not send a notification to upper layer
     return DBUS_HANDLER_RESULT_HANDLED;
   } else {
 #ifdef DEBUG
@@ -2453,6 +2469,12 @@ BluetoothDBusService::CreatePairedDeviceInternal(
                                               int aTimeout,
                                               BluetoothReplyRunnable* aRunnable)
 {
+  if (!IsReady()) {
+    NS_NAMED_LITERAL_STRING(errorStr, "Bluetooth service is not ready yet!");
+    DispatchBluetoothReply(aRunnable, BluetoothValue(), errorStr);
+    return NS_OK;
+  }
+
   const char *capabilities = B2G_AGENT_CAPABILITIES;
   const char *deviceAgentPath = KEY_REMOTE_AGENT;
 
@@ -2548,6 +2570,12 @@ BluetoothDBusService::SetPinCodeInternal(const nsAString& aDeviceAddress,
                                          const nsAString& aPinCode,
                                          BluetoothReplyRunnable* aRunnable)
 {
+  if (!IsReady()) {
+    NS_NAMED_LITERAL_STRING(errorStr, "Bluetooth service is not ready yet!");
+    DispatchBluetoothReply(aRunnable, BluetoothValue(), errorStr);
+    return false;
+  }
+
   nsAutoString errorStr;
   BluetoothValue v = true;
   DBusMessage *msg;
@@ -2596,6 +2624,12 @@ BluetoothDBusService::SetPasskeyInternal(const nsAString& aDeviceAddress,
                                          uint32_t aPasskey,
                                          BluetoothReplyRunnable* aRunnable)
 {
+  if (!IsReady()) {
+    NS_NAMED_LITERAL_STRING(errorStr, "Bluetooth service is not ready yet!");
+    DispatchBluetoothReply(aRunnable, BluetoothValue(), errorStr);
+    return false;
+  }
+
   nsAutoString errorStr;
   BluetoothValue v = true;
   DBusMessage *msg;
@@ -2643,6 +2677,12 @@ BluetoothDBusService::SetPairingConfirmationInternal(
                                               bool aConfirm,
                                               BluetoothReplyRunnable* aRunnable)
 {
+  if (!IsReady()) {
+    NS_NAMED_LITERAL_STRING(errorStr, "Bluetooth service is not ready yet!");
+    DispatchBluetoothReply(aRunnable, BluetoothValue(), errorStr);
+    return false;
+  }
+
   nsAutoString errorStr;
   BluetoothValue v = true;
   DBusMessage *msg;
@@ -3019,6 +3059,26 @@ BluetoothDBusService::SendFile(const nsAString& aDeviceAddress,
   BluetoothOppManager* opp = BluetoothOppManager::Get();
   nsAutoString errorStr;
   if (!opp || !opp->SendFile(aDeviceAddress, aBlobParent)) {
+    errorStr.AssignLiteral("Calling SendFile() failed");
+  }
+
+  DispatchBluetoothReply(aRunnable, BluetoothValue(true), errorStr);
+}
+
+void
+BluetoothDBusService::SendFile(const nsAString& aDeviceAddress,
+                               nsIDOMBlob* aBlob,
+                               BluetoothReplyRunnable* aRunnable)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  // Currently we only support one device sending one file at a time,
+  // so we don't need aDeviceAddress here because the target device
+  // has been determined when calling 'Connect()'. Nevertheless, keep
+  // it for future use.
+  BluetoothOppManager* opp = BluetoothOppManager::Get();
+  nsAutoString errorStr;
+  if (!opp || !opp->SendFile(aDeviceAddress, aBlob)) {
     errorStr.AssignLiteral("Calling SendFile() failed");
   }
 

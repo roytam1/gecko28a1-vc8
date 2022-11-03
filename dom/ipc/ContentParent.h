@@ -298,6 +298,10 @@ private:
     bool TransformPreallocatedIntoApp(const nsAString& aAppManifestURL,
                                       ChildPrivileges aPrivs);
 
+    // Transform a pre-allocated app process into a browser process. If this
+    // returns false, the child process has died.
+    bool TransformPreallocatedIntoBrowser();
+
     /**
      * Mark this ContentParent as dead for the purposes of Get*().
      * This method is idempotent.
@@ -316,6 +320,10 @@ private:
      * is an abnormal shutdown (e.g. a crash).
      */
     void ShutDownProcess(bool aCloseWithError);
+
+    // Perform any steps necesssary to gracefully shtudown the message
+    // manager and null out mMessageManager.
+    void ShutDownMessageManager();
 
     PCompositorParent*
     AllocPCompositorParent(mozilla::ipc::Transport* aTransport,

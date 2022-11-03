@@ -25,6 +25,7 @@
 #include "jstypes.h"
 #include "jsutil.h"
 
+#include "frontend/BytecodeCompiler.h"
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/SharedContext.h"
 #include "gc/Marking.h"
@@ -33,6 +34,7 @@
 #include "js/OldDebugAPI.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/Debugger.h"
+#include "vm/SelfHosting.h"
 #include "vm/Shape.h"
 #include "vm/Xdr.h"
 
@@ -2483,6 +2485,29 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
         }
     }
 
+    /*
+     * Wrap the script source object as needed. Self-hosted scripts may be
+     * in another runtime, so lazily create a new script source object to
+     * use for them.
+     */
+    RootedObject sso(cx);
+    if (cx->runtime()->isSelfHostingCompartment(src->compartment())) {
+        if (!cx->compartment()->selfHostingScriptSource) {
+            CompileOptions options(cx);
+            FillSelfHostingCompileOptions(options);
+
+            ScriptSourceObject *obj = frontend::CreateScriptSourceObject(cx, options);
+            if (!obj)
+                return nullptr;
+            cx->compartment()->selfHostingScriptSource = obj;
+        }
+        sso = cx->compartment()->selfHostingScriptSource;
+    } else {
+        sso = src->sourceObject();
+        if (!cx->compartment()->wrap(cx, &sso))
+            return nullptr;
+    }
+
     /* Now that all fallible allocation is complete, create the GC thing. */
 
     CompileOptions options(cx);
@@ -2494,7 +2519,7 @@ js::CloneScript(JSContext *cx, HandleObject enclosingScope, HandleFunction fun, 
            .setVersion(src->getVersion());
 
     /* Make sure we clone the script source object with the script */
-    RootedScriptSource sourceObject(cx, ScriptSourceObject::create(cx, src->scriptSource()));
+    RootedScriptSource sourceObject(cx, &sso->as<ScriptSourceObject>());
     if (!sourceObject)
         return nullptr;
 

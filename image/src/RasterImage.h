@@ -275,6 +275,16 @@ public:
   nsIntSize GetRequestedResolution() {
     return mRequestedResolution;
   }
+  /* Provide a hint for the requested dimension of the resulting image. */
+  void SetRequestedSampleSize(int requestedSampleSize) {
+    mRequestedSampleSize = requestedSampleSize;
+  }
+
+  int GetRequestedSampleSize() {
+    return mRequestedSampleSize;
+  }
+
+
 
  nsCString GetURIString() {
     nsCString spec;
@@ -533,7 +543,7 @@ private:
   nsresult FinishedSomeDecoding(eShutdownIntent intent = eShutdownIntent_Done,
                                 DecodeRequest* request = nullptr);
 
-  void DrawWithPreDownscaleIfNeeded(imgFrame *aFrame,
+  bool DrawWithPreDownscaleIfNeeded(imgFrame *aFrame,
                                     gfxContext *aContext,
                                     GraphicsFilter aFilter,
                                     const gfxMatrix &aUserSpaceToImageSpace,
@@ -641,8 +651,14 @@ private: // data
   // If the image contains multiple resolutions, a hint as to which one should be used
   nsIntSize                  mRequestedResolution;
 
+  // A hint for image decoder that directly scale the image to smaller buffer
+  int                        mRequestedSampleSize;
+
   // Cached value for GetImageContainer.
   nsRefPtr<mozilla::layers::ImageContainer> mImageContainer;
+
+  // If not cached in mImageContainer, this might have our image container
+  WeakPtr<mozilla::layers::ImageContainer> mImageContainerCache;
 
 #ifdef DEBUG
   uint32_t                       mFramesNotified;
@@ -761,6 +777,7 @@ private: // data
   // Helpers
   bool CanDiscard();
   bool CanForciblyDiscard();
+  bool CanForciblyDiscardAndRedecode();
   bool DiscardingActive();
   bool StoringSourceData() const;
 

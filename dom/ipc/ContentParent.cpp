@@ -308,7 +308,7 @@ ContentParent::PreallocateAppProcess()
                           // Final privileges are set when we
                           // transform into our app.
                           base::PRIVILEGES_INHERIT,
-                          PROCESS_PRIORITY_BACKGROUND);
+                          PROCESS_PRIORITY_PREALLOC);
     process->Init();
     return process.forget();
 }
@@ -425,43 +425,31 @@ ContentParent::GetNewOrUsed(bool aForBrowserElement)
         return p.forget();
     }
 
-    nsRefPtr<ContentParent> p =
-        new ContentParent(/* app = */ nullptr,
-                          aForBrowserElement,
-                          /* isForPreallocated = */ false,
-                          base::PRIVILEGES_DEFAULT,
-                          PROCESS_PRIORITY_FOREGROUND);
-    p->Init();
+    // Try to take and transform the preallocated process into browser.
+    nsRefPtr<ContentParent> p = PreallocatedProcessManager::Take();
+    if (p) {
+        if (!p->TransformPreallocatedIntoBrowser()) {
+            p->KillHard();
+            p = nullptr;
+        }
+    } else {
+      // Failed in using the preallocated process: fork from the chrome process.
+#ifdef MOZ_NUWA_PROCESS
+        if (Preferences::GetBool("dom.ipc.processPrelaunch.enabled", false)) {
+            // Wait until the Nuwa process forks a new process.
+            return nullptr;
+        }
+#endif
+        p = new ContentParent(/* app = */ nullptr,
+                              aForBrowserElement,
+                              /* isForPreallocated = */ false,
+                              base::PRIVILEGES_DEFAULT,
+                              PROCESS_PRIORITY_FOREGROUND);
+        p->Init();
+    }
+
     sNonAppContentParents->AppendElement(p);
     return p.forget();
-}
-
-namespace {
-struct SpecialPermission {
-    const char* perm;           // an app permission
-    ChildPrivileges privs;      // the OS privilege it requires
-};
-}
-
-static ChildPrivileges
-PrivilegesForApp(mozIApplication* aApp)
-{
-    const SpecialPermission specialPermissions[] = {
-        // FIXME/bug 785592: implement a CameraBridge so we don't have
-        // to hack around with OS permissions
-        { "camera", base::PRIVILEGES_CAMERA }
-    };
-    for (size_t i = 0; i < ArrayLength(specialPermissions); ++i) {
-        const char* const permission = specialPermissions[i].perm;
-        bool hasPermission = false;
-        if (NS_FAILED(aApp->HasPermission(permission, &hasPermission))) {
-            NS_WARNING("Unable to check permissions.  Breakage may follow.");
-            break;
-        } else if (hasPermission) {
-            return specialPermissions[i].privs;
-        }
-    }
-    return base::PRIVILEGES_DEFAULT;
 }
 
 /*static*/ ProcessPriority
@@ -519,6 +507,23 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
         return nullptr;
     }
 
+    nsTArray<ContentParent*> cp;
+    int gcDelay = Preferences::GetInt("dom.ipc.gcSuppressionPeriod", 3000); // ms
+    int gcInterval = Preferences::GetInt("dom.ipc.gcSuppressionInterval", 500); // ms
+    GetAll(cp);
+    for (int i = 0; i < cp.Length(); i++) {
+        ContentParent* p = cp[i];
+        if (!p->IsPreallocated()
+#ifdef MOZ_NUWA_PROCESS
+            && !p->IsNuwaProcess()
+#endif
+        ) {
+            p->SendSuppressCollect(gcDelay);
+            // Prevent many proesses from GCing at the same time.
+            gcDelay += gcInterval;
+        }
+    }
+
     if (aContext.IsBrowserElement() || !aContext.HasOwnApp()) {
         if (nsRefPtr<ContentParent> cp = GetNewOrUsed(aContext.IsBrowserElement())) {
             nsRefPtr<TabParent> tp(new TabParent(cp, aContext));
@@ -561,7 +566,8 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
             new nsDataHashtable<nsStringHashKey, ContentParent*>();
     }
 
-    // Each app gets its own ContentParent instance.
+    // Each app gets its own ContentParent instance unless it shares it with
+    // a parent app.
     nsAutoString manifestURL;
     if (NS_FAILED(ownApp->GetManifestURL(manifestURL))) {
         NS_ERROR("Failed to get manifest URL");
@@ -569,8 +575,41 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
     }
 
     ProcessPriority initialPriority = GetInitialProcessPriority(aFrameElement);
-
     nsRefPtr<ContentParent> p = sAppContentParents->Get(manifestURL);
+
+    if (!p && Preferences::GetBool("dom.ipc.reuse_parent_app")) {
+        nsAutoString parentAppManifestURL;
+        aFrameElement->GetAttr(kNameSpaceID_None,
+                               nsGkAtoms::parentapp, parentAppManifestURL);
+        nsAdoptingString systemAppManifestURL =
+            Preferences::GetString("browser.manifestURL");
+        nsCOMPtr<nsIAppsService> appsService =
+            do_GetService(APPS_SERVICE_CONTRACTID);
+        if (!parentAppManifestURL.IsEmpty() &&
+            !parentAppManifestURL.Equals(systemAppManifestURL) &&
+            appsService) {
+            nsCOMPtr<mozIApplication> parentApp;
+            nsCOMPtr<mozIApplication> app;
+            appsService->GetAppByManifestURL(parentAppManifestURL,
+                                             getter_AddRefs(parentApp));
+            appsService->GetAppByManifestURL(manifestURL,
+                                             getter_AddRefs(app));
+
+            // Only let certified apps re-use the same process.
+            unsigned short parentAppStatus = 0;
+            unsigned short appStatus = 0;
+            if (app &&
+                NS_SUCCEEDED(app->GetAppStatus(&appStatus)) &&
+                appStatus == nsIPrincipal::APP_STATUS_CERTIFIED &&
+                parentApp &&
+                NS_SUCCEEDED(parentApp->GetAppStatus(&parentAppStatus)) &&
+                parentAppStatus == nsIPrincipal::APP_STATUS_CERTIFIED) {
+                // Check if we can re-use the process of the parent app.
+                p = sAppContentParents->Get(parentAppManifestURL);
+            }
+        }
+    }
+
     if (p) {
         // Check that the process is still alive and set its priority.
         // Hopefully the process won't die after this point, if this call
@@ -581,7 +620,7 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
     }
 
     if (!p) {
-        ChildPrivileges privs = PrivilegesForApp(ownApp);
+        ChildPrivileges privs = base::PRIVILEGES_DEFAULT;
         p = MaybeTakePreallocatedAppProcess(manifestURL, privs,
                                             initialPriority);
         if (!p) {
@@ -857,6 +896,20 @@ ContentParent::TransformPreallocatedIntoApp(const nsAString& aAppManifestURL,
     return SendSetProcessPrivileges(aPrivs);
 }
 
+bool
+ContentParent::TransformPreallocatedIntoBrowser()
+{
+    // Reset mAppManifestURL, mIsForBrowser and mOSPrivileges for browser.
+    mAppManifestURL.Truncate();
+    mIsForBrowser = true;
+    mOSPrivileges = base::PRIVILEGES_DEFAULT;
+
+    // Set priority and drop privileges.
+    ProcessPriorityManager::SetProcessPriority(this,
+                                               PROCESS_PRIORITY_FOREGROUND);
+    return SendSetProcessPrivileges(mOSPrivileges);
+}
+
 void
 ContentParent::ShutDownProcess(bool aCloseWithError)
 {
@@ -893,10 +946,23 @@ ContentParent::ShutDownProcess(bool aCloseWithError)
     // shut down the cycle collector.  But by then it's too late to release any
     // CC'ed objects, so we need to null them out here, while we still can.  See
     // bug 899761.
-    if (mMessageManager) {
-      mMessageManager->Disconnect();
-      mMessageManager = nullptr;
-    }
+    ShutDownMessageManager();
+}
+
+void
+ContentParent::ShutDownMessageManager()
+{
+  if (!mMessageManager) {
+    return;
+  }
+
+  mMessageManager->ReceiveMessage(
+            static_cast<nsIContentFrameMessageManager*>(mMessageManager.get()),
+            CHILD_PROCESS_SHUTDOWN_MESSAGE, false,
+            nullptr, nullptr, nullptr, nullptr);
+
+  mMessageManager->Disconnect();
+  mMessageManager = nullptr;
 }
 
 void
@@ -1026,12 +1092,8 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
         mForceKillTask = nullptr;
     }
 
-    nsRefPtr<nsFrameMessageManager> ppm = mMessageManager;
-    if (ppm) {
-      ppm->ReceiveMessage(static_cast<nsIContentFrameMessageManager*>(ppm.get()),
-                          CHILD_PROCESS_SHUTDOWN_MESSAGE, false,
-                          nullptr, nullptr, nullptr, nullptr);
-    }
+    ShutDownMessageManager();
+
     nsCOMPtr<nsIThreadObserver>
         kungFuDeathGrip(static_cast<nsIThreadObserver*>(this));
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -1052,10 +1114,6 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
 #ifdef ACCESSIBILITY
         obs->RemoveObserver(static_cast<nsIObserver*>(this), "a11y-init-or-shutdown");
 #endif
-    }
-
-    if (ppm) {
-      ppm->Disconnect();
     }
 
     // Tell the memory reporter manager that this ContentParent is going away.
@@ -1365,7 +1423,7 @@ ContentParent::ContentParent(ContentParent* aTemplate,
     // memory priority, which it has inherited from this process.
     ProcessPriority priority;
     if (IsPreallocated()) {
-        priority = PROCESS_PRIORITY_BACKGROUND;
+        priority = PROCESS_PRIORITY_PREALLOC;
     } else {
         priority = PROCESS_PRIORITY_FOREGROUND;
     }

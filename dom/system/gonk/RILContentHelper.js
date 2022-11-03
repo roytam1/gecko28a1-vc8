@@ -21,8 +21,11 @@ Cu.import("resource://gre/modules/DOMRequestHelper.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var RIL = {};
-Cu.import("resource://gre/modules/ril_consts.js", RIL);
+XPCOMUtils.defineLazyGetter(this, "RIL", function () {
+  let obj = {};
+  Cu.import("resource://gre/modules/ril_consts.js", obj);
+  return obj;
+});
 
 const NS_XPCOM_SHUTDOWN_OBSERVER_ID = "xpcom-shutdown";
 
@@ -108,7 +111,8 @@ const RIL_IPC_MSG_NAMES = [
   "RIL:SetVoicePrivacyMode",
   "RIL:GetVoicePrivacyMode",
   "RIL:OtaStatusChanged",
-  "RIL:MatchMvno"
+  "RIL:MatchMvno",
+  "RIL:ClirModeChanged"
 ];
 
 XPCOMUtils.defineLazyServiceGetter(this, "cpmm",
@@ -1402,6 +1406,13 @@ RILContentHelper.prototype = {
     let request = Services.DOMRequest.createRequest(window);
     let requestId = this.getRequestId(request);
 
+    let radioState = this.rilContexts[clientId].radioState;
+    if (radioState !== RIL.GECKO_DETAILED_RADIOSTATE_ENABLED) {
+      this.dispatchFireRequestError(requestId,
+                                    RIL.GECKO_ERROR_RADIO_NOT_AVAILABLE);
+      return request;
+    }
+
     cpmm.sendAsyncMessage("RIL:GetCallingLineIdRestriction", {
       clientId: clientId,
       data: {
@@ -1414,13 +1425,19 @@ RILContentHelper.prototype = {
 
   setCallingLineIdRestriction:
     function setCallingLineIdRestriction(clientId, window, clirMode) {
-
     if (window == null) {
       throw Components.Exception("Can't get window object",
                                   Cr.NS_ERROR_UNEXPECTED);
     }
     let request = Services.DOMRequest.createRequest(window);
     let requestId = this.getRequestId(request);
+
+    let radioState = this.rilContexts[clientId].radioState;
+    if (radioState !== RIL.GECKO_DETAILED_RADIOSTATE_ENABLED) {
+      this.dispatchFireRequestError(requestId,
+                                    RIL.GECKO_ERROR_RADIO_NOT_AVAILABLE);
+      return request;
+    }
 
     cpmm.sendAsyncMessage("RIL:SetCallingLineIdRestriction", {
       clientId: clientId,
@@ -1900,6 +1917,12 @@ RILContentHelper.prototype = {
       case "RIL:GetVoicePrivacyMode":
         this.handleSimpleRequest(data.requestId, data.errorMsg,
                                  data.enabled);
+        break;
+      case "RIL:ClirModeChanged":
+        this._deliverEvent(clientId,
+                           "_mobileConnectionListeners",
+                           "notifyClirModeChanged",
+                           [data]);
         break;
     }
   },

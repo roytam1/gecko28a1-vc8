@@ -16,6 +16,8 @@
 #include "nsIObserver.h"
 #include "nsXULAppAPI.h"
 
+class nsIDOMMozWakeLock;
+
 BEGIN_FMRADIO_NAMESPACE
 
 class FMRadioReplyRunnable : public nsRunnable
@@ -140,7 +142,7 @@ class FMRadioService MOZ_FINAL : public IFMRadioService
                                , public hal::FMRadioObserver
                                , public nsIObserver
 {
-  friend class ReadRilSettingTask;
+  friend class ReadAirplaneModeSettingTask;
   friend class SetFrequencyRunnable;
 
 public:
@@ -186,6 +188,8 @@ private:
   void SetState(FMRadioState aState);
   void UpdatePowerState();
   void UpdateFrequency();
+  void AcquireWakeLock();
+  void ReleaseWakeLock();
 
 private:
   bool mEnabled;
@@ -194,8 +198,8 @@ private:
 
   FMRadioState mState;
 
-  bool mHasReadRilSetting;
-  bool mRilDisabled;
+  bool mHasReadAirplaneModeSetting;
+  bool mAirplaneModeEnabled;
 
   double mUpperBoundInKHz;
   double mLowerBoundInKHz;
@@ -206,6 +210,8 @@ private:
   FMRadioEventObserverList mObserverList;
 
   static StaticRefPtr<FMRadioService> sFMRadioService;
+
+  nsCOMPtr<nsIDOMMozWakeLock> mWakeLock;
 };
 
 END_FMRADIO_NAMESPACE

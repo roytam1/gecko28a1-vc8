@@ -10,6 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/ipc/Blob.h"
+#include "nsITimer.h"
 #include "nsWeakPtr.h"
 
 struct ChromePackage;
@@ -64,6 +65,7 @@ public:
     bool Init(MessageLoop* aIOLoop,
               base::ProcessHandle aParentHandle,
               IPC::Channel* aChannel);
+    void InitProcessAttributes();
     void InitXPCOM();
 
     static ContentChild* GetSingleton() {
@@ -74,7 +76,7 @@ public:
         return mAppInfo;
     }
 
-    void SetProcessName(const nsAString& aName);
+    void SetProcessName(const nsAString& aName, bool aDontOverride = false);
     void GetProcessName(nsAString& aName);
     void GetProcessName(nsACString& aName);
     static void AppendProcessId(nsACString& aName);
@@ -212,6 +214,7 @@ public:
 
     virtual bool RecvGarbageCollect();
     virtual bool RecvCycleCollect();
+    virtual bool RecvSuppressCollect(const int& delay);
 
     virtual bool RecvAppInfo(const nsCString& version, const nsCString& buildID,
                              const nsCString& name, const nsCString& UAName);
@@ -291,8 +294,10 @@ private:
 
     bool mIsForApp;
     bool mIsForBrowser;
+    bool mCanOverrideProcessName;
     nsString mProcessName;
     nsWeakPtr mMemoryMinimizerRunnable;
+    nsCOMPtr<nsITimer> mEnableGCTimer;
 
     static ContentChild* sSingleton;
 

@@ -1208,7 +1208,7 @@ TabChild::SetProcessNameToAppName()
     return;
   }
 
-  ContentChild::GetSingleton()->SetProcessName(appName);
+  ContentChild::GetSingleton()->SetProcessName(appName, true);
 }
 
 bool
@@ -1882,7 +1882,7 @@ TabChild::RecvRealTouchEvent(const WidgetTouchEvent& aEvent,
   }
 
   nsCOMPtr<nsPIDOMWindow> outerWindow = do_GetInterface(mWebNav);
-  nsCOMPtr<nsPIDOMWindow> innerWindow = outerWindow->GetCurrentInnerWindow();
+  nsCOMPtr<nsPIDOMWindow> innerWindow = outerWindow ? outerWindow->GetCurrentInnerWindow() : nullptr;
 
   if (!innerWindow || !innerWindow->HasTouchEventListeners()) {
     SendContentReceivedTouch(aGuid, false);
@@ -2467,12 +2467,12 @@ TabChild::DoSendBlockingMessage(JSContext* aCx,
     }
   }
   if (aIsSync) {
-    return SendSyncMessage(nsString(aMessage), data, cpows, aPrincipal,
-                           aJSONRetVal);
+    return SendSyncMessage(PromiseFlatString(aMessage), data, cpows,
+                           aPrincipal, aJSONRetVal);
   }
 
-  return CallRpcMessage(nsString(aMessage), data, cpows, aPrincipal,
-                        aJSONRetVal);
+  return CallRpcMessage(PromiseFlatString(aMessage), data, cpows,
+                        aPrincipal, aJSONRetVal);
 }
 
 bool
@@ -2493,7 +2493,7 @@ TabChild::DoSendAsyncMessage(JSContext* aCx,
       return false;
     }
   }
-  return SendAsyncMessage(nsString(aMessage), data, cpows,
+  return SendAsyncMessage(PromiseFlatString(aMessage), data, cpows,
                           aPrincipal);
 }
 

@@ -105,6 +105,13 @@ struct DeviceStorageAddParams
   PBlob blob;
 };
 
+struct DeviceStorageCreateFdParams
+{
+  nsString type;
+  nsString storageName;
+  nsString relpath;
+};
+
 struct DeviceStorageGetParams
 {
   nsString type;
@@ -131,6 +138,7 @@ struct DeviceStorageEnumerationParams
 union DeviceStorageParams
 {
   DeviceStorageAddParams;
+  DeviceStorageCreateFdParams;
   DeviceStorageGetParams;
   DeviceStorageDeleteParams;
   DeviceStorageEnumerationParams;
@@ -305,6 +313,7 @@ child:
 
     GarbageCollect();
     CycleCollect();
+    SuppressCollect(int delay);
     
     /**
      * Start accessibility engine in content process.

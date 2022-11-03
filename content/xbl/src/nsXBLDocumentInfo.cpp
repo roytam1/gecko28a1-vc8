@@ -41,249 +41,6 @@ using namespace mozilla::dom;
 
 static const char kXBLCachePrefix[] = "xblcache";
 
-class nsXBLDocGlobalObject : public nsISupports
-{
-public:
-  nsXBLDocGlobalObject(nsXBLDocumentInfo *aGlobalObjectOwner);
-
-  // nsISupports interface
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsXBLDocGlobalObject)
-
-  JSObject *GetCompilationGlobal();
-  void UnmarkCompilationGlobal();
-  void Destroy();
-  nsIPrincipal* GetPrincipal();
-
-  static bool doCheckAccess(JSContext *cx, JS::Handle<JSObject*> obj,
-                            JS::Handle<jsid> id, uint32_t accessType);
-
-  void ClearGlobalObjectOwner();
-
-  static const JSClass gSharedGlobalClass;
-
-protected:
-  virtual ~nsXBLDocGlobalObject();
-
-  JS::Heap<JSObject*> mJSObject;
-  nsXBLDocumentInfo* mGlobalObjectOwner; // weak reference
-  bool mDestroyed; // Probably not necessary, but let's be safe.
-};
-
-bool
-nsXBLDocGlobalObject::doCheckAccess(JSContext *cx, JS::Handle<JSObject*> obj,
-                                    JS::Handle<jsid> id, uint32_t accessType)
-{
-  nsIScriptSecurityManager *ssm = nsContentUtils::GetSecurityManager();
-  if (!ssm) {
-    ::JS_ReportError(cx, "Unable to verify access to a global object property.");
-    return false;
-  }
-
-  // Make sure to actually operate on our object, and not some object further
-  // down on the proto chain.
-  JS::Rooted<JSObject*> base(cx, obj);
-  while (JS_GetClass(base) != &nsXBLDocGlobalObject::gSharedGlobalClass) {
-    if (!::JS_GetPrototype(cx, base, &base)) {
-      return false;
-    }
-    if (!base) {
-      ::JS_ReportError(cx, "Invalid access to a global object property.");
-      return false;
-    }
-  }
-
-  nsresult rv = ssm->CheckPropertyAccess(cx, base, JS_GetClass(base)->name,
-                                         id, accessType);
-  return NS_SUCCEEDED(rv);
-}
-
-static bool
-nsXBLDocGlobalObject_getProperty(JSContext *cx, JS::Handle<JSObject*> obj,
-                                 JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
-{
-  return nsXBLDocGlobalObject::
-    doCheckAccess(cx, obj, id, nsIXPCSecurityManager::ACCESS_GET_PROPERTY);
-}
-
-static bool
-nsXBLDocGlobalObject_setProperty(JSContext *cx, JS::Handle<JSObject*> obj,
-                                 JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
-{
-  return nsXBLDocGlobalObject::
-    doCheckAccess(cx, obj, id, nsIXPCSecurityManager::ACCESS_SET_PROPERTY);
-}
-
-static bool
-nsXBLDocGlobalObject_checkAccess(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
-                                 JSAccessMode mode, JS::MutableHandle<JS::Value> vp)
-{
-  uint32_t translated;
-  if (mode & JSACC_WRITE) {
-    translated = nsIXPCSecurityManager::ACCESS_SET_PROPERTY;
-  } else {
-    translated = nsIXPCSecurityManager::ACCESS_GET_PROPERTY;
-  }
-
-  return nsXBLDocGlobalObject::
-    doCheckAccess(cx, obj, id, translated);
-}
-
-static void
-nsXBLDocGlobalObject_finalize(JSFreeOp *fop, JSObject *obj)
-{
-  nsISupports *nativeThis = (nsISupports*)JS_GetPrivate(obj);
-  nsXBLDocGlobalObject* dgo = static_cast<nsXBLDocGlobalObject*>(nativeThis);
-
-  if (dgo)
-    dgo->Destroy();
-
-  // The addref was part of JSObject construction. Note that this effectively
-  // just calls release later on.
-  nsContentUtils::DeferredFinalize(nativeThis);
-}
-
-static bool
-nsXBLDocGlobalObject_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id)
-{
-  bool did_resolve = false;
-  return JS_ResolveStandardClass(cx, obj, id, &did_resolve);
-}
-
-
-const JSClass nsXBLDocGlobalObject::gSharedGlobalClass = {
-    "nsXBLPrototypeScript compilation scope",
-    JSCLASS_HAS_PRIVATE | JSCLASS_PRIVATE_IS_NSISUPPORTS |
-    JSCLASS_IMPLEMENTS_BARRIERS | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0),
-    JS_PropertyStub,  JS_DeletePropertyStub,
-    nsXBLDocGlobalObject_getProperty, nsXBLDocGlobalObject_setProperty,
-    JS_EnumerateStub, nsXBLDocGlobalObject_resolve,
-    JS_ConvertStub, nsXBLDocGlobalObject_finalize,
-    nsXBLDocGlobalObject_checkAccess, nullptr, nullptr, nullptr,
-    nullptr
-};
-
-//----------------------------------------------------------------------
-//
-// nsXBLDocGlobalObject
-//
-
-nsXBLDocGlobalObject::nsXBLDocGlobalObject(nsXBLDocumentInfo *aGlobalObjectOwner)
-    : mJSObject(nullptr)
-    , mGlobalObjectOwner(aGlobalObjectOwner) // weak reference
-    , mDestroyed(false)
-
-{
-}
-
-
-nsXBLDocGlobalObject::~nsXBLDocGlobalObject()
-{
-  MOZ_ASSERT(!mJSObject);
-}
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(nsXBLDocGlobalObject)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsXBLDocGlobalObject)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsXBLDocGlobalObject)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mJSObject)
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsXBLDocGlobalObject)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXBLDocGlobalObject)
-  tmp->Destroy();
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(nsXBLDocGlobalObject)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(nsXBLDocGlobalObject)
-
-void
-nsXBLDocGlobalObject::ClearGlobalObjectOwner()
-{
-  mGlobalObjectOwner = nullptr;
-}
-
-void
-nsXBLDocGlobalObject::UnmarkCompilationGlobal()
-{
-  if (mJSObject) {
-    JS::ExposeObjectToActiveJS(mJSObject);
-  }
-}
-
-JSObject *
-nsXBLDocGlobalObject::GetCompilationGlobal()
-{
-  // The prototype document has its own special secret script object
-  // that can be used to compile scripts and event handlers.
-  if (mJSObject || mDestroyed) {
-    // We've been initialized before - what we have is what you get.
-    return mJSObject;
-  }
-
-  AutoSafeJSContext cx;
-  JS::CompartmentOptions options;
-  options.setZone(JS::SystemZone)
-         .setInvisibleToDebugger(true);
-  mJSObject = JS_NewGlobalObject(cx, &gSharedGlobalClass,
-                                 nsJSPrincipals::get(GetPrincipal()),
-                                 JS::DontFireOnNewGlobalHook,
-                                 options);
-  if (!mJSObject)
-      return nullptr;
-
-  mozilla::HoldJSObjects(this);
-
-  // Set the location information for the new global, so that tools like
-  // about:memory may use that information
-  nsIURI *ownerURI = mGlobalObjectOwner->DocumentURI();
-  xpc::SetLocationForGlobal(mJSObject, ownerURI);
-
-  // Add an owning reference from JS back to us. This'll be
-  // released when the JSObject is finalized.
-  ::JS_SetPrivate(mJSObject, this);
-  NS_ADDREF(this);
-  return mJSObject;
-}
-
-void
-nsXBLDocGlobalObject::Destroy()
-{
-  // Maintain indempotence.
-  mDestroyed = true;
-  if (!mJSObject)
-    return;
-  mJSObject = nullptr;
-  mozilla::DropJSObjects(this);
-}
-
-
-nsIPrincipal*
-nsXBLDocGlobalObject::GetPrincipal()
-{
-  if (!mGlobalObjectOwner) {
-    // XXXbz this should really save the principal when
-    // ClearGlobalObjectOwner() happens.
-    return nullptr;
-  }
-
-  nsRefPtr<nsXBLDocumentInfo> docInfo =
-    static_cast<nsXBLDocumentInfo*>(mGlobalObjectOwner);
-
-  nsCOMPtr<nsIDocument> document = docInfo->GetDocument();
-  if (!document)
-    return nullptr;
-
-  return document->NodePrincipal();
-}
-
 /* Implementation file */
 
 static bool
@@ -326,7 +83,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXBLDocumentInfo)
     tmp->mBindingTable->Enumerate(UnlinkProtoJSObjects, nullptr);
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobalObject)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsXBLDocumentInfo)
   if (tmp->mDocument &&
@@ -338,7 +94,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsXBLDocumentInfo)
   if (tmp->mBindingTable) {
     tmp->mBindingTable->Enumerate(TraverseProtos, &cb);
   }
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobalObject)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsXBLDocumentInfo)
@@ -371,9 +126,6 @@ nsXBLDocumentInfo::MarkInCCGeneration(uint32_t aGeneration)
   // Unmark any JS we hold
   if (mBindingTable) {
     mBindingTable->Enumerate(UnmarkProtos, nullptr);
-  }
-  if (mGlobalObject) {
-    mGlobalObject->UnmarkCompilationGlobal();
   }
 }
 
@@ -426,10 +178,6 @@ nsXBLDocumentInfo::nsXBLDocumentInfo(nsIDocument* aDocument)
 
 nsXBLDocumentInfo::~nsXBLDocumentInfo()
 {
-  /* destructor code */
-  if (mGlobalObject) {
-    mGlobalObject->ClearGlobalObjectOwner(); // just in case
-  }
   if (mBindingTable) {
     delete mBindingTable;
     mBindingTable = nullptr;
@@ -631,27 +379,12 @@ nsXBLDocumentInfo::FlushSkinStylesheets()
     mBindingTable->Enumerate(FlushScopedSkinSheets);
 }
 
-JSObject*
-nsXBLDocumentInfo::GetCompilationGlobal()
-{
-  EnsureGlobalObject();
-  return mGlobalObject->GetCompilationGlobal();
-}
-
-void
-nsXBLDocumentInfo::EnsureGlobalObject()
-{
-  if (!mGlobalObject) {
-    mGlobalObject = new nsXBLDocGlobalObject(this);
-  }
-}
-
 #ifdef DEBUG
 void
 AssertInCompilationScope()
 {
   AutoJSContext cx;
-  MOZ_ASSERT(JS_GetClass(JS::CurrentGlobalOrNull(cx)) ==
-             &nsXBLDocGlobalObject::gSharedGlobalClass);
+  // Note - Inverting the order of these operands is a rooting hazard.
+  MOZ_ASSERT(xpc::GetCompilationScope() == JS::CurrentGlobalOrNull(cx));
 }
 #endif

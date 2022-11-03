@@ -584,7 +584,7 @@ NetworkStatsDB.prototype = {
   },
 
   clearInterfaceStats: function clearInterfaceStats(aNetwork, aResultCb) {
-    let network = [aNetwork.id, aNetwork.type];
+    let network = [aNetwork.network.id, aNetwork.network.type];
     let self = this;
 
     // Clear and save an empty sample to keep sync with system counters
@@ -617,7 +617,7 @@ NetworkStatsDB.prototype = {
           self._saveStats(aTxn, aStore, sample);
         }
       };
-    }, aResultCb);
+    }, this._resetAlarms.bind(this, aNetwork.networkId, aResultCb));
   },
 
   clearStats: function clearStats(aNetworks, aResultCb) {
@@ -851,6 +851,24 @@ NetworkStatsDB.prototype = {
     }, aResultCb);
   },
 
+  getAvailableServiceTypes: function getAvailableServiceTypes(aResultCb) {
+    this.dbNewTxn("readonly", function(aTxn, aStore) {
+      if (!aTxn.result) {
+        aTxn.result = [];
+      }
+
+      let request = aStore.index("serviceType").openKeyCursor(null, "nextunique");
+      request.onsuccess = function onsuccess(event) {
+        let cursor = event.target.result;
+        if (cursor) {
+          aTxn.result.push({ serviceType: cursor.key });
+          cursor.continue();
+          return;
+        }
+      };
+    }, aResultCb);
+  },
+
   get sampleRate () {
     return SAMPLE_RATE;
   },
@@ -871,6 +889,7 @@ NetworkStatsDB.prototype = {
     let record = { networkId: aAlarm.networkId,
                    absoluteThreshold: aAlarm.absoluteThreshold,
                    relativeThreshold: aAlarm.relativeThreshold,
+                   startTime: aAlarm.startTime,
                    data: aAlarm.data,
                    manifestURL: aAlarm.manifestURL,
                    pageURL: aAlarm.pageURL };
@@ -886,6 +905,7 @@ NetworkStatsDB.prototype = {
     let alarm = { networkId: aRecord.networkId,
                   absoluteThreshold: aRecord.absoluteThreshold,
                   relativeThreshold: aRecord.relativeThreshold,
+                  startTime: aRecord.startTime,
                   data: aRecord.data,
                   manifestURL: aRecord.manifestURL,
                   pageURL: aRecord.pageURL };
@@ -1011,6 +1031,30 @@ NetworkStatsDB.prototype = {
 
         cursor.continue();
       }
+    }, aResultCb);
+  },
+
+  _resetAlarms: function _resetAlarms(aNetworkId, aResultCb) {
+    this.dbNewTxn(ALARMS_STORE_NAME, "readwrite", function(txn, store) {
+      if (DEBUG) {
+        debug("Reset alarms for network " + aNetworkId);
+      }
+
+      let lowerFilter = [aNetworkId, 0];
+      let upperFilter = [aNetworkId, ""];
+      let range = IDBKeyRange.bound(lowerFilter, upperFilter);
+
+      store.index("alarm").openCursor(range).onsuccess = function onsuccess(event) {
+        let cursor = event.target.result;
+        if (cursor) {
+          if (cursor.value.startTime) {
+            cursor.value.relativeThreshold = cursor.value.threshold;
+            cursor.update(cursor.value);
+          }
+          cursor.continue();
+          return;
+        }
+      };
     }, aResultCb);
   }
 };

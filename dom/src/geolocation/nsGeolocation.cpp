@@ -670,7 +670,7 @@ nsresult nsGeolocationService::Init()
 #endif
 
 #ifdef MOZ_WIDGET_GONK
-  mProvider = do_GetService(GONK_GPS_GEOLOCATION_PROVIDER_CONTRACTID);
+  mProvider = do_CreateInstance(GONK_GPS_GEOLOCATION_PROVIDER_CONTRACTID);
 #endif
 
 #ifdef MOZ_WIDGET_COCOA
@@ -679,6 +679,10 @@ nsresult nsGeolocationService::Init()
     mProvider = new CoreLocationLocationProvider();
   }
 #endif
+
+  if (Preferences::GetBool("geo.provider.use_mls", false)) {
+    mProvider = do_CreateInstance("@mozilla.org/geolocation/mls-provider;1");
+  }
 
   // Override platform-specific providers with the default (network)
   // provider while testing. Our tests are currently not meant to exercise

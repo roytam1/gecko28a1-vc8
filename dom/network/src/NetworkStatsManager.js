@@ -299,6 +299,15 @@ NetworkStatsManager.prototype = {
     return request;
   },
 
+  getAvailableServiceTypes: function getAvailableServiceTypes() {
+    this.checkPrivileges();
+
+    let request = this.createRequest();
+    cpmm.sendAsyncMessage("NetworkStats:GetAvailableServiceTypes",
+                          { id: this.getRequestId(request) });
+    return request;
+  },
+
   get sampleRate() {
     this.checkPrivileges();
     return cpmm.sendSyncMessage("NetworkStats:SampleRate")[0];

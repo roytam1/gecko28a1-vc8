@@ -3,6 +3,10 @@
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
+const NETWORK_STATUS_READY   = 0;
+const NETWORK_STATUS_STANDBY = 1;
+const NETWORK_STATUS_AWAY    = 2;
+
 const QUEUE_TYPE_UPDATE_STATS = 0;
 
 var wifiId = '00';
@@ -17,8 +21,12 @@ add_test(function test_clearDB() {
   getNetworks(function onGetNetworks(error, result) {
     do_check_eq(error, null);
     var networks = result;
+    networks.forEach(function(network, index) {
+      networks[index] = {network: network, networkId: NetworkStatsService.getNetworkId(network.id, network.type)};
+    }, this);
+
     NetworkStatsService._db.clearStats(networks, function onDBCleared(error, result) {
-      do_check_eq(result, null);
+      do_check_eq(error, null);
       run_next_test();
     });
   });
@@ -89,9 +97,18 @@ add_test(function test_updateQueueIndex() {
 });
 
 add_test(function test_updateAllStats() {
+  NetworkStatsService._networks[wifiId].status = NETWORK_STATUS_READY;
   NetworkStatsService.updateAllStats(function(success, msg) {
     do_check_eq(success, true);
-    run_next_test();
+    NetworkStatsService._networks[wifiId].status = NETWORK_STATUS_STANDBY;
+    NetworkStatsService.updateAllStats(function(success, msg) {
+      do_check_eq(success, true);
+      NetworkStatsService._networks[wifiId].status = NETWORK_STATUS_AWAY;
+      NetworkStatsService.updateAllStats(function(success, msg) {
+        do_check_eq(success, true);
+        run_next_test();
+      });
+    });
   });
 });
 
@@ -218,6 +235,8 @@ add_test(function test_setAlarm_invalid_threshold() {
                 data: null,
                 pageURL: testPageURL,
                 manifestURL: testManifestURL };
+
+  NetworkStatsService._networks[wifiId].status = NETWORK_STATUS_READY;
 
   NetworkStatsService._setAlarm(alarm, function onSet(error, result) {
     do_check_eq(error, "InvalidStateError");

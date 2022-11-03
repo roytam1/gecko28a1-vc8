@@ -435,7 +435,8 @@ NoteJSChildGrayWrapperShim(void* aData, void* aThing)
 // CycleCollectedJSRuntime. It should never be used directly.
 static const JSZoneParticipant sJSZoneCycleCollectorGlobal;
 
-CycleCollectedJSRuntime::CycleCollectedJSRuntime(uint32_t aMaxbytes,
+CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSRuntime* aParentRuntime,
+                                                 uint32_t aMaxbytes,
                                                  JSUseHelperThreads aUseHelperThreads)
   : mGCThingCycleCollectorGlobal(sGCThingCycleCollectorGlobal),
     mJSZoneCycleCollectorGlobal(sJSZoneCycleCollectorGlobal),
@@ -444,7 +445,7 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(uint32_t aMaxbytes,
 {
   mozilla::dom::InitScriptSettings();
 
-  mJSRuntime = JS_NewRuntime(aMaxbytes, aUseHelperThreads);
+  mJSRuntime = JS_NewRuntime(aMaxbytes, aUseHelperThreads, aParentRuntime);
   if (!mJSRuntime) {
     MOZ_CRASH();
   }
