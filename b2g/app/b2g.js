@@ -65,6 +65,9 @@ pref("network.http.spdy.push-allowance", 32768);
 pref("network.buffer.cache.count", 24);
 pref("network.buffer.cache.size",  16384);
 
+ // predictive actions
+pref("network.seer.enable", false); // disabled on b2g
+
 /* session history */
 pref("browser.sessionhistory.max_total_viewers", 1);
 pref("browser.sessionhistory.max_entries", 50);
@@ -834,6 +837,9 @@ pref("gfx.canvas.azure.accelerated", true);
 
 // Turn on dynamic cache size for Skia
 pref("gfx.canvas.skiagl.dynamic-cache", true);
+
+// Limit skia to canvases the size of the device screen or smaller
+pref("gfx.canvas.max-size-for-skia-gl", -1);
 
 // enable fence with readpixels for SurfaceStream
 pref("gfx.gralloc.fence-with-readpixels", true);
