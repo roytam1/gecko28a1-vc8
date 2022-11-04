@@ -34,6 +34,7 @@
 #include "ConvolverNode.h"
 #include "OscillatorNode.h"
 #include "nsNetUtil.h"
+#include "js/RootingAPI.h"
 
 namespace mozilla {
 namespace dom {
@@ -140,8 +141,8 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
   if (aNumberOfChannels == 0 ||
       aNumberOfChannels > WebAudioUtils::MaxChannelCount ||
       aLength == 0 ||
-      aSampleRate <= 1.0f ||
-      aSampleRate >= TRACK_RATE_MAX) {
+      aSampleRate < WebAudioUtils::MinSampleRate ||
+      aSampleRate > WebAudioUtils::MaxSampleRate) {
     // The DOM binding protects us against infinity and NaN
     aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
@@ -168,24 +169,8 @@ AudioContext::CreateBuffer(JSContext* aJSContext, uint32_t aNumberOfChannels,
                            uint32_t aLength, float aSampleRate,
                            ErrorResult& aRv)
 {
-  if (aSampleRate < 8000 || aSampleRate > 96000 || !aLength) {
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-
-  if (aLength > INT32_MAX) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return nullptr;
-  }
-
-  nsRefPtr<AudioBuffer> buffer =
-    new AudioBuffer(this, int32_t(aLength), aSampleRate);
-  if (!buffer->InitializeBuffers(aNumberOfChannels, aJSContext)) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return nullptr;
-  }
-
-  return buffer.forget();
+  return AudioBuffer::Create(this, aNumberOfChannels, aLength,
+                             aSampleRate, aJSContext, aRv);
 }
 
 already_AddRefed<AudioBuffer>
@@ -206,7 +191,7 @@ AudioContext::CreateBuffer(JSContext* aJSContext, const ArrayBuffer& aBuffer,
                   contentType);
 
   nsRefPtr<WebAudioDecodeJob> job =
-    new WebAudioDecodeJob(contentType, this, aBuffer);
+    new WebAudioDecodeJob(contentType, this);
 
   if (mDecoder.SyncDecodeMedia(contentType.get(),
                                aBuffer.Data(), aBuffer.Length(), *job) &&
@@ -438,22 +423,33 @@ AudioContext::DecodeAudioData(const ArrayBuffer& aBuffer,
                               DecodeSuccessCallback& aSuccessCallback,
                               const Optional<OwningNonNull<DecodeErrorCallback> >& aFailureCallback)
 {
+  // Neuter the array buffer
+  AutoPushJSContext cx(GetJSContext());
+
+  size_t length = aBuffer.Length();
+  void* dummy;
+  uint8_t* data;
+  bool rv;
+  JS::RootedObject obj(cx, aBuffer.Obj());
+  rv = JS_StealArrayBufferContents(cx, obj, &dummy, &data);
+
+  if (!rv) {
+    return;
+  }
+
   // Sniff the content of the media.
   // Failed type sniffing will be handled by AsyncDecodeMedia.
   nsAutoCString contentType;
-  NS_SniffContent(NS_DATA_SNIFFER_CATEGORY, nullptr,
-                  aBuffer.Data(), aBuffer.Length(),
-                  contentType);
+  NS_SniffContent(NS_DATA_SNIFFER_CATEGORY, nullptr, data, length, contentType);
 
   nsCOMPtr<DecodeErrorCallback> failureCallback;
   if (aFailureCallback.WasPassed()) {
     failureCallback = &aFailureCallback.Value();
   }
   nsRefPtr<WebAudioDecodeJob> job(
-    new WebAudioDecodeJob(contentType, this, aBuffer,
+    new WebAudioDecodeJob(contentType, this,
                           &aSuccessCallback, failureCallback));
-  mDecoder.AsyncDecodeMedia(contentType.get(),
-                            aBuffer.Data(), aBuffer.Length(), *job);
+  mDecoder.AsyncDecodeMedia(contentType.get(), data, dummy, length, *job);
   // Transfer the ownership to mDecodeJobs
   mDecodeJobs.AppendElement(job.forget());
 }
