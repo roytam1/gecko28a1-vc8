@@ -853,6 +853,8 @@ nsHTMLReflowState::ApplyRelativePositioning(nsIFrame* aFrame,
                                             const nsMargin& aComputedOffsets,
                                             nsPoint* aPosition)
 {
+  const nsStyleDisplay* display = aFrame->StyleDisplay();
+
   if (!aFrame->IsRelativelyPositioned()) {
     NS_ASSERTION(!aFrame->Properties().Get(nsIFrame::NormalPositionProperty()),
                  "We assume that changing the 'position' property causes "
@@ -872,7 +874,6 @@ nsHTMLReflowState::ApplyRelativePositioning(nsIFrame* aFrame,
     props.Set(nsIFrame::NormalPositionProperty(), new nsPoint(*aPosition));
   }
 
-  const nsStyleDisplay* display = aFrame->StyleDisplay();
   if (NS_STYLE_POSITION_RELATIVE == display->mPosition) {
     *aPosition += nsPoint(aComputedOffsets.left, aComputedOffsets.top);
   } else if (NS_STYLE_POSITION_STICKY == display->mPosition &&

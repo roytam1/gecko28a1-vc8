@@ -416,6 +416,7 @@ NeedIntermediateSurface(const Pattern& aPattern, const DrawOptions& aOptions)
 
 DrawTargetCairo::DrawTargetCairo()
   : mContext(nullptr)
+  , mSurface(nullptr)
   , mLockedBits(nullptr)
 {
 }
@@ -1142,6 +1143,12 @@ DrawTargetCairo::CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFo
 bool
 DrawTargetCairo::InitAlreadyReferenced(cairo_surface_t* aSurface, const IntSize& aSize)
 {
+  //check if aSurface is valid. Destroy and return early if not a valid surface.
+  if (cairo_surface_status(aSurface)) {
+    cairo_surface_destroy(aSurface);
+    return false;
+  }
+
   mContext = cairo_create(aSurface);
   mSurface = aSurface;
   mSize = aSize;
