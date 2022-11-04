@@ -388,6 +388,18 @@ GetStubReturnAddress(JSContext *cx, jsbytecode *pc)
     return cx->compartment()->jitCompartment()->baselineCallReturnAddr();
 }
 
+static inline jsbytecode *
+GetNextNonLoopEntryPc(jsbytecode *pc)
+{
+    JSOp op = JSOp(*pc);
+    if (op == JSOP_GOTO)
+        return pc + GET_JUMP_OFFSET(pc);
+    if (op == JSOP_LOOPENTRY || op == JSOP_NOP || op == JSOP_LOOPHEAD)
+        return GetNextPc(pc);
+    return pc;
+}
+
+
 // For every inline frame, we write out the following data:
 //
 //                      |      ...      |
@@ -778,16 +790,27 @@ InitFromBailout(JSContext *cx, HandleScript caller, jsbytecode *callerPC,
     // If we are resuming at a LOOPENTRY op, resume at the next op to avoid
     // a bailout -> enter Ion -> bailout loop with --ion-eager. See also
     // ThunkToInterpreter.
+    //
+    // Cycles can cause the loop below to not terminate. Empty loops are one
+    // such example:
+    //
+    //   L: loophead
+    //      loopentry
+    //      goto L
+    //
+    // We do cycle detection below with the "tortoise and the hare" algorithm.
     if (!resumeAfter) {
+        jsbytecode *fasterPc = pc;
         while (true) {
-            op = JSOp(*pc);
-            if (op == JSOP_GOTO)
-                pc += GET_JUMP_OFFSET(pc);
-            else if (op == JSOP_LOOPENTRY || op == JSOP_NOP || op == JSOP_LOOPHEAD)
-                pc = GetNextPc(pc);
-            else
+            // Advance fasterPc twice as fast as pc.
+            pc = GetNextNonLoopEntryPc(pc);
+            fasterPc = GetNextNonLoopEntryPc(GetNextNonLoopEntryPc(fasterPc));
+
+            // Break on cycles or at the end of goto sequences.
+            if (fasterPc == pc)
                 break;
         }
+        op = JSOp(*pc);
     }
 
     uint32_t pcOff = script->pcToOffset(pc);
