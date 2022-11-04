@@ -1004,6 +1004,14 @@ public:
     mExistThrottledUpdates = aExistThrottledUpdates;
   }
 
+  bool HasWarnedAboutPositionedTableParts() const {
+    return mHasWarnedAboutPositionedTableParts;
+  }
+
+  void SetHasWarnedAboutPositionedTableParts() {
+    mHasWarnedAboutPositionedTableParts = true;
+  }
+
   bool IsDeviceSizePageSize();
 
 protected:
@@ -1305,6 +1313,8 @@ protected:
   // value the slow way.
   mutable unsigned      mIsChromeIsCached : 1;
   mutable unsigned      mIsChrome : 1;
+
+  unsigned mHasWarnedAboutPositionedTableParts : 1;
 
   // Should we paint flash in this context? Do not use this variable directly.
   // Use GetPaintFlashing() method instead.
