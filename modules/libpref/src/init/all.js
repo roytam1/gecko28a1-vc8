@@ -81,8 +81,7 @@ pref("offline-apps.quota.warn",        51200);
 // 0 => disable compression
 // 1 => best speed
 // 9 => best compression
-// cache compression turned off for now - see bug #715198
-pref("browser.cache.compression_level", 0);
+pref("browser.cache.compression_level", 3);
 
 // Whether or not testing features are enabled.
 pref("dom.quotaManager.testing", false);
@@ -120,6 +119,7 @@ pref("browser.sessionhistory.max_total_viewers", -1);
 
 pref("ui.use_native_colors", true);
 pref("ui.click_hold_context_menus", false);
+pref("browser.display.ignore_accessibility_theme", false); // completely ignore accessibility theme (high contrast, etc)
 pref("browser.display.use_document_fonts",  1);  // 0 = never, 1 = quick, 2 = always
 pref("browser.display.use_document_colors", true);
 pref("browser.display.use_system_colors",   false);
@@ -4129,7 +4129,7 @@ pref("image.high_quality_downscaling.enabled", true);
 
 // The minimum percent downscaling we'll use high-quality downscaling on,
 // interpreted as a floating-point number / 1000.
-pref("image.high_quality_downscaling.min_factor", 1000);
+pref("image.high_quality_downscaling.min_factor", 335);
 
 // The maximum memory size which we'll use high-quality uspcaling on,
 // interpreted as number of decoded bytes.
