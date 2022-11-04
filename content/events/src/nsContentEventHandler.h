@@ -62,7 +62,7 @@ protected:
   nsresult Init(mozilla::WidgetQueryContentEvent* aEvent);
   nsresult Init(mozilla::WidgetSelectionEvent* aEvent);
 
-  nsresult InitBasic();
+  // InitCommon() is called from each Init().
   nsresult InitCommon();
 
 public:
