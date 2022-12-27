@@ -320,7 +320,7 @@ class nsHtml5TreeOpExecutor : public nsContentSink,
                   
     void RunFlushLoop();
 
-    void FlushDocumentWrite();
+    nsresult FlushDocumentWrite();
 
     void MaybeSuspend();
 
