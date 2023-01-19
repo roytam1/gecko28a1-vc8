@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* ES6 20121122 draft 15.16.4.6. */
+/* ES6 draft 2014-10-14 23.2.3.6. */
 
 function SetForEach(callbackfn, thisArg = undefined) {
     /* Step 1-2. */
@@ -24,10 +24,13 @@ function SetForEach(callbackfn, thisArg = undefined) {
     /* Step 7-8. */
     var values = std_Set_iterator.call(S);
     while (true) {
-        var result = std_Set_iterator_next.call(values);
-        if (result.done)
-            break;
-        var value = result.value;
-        callFunction(callbackfn, thisArg, value, value, S);
+        try {
+            var entry = std_Set_iterator_next.call(values);
+        } catch (err) {
+            if (err instanceof StopIteration)
+                break;
+            throw err;
+        }
+        callFunction(callbackfn, thisArg, entry, entry, S);
     }
 }

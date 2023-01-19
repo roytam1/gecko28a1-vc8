@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* ES6 20121122 draft 15.14.4.4. */
+/* ES6 draft 2014-10-14 23.1.3.5. */
 
 function MapForEach(callbackfn, thisArg = undefined) {
     /* Step 1-2. */
@@ -24,10 +24,13 @@ function MapForEach(callbackfn, thisArg = undefined) {
     /* Step 6-8. */
     var entries = std_Map_iterator.call(M);
     while (true) {
-        var result = std_Map_iterator_next.call(entries);
-        if (result.done)
-            break;
-        var entry = result.value;
+        try {
+            var entry = std_Map_iterator_next.call(entries);
+        } catch (err) {
+            if (err instanceof StopIteration)
+                break;
+            throw err;
+        }
         callFunction(callbackfn, thisArg, entry[1], entry[0], M);
     }
 }
