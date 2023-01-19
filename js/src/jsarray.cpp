@@ -2876,6 +2876,7 @@ ArrayFromCallArgs(JSContext *cx, RootedTypeObject &type, CallArgs &args)
     return true;
 }
 
+/* ES6 draft 2014-10-14 22.1.2.3 */
 static bool
 array_of(JSContext *cx, unsigned argc, Value *vp)
 {

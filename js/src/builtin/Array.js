@@ -414,7 +414,7 @@ function ArrayStaticReduceRight(list, callbackfn) {
         return callFunction(ArrayReduceRight, list, callbackfn);
 }
 
-/* ES6 draft 2013-05-14 15.4.3.23. */
+/* ES6 draft 2014-10-14 22.1.3.8. */
 function ArrayFind(predicate/*, thisArg*/) {
     /* Steps 1-2. */
     var O = ToObject(this);
@@ -452,7 +452,7 @@ function ArrayFind(predicate/*, thisArg*/) {
     return undefined;
 }
 
-/* ES6 draft 2013-05-14 15.4.3.23. */
+/* ES6 draft 2014-10-14 22.1.3.9. */
 function ArrayFindIndex(predicate/*, thisArg*/) {
     /* Steps 1-2. */
     var O = ToObject(this);

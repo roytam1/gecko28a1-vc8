@@ -498,7 +498,7 @@ extern bool
 fun_resolve(JSContext *cx, HandleObject obj, HandleId id,
             unsigned flags, MutableHandleObject objp);
 
-// ES6 9.2.5 IsConstructor
+// ES6 draft 2014-10-14 7.2.5 IsConstructor(arg)
 bool IsConstructor(const Value &v);
 
 /*

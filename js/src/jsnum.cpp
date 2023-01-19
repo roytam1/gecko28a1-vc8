@@ -1086,6 +1086,8 @@ enum nc_slot {
     NC_NEGATIVE_INFINITY,
     NC_MAX_VALUE,
     NC_MIN_VALUE,
+    NC_MAX_SAFE_INTEGER,
+    NC_MIN_SAFE_INTEGER,
     NC_EPSILON,
     NC_LIMIT
 };
@@ -1101,7 +1103,11 @@ static JSConstDoubleSpec number_constants[] = {
     {0,                         "NEGATIVE_INFINITY", 0,{0,0,0}},
     {1.7976931348623157E+308,   "MAX_VALUE",         0,{0,0,0}},
     {0,                         "MIN_VALUE",         0,{0,0,0}},
-    /* ES6 (May 2013 draft) 15.7.3.7 */
+    /* ES6 draft 2014-10-14 20.1.2.6 Number.MAX_SAFE_INTEGER constant */
+    {9007199254740991,          "MAX_SAFE_INTEGER",  0,{0,0,0}},
+    /* ES6 draft 2014-10-14 20.1.2.8 Number.MIN_SAFE_INTEGER constant */
+    {-9007199254740991,         "MIN_SAFE_INTEGER",  0,{0,0,0}},
+    /* ES6 draft 2014-10-14 20.1.2.1 Number.EPSILON constant */
     {2.2204460492503130808472633361816e-16, "EPSILON", 0,{0,0,0}},
     {0,0,0,{0,0,0}}
 };

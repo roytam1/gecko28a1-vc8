@@ -1,7 +1,14 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/*
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/licenses/publicdomain/
+ */
 
+// explicitly turn on js185
+if (typeof version != 'undefined')
+{
+  version(185);
+}
 
 if (typeof assertThrowsInstanceOf === 'undefined') {
     var assertThrowsInstanceOf = function assertThrowsInstanceOf(f, ctor, msg) {
