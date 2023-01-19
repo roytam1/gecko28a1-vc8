@@ -16,7 +16,7 @@ dictionary PositionOptions {
   long maximumAge = 0;
 };
 
-[NoInterfaceObject]
+[NoInterfaceObject, Pref="geo.enabled"]
 interface Geolocation {
   [Throws]
   void getCurrentPosition(PositionCallback successCallback,

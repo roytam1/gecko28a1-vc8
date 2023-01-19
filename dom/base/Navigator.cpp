@@ -965,11 +965,14 @@ Navigator::GetGeolocation(ErrorResult& aRv)
     return nullptr;
   }
 
-  mGeolocation = new Geolocation();
-  if (NS_FAILED(mGeolocation->Init(mWindow->GetOuterWindow()))) {
-    mGeolocation = nullptr;
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
+  if (Preferences::GetBool("geo.enabled", true)) {
+    //Only Init when enabled, otherwise return empty
+    mGeolocation = new Geolocation();
+    if (NS_FAILED(mGeolocation->Init(mWindow->GetOuterWindow()))) {
+      mGeolocation = nullptr;
+      aRv.Throw(NS_ERROR_FAILURE);
+      return nullptr;
+    }
   }
 
   return mGeolocation;
