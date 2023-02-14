@@ -2557,7 +2557,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         cppheaders = [CppDirective('include', '"%s"' % filename)
                       for filename in ipdl.builtin.CppIncludes]
 
-        if msvcver > 8:
+        if msvcver > 9:
             cf.addthings((
                 [ Whitespace.NL ]
                 + self.protocolCxxIncludes
